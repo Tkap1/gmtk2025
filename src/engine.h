@@ -151,6 +151,20 @@ struct s_text_iterator
 };
 
 
+struct s_audio_fade
+{
+	float percent[2];
+	float volume[2];
+};
+
+struct s_play_sound_data
+{
+	float volume = 1;
+	float speed = 1;
+	b8 loop;
+	s_maybe<s_audio_fade> fade;
+};
+
 struct s_time_format
 {
 	int hours;

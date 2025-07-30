@@ -297,6 +297,13 @@ struct s_input
 	b8 right;
 };
 
+struct s_active_sound
+{
+	Mix_Chunk* chunk;
+	s_play_sound_data data;
+	float index;
+};
+
 struct s_game
 {
 	b8 freeze_loop;
@@ -321,6 +328,8 @@ struct s_game
 	s_rng rng;
 	float speed;
 	s_input_name_state input_name_state;
+
+	s_list<s_active_sound, 128> active_sound_arr;
 
 	s_editor editor;
 	s_map map;

@@ -303,11 +303,17 @@ func Mix_Chunk* load_sound_from_file(char* path, u8 volume)
 	return chunk;
 }
 
-func void play_sound(e_sound sound_id)
+func void play_sound(e_sound sound_id, s_play_sound_data data)
 {
 	if(!game->turn_off_all_sounds) {
 		Mix_Chunk* chunk = game->sound_arr[sound_id];
-		Mix_PlayChannel(-1, chunk, 0);
+		if(!game->active_sound_arr.is_full()) {
+			s_active_sound active_sound = zero;
+			active_sound.chunk = chunk;
+			active_sound.data = data;
+			game->active_sound_arr.add(active_sound);
+		}
+		// Mix_PlayChannel(-1, chunk, 0);
 	}
 }
 

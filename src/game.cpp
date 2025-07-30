@@ -250,7 +250,19 @@ m_dll_export void init(s_platform_data* platform_data)
 		bind_framebuffer(0);
 	}
 
-	load_map();
+	{
+		SDL_AudioSpec desired_spec;
+    desired_spec.freq = 44100;
+    desired_spec.format = AUDIO_F32SYS;
+    desired_spec.channels = 2;
+    desired_spec.samples = 512; // nocheckin
+    desired_spec.callback = my_audio_callback;
+
+		SDL_AudioSpec obtained_spec = zero;
+
+		SDL_AudioDeviceID device = SDL_OpenAudioDevice(null, 0, &desired_spec, &obtained_spec, 0);
+		SDL_PauseAudioDevice(device, 0);
+	}
 
 	#if defined(__EMSCRIPTEN__)
 	load_or_create_leaderboard_id();
@@ -413,15 +425,8 @@ func void input()
 					}
 					#if defined(m_debug)
 					else if(key == SDLK_s && event.key.repeat == 0 && event.key.keysym.mod & KMOD_LCTRL) {
-						if(state0 == e_game_state0_play && state1 == e_game_state1_editor) {
-							save_map("map.map");
-							save_map("map_backup.map");
-						}
 					}
 					else if(key == SDLK_l && event.key.repeat == 0 && event.key.keysym.mod & KMOD_LCTRL) {
-						if(state0 == e_game_state0_play && state1 == e_game_state1_editor) {
-							load_map();
-						}
 					}
 					else if(key == SDLK_KP_PLUS) {
 						game->speed_index = circular_index(game->speed_index + 1, array_count(c_game_speed_arr));
@@ -442,7 +447,7 @@ func void input()
 						}
 					}
 					else if(key == SDLK_g && event.key.repeat == 0) {
-						play_sound(e_sound_key);
+						play_sound(e_sound_key, zero);
 					}
 					else if(key == SDLK_j && event.key.repeat == 0) {
 						player->pos = game->last_debug_teleport_pos;
@@ -832,7 +837,7 @@ func void render(float interp_dt, float delta)
 			b8 submitted = handle_string_input(&state->name, game->render_time);
 			int count_after = state->name.str.count;
 			if(count_before != count_after) {
-				play_sound(e_sound_key);
+				play_sound(e_sound_key, zero);
 			}
 			if(submitted) {
 				b8 can_submit = true;
@@ -1245,7 +1250,7 @@ func b8 do_button_ex(s_len_str text, s_v2 pos, s_v2 size, b8 centered)
 		color = make_color(0.5f);
 		if(g_click) {
 			result = true;
-			play_sound(e_sound_click);
+			play_sound(e_sound_click, zero);
 		}
 	}
 
@@ -1474,29 +1479,6 @@ func s_v2 get_rect_normal_of_closest_edge(s_v2 p, s_v2 center, s_v2 size)
 	return result;
 }
 
-func void load_map()
-{
-	u8* data = read_file("map.map", &game->update_frame_arena);
-	if(!data) { return; }
-	u8* cursor = data;
-	int version = buffer_read<int>(&cursor);
-	game->map.spawn_tile_index = buffer_read<s_v2i>(&cursor);
-	assert(version == 1);
-	memcpy(game->map.tile_arr, cursor, sizeof(game->map.tile_arr));
-}
-
-func void save_map(char* path)
-{
-	u8* buffer = arena_alloc(&game->update_frame_arena, 5 * c_mb);
-	u8* cursor = buffer;
-	buffer_write(&cursor, c_map_version);
-	buffer_write(&cursor, game->map.spawn_tile_index);
-	buffer_memcpy(&cursor, game->map.tile_arr, sizeof(game->map.tile_arr));
-	int size = (int)(cursor - buffer);
-	assert(size <= 5 * c_mb);
-	write_file(path, buffer, size);
-}
-
 func b8 is_valid_2d_index(s_v2i index, int x_count, int y_count)
 {
 	b8 result = index.x >= 0 && index.x < x_count && index.y >= 0 && index.y < y_count;
@@ -1662,5 +1644,72 @@ func void draw_background(s_v2 player_pos, s_m4 ortho)
 		data.blend_mode = e_blend_mode_normal;
 		data.depth_mode = e_depth_mode_read_no_write;
 		render_flush(data, true);
+	}
+}
+
+func void my_audio_callback(void* userdata, u8* stream, int len) {
+	(void)userdata;
+	assert(len % sizeof(float) == 0);
+	int sample_count = len / sizeof(float) / 2;
+	float* ptr = (float*)stream;
+	for(int i = 0; i < sample_count; i += 1) {
+		float value_left = 0;
+		float value_right = 0;
+		foreach_ptr(sound_i, sound, game->active_sound_arr) {
+			int sound_sample_count = sound->chunk->alen / sizeof(s16);
+			s16* sound_sample_arr = (s16*)sound->chunk->abuf;
+			float percent = floorfi(sound->index) * 2 / (float)sound_sample_count;
+			float fade_volume = 1;
+			if(sound->data.fade.valid) {
+				if(percent >= sound->data.fade.value.percent[0]) {
+					float t = ilerp(sound->data.fade.value.percent[0], sound->data.fade.value.percent[1], percent);
+					fade_volume = lerp(sound->data.fade.value.volume[0], sound->data.fade.value.volume[1], t);
+				}
+			}
+
+			{
+				float left_index_f = sound->index;
+				int left_index_i = floorfi(left_index_f) * 2;
+				float left_sample0 = sound_sample_arr[left_index_i] / (float)c_max_s16;
+				float left_sample1 = 0;
+				if(left_index_i + 2 >= sound_sample_count) {
+					left_sample1 = left_sample0;
+				}
+				else {
+					left_sample1 = sound_sample_arr[left_index_i + 2] / (float)c_max_s16;
+				}
+				float value = lerp(left_sample0, left_sample1, fract(sound->index));
+				value_left += value * sound->data.volume * fade_volume;
+			}
+
+			{
+				float right_index_f = sound->index + 1;
+				int right_index_i = floorfi(right_index_f) * 2 + 1;
+				float right_sample0 = sound_sample_arr[right_index_i] / (float)c_max_s16;
+				float right_sample1 = 0;
+				if(right_index_i + 2 >= sound_sample_count) {
+					right_sample1 = right_sample0;
+				}
+				else {
+					right_sample1 = sound_sample_arr[right_index_i + 2] / (float)c_max_s16;
+				}
+				float value = lerp(right_sample0, right_sample1, fract(sound->index));
+				value_right += value * sound->data.volume * fade_volume;
+			}
+
+			sound->index += sound->data.speed;
+			if(floorfi(sound->index) * 2 >= sound_sample_count) {
+				if(sound->data.loop) {
+					sound->index -= sound_sample_count / 2;
+				}
+				else {
+					game->active_sound_arr.remove_and_swap(sound_i);
+					sound_i -= 1;
+				}
+			}
+		}
+		ptr[0] = value_left;
+		ptr[1] = value_right;
+		ptr += 2;
 	}
 }

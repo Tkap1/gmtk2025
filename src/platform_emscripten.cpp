@@ -22,7 +22,7 @@ int main()
 
 	SDL_SetMainReady();
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
-	Mix_OpenAudioDevice(44100, MIX_DEFAULT_FORMAT, 2, 512, NULL, 0);
+	Mix_OpenAudioDevice(44100, AUDIO_F32SYS, 2, 512, NULL, 0);
 	Mix_Volume(-1, floorfi(MIX_MAX_VOLUME * 0.1f));
 
 	init(&g_platform_data);

@@ -8,7 +8,7 @@ func void set_depth_mode(e_depth_mode mode);
 func void set_blend_mode(e_blend_mode mode);
 func void set_window_size(int width, int height);
 func Mix_Chunk* load_sound_from_file(char* path, u8 volume);
-func void play_sound(e_sound sound_id);
+func void play_sound(e_sound sound_id, s_play_sound_data data);
 func s_texture load_texture_from_file(char* path, u32 filtering);
 func s_texture load_texture_from_data(void* data, int width, int height, int format, u32 filtering);
 func s_font load_font_from_file(char* file, int font_size, s_linear_arena* arena);
