@@ -18,7 +18,6 @@ global constexpr float c_max_gravity = 9.0f;
 global constexpr float c_movement_speed = 3;
 global constexpr float c_increased_movement_speed_per_upgrade = 0.1f;
 global constexpr s_v2 c_player_size_v = {32, 32};
-global constexpr s_v2 c_enemy_size_v = c_player_size_v;
 global constexpr s_v2 c_fist_size_v = {c_player_size_v.x * 0.4f, c_player_size_v.y * 0.4f};
 global constexpr int c_map_version = 1;
 global constexpr s_v2i c_atlas_size_v = {2679, 651};
@@ -38,6 +37,9 @@ global constexpr int c_music_volume = 8;
 global constexpr float c_circle_radius = 320;
 global constexpr float c_player_attack_range = 64;
 global constexpr s_v2 c_game_area = {c_world_size.x * 0.75f, c_world_size.y * 1.0f};
+global constexpr float c_spawn_delay = 2;
+global constexpr float c_dash_duration = 0.25f;
+global constexpr float c_dash_cooldown = 3;
 
 global constexpr float c_game_speed_arr[] = {
 	0.0f, 0.01f, 0.1f, 0.25f, 0.5f,

@@ -450,7 +450,9 @@ func s_v2 draw_text(s_len_str text, s_v2 in_pos, float font_size, s_v4 color, b8
 			// swap(&uv_min.y, &uv_max.y);
 			// t.origin_offset = c_origin_bottomleft;
 
-			draw_texture_screen(tpos.xy, draw_size, it.color, e_texture_font, e_shader_text, uv_min, uv_max);
+			s_v4 temp_color = it.color;
+			temp_color.a = color.a;
+			draw_texture_screen(tpos.xy, draw_size, temp_color, e_texture_font, e_shader_text, uv_min, uv_max);
 
 			// draw_generic(game_renderer, &t, render_pass, render_data.shader, font->texture.game_id, e_mesh_rect);
 

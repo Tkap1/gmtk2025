@@ -403,6 +403,9 @@ func void input()
 					else if(key == SDLK_f && event.key.repeat == 0) {
 						soft_data->tried_to_attack_timestamp = game->update_time;
 					}
+					else if(key == SDLK_g && event.key.repeat == 0) {
+						soft_data->want_to_dash_timestamp = game->update_time;
+					}
 					else if(key == SDLK_ESCAPE && event.key.repeat == 0) {
 						if(state0 == e_game_state0_play && state1 == e_game_state1_default) {
 							add_state(&game->state0, e_game_state0_pause);
@@ -426,9 +429,6 @@ func void input()
 					}
 					else if(key == SDLK_F1) {
 						game->cheat_menu_enabled = !game->cheat_menu_enabled;
-					}
-					else if(key == SDLK_g && event.key.repeat == 0) {
-						play_sound(e_sound_key, zero);
 					}
 					else if(key == SDLK_j && event.key.repeat == 0) {
 					}
@@ -496,7 +496,9 @@ func void update()
 
 	if(game->do_hard_reset) {
 		game->do_hard_reset = false;
+		memset(hard_data, 0, sizeof(*hard_data));
 		memset(soft_data, 0, sizeof(*soft_data));
+		set_state(&game->hard_data.state1, e_game_state1_default);
 		game->arena.used = 0;
 		for_enum(type_i, e_entity) {
 			entity_manager_reset(entity_arr, type_i);
@@ -548,12 +550,35 @@ func void update()
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		spawn start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		{
 			soft_data->spawn_timer += delta;
-			float spawn_delay = 2;
-			while(soft_data->spawn_timer >= spawn_delay) {
-				soft_data->spawn_timer -= spawn_delay;
+			while(soft_data->spawn_timer >= c_spawn_delay) {
+				soft_data->spawn_timer -= c_spawn_delay;
+
+				s_list<e_enemy, e_enemy_count> possible_spawn_arr;
+				possible_spawn_arr.count = 0;
+				for_enum(type_i, e_enemy) {
+					b8 valid = type_i == 0;
+					if(type_i > 0) {
+						if(soft_data->enemy_type_kill_count_arr[type_i - 1] >= g_enemy_type_data[type_i].prev_enemy_required_kill_count) {
+							valid = true;
+						}
+					}
+					if(valid) {
+						possible_spawn_arr.add(type_i);
+					}
+				}
+
+				s_list<u32, e_enemy_count> weight_arr;
+				weight_arr.count = 0;
+				foreach_val(possible_i, possible, possible_spawn_arr) {
+					weight_arr.add(g_enemy_type_data[possible].spawn_weight);
+				}
+
+				int chosen_index = pick_rand_from_weight_arr(&weight_arr, &game->rng);
+				e_enemy chosen_enemy_type = possible_spawn_arr[chosen_index];
 
 				{
 					s_entity enemy = zero;
+					enemy.enemy_type = chosen_enemy_type;
 					enemy.spawn_timestamp = game->update_time;
 					s_v2 pos = gxy(0.5f) + v2_from_angle(randf_range(&game->rng, 0, c_tau)) * c_game_area.x * 0.6f;
 					teleport_entity(&enemy, pos);
@@ -577,7 +602,7 @@ func void update()
 				}
 			}
 			else {
-				float speed = 25;
+				float speed = 25 * g_enemy_type_data[enemy->enemy_type].speed_multi;
 				s_time_data time_data = get_time_data(game->update_time, enemy->spawn_timestamp, 5.0f);
 				if(time_data.percent <= 1) {
 					speed += time_data.inv_percent * 100;
@@ -613,7 +638,22 @@ func void update()
 			player->pos.x = cosf(player->timer) * c_circle_radius * 0.5f;
 			player->pos.y = sinf(player->timer) * c_circle_radius * 0.5f;
 			player->pos += center;
-			player->timer += delta * get_player_speed();
+			float time_since_dash_ended = game->update_time - (soft_data->did_dash_timestamp + c_dash_duration);
+			b8 is_dash_on_cooldown = time_since_dash_ended < c_dash_cooldown && soft_data->did_dash_timestamp > 0;
+			if(check_action(game->update_time, soft_data->want_to_dash_timestamp, 0.1f) && !is_dash_on_cooldown) {
+				play_sound(e_sound_dash, {.volume = 0.1f});
+				soft_data->did_dash_timestamp = game->update_time;
+				soft_data->want_to_dash_timestamp = 0;
+			}
+
+			float dash_speed = 1;
+			{
+				s_time_data time_data = get_time_data(game->update_time, soft_data->did_dash_timestamp, c_dash_duration);
+				if(time_data.percent >= 0.0f && time_data.percent <= 1.0f) {
+					dash_speed = time_data.inv_percent * 10;
+				}
+			}
+			player->timer += delta * get_player_speed() * dash_speed;
 
 			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		try to hit start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 			b8 highlighted_an_enemy = false;
@@ -623,18 +663,19 @@ func void update()
 				s_entity* enemy = &entity_arr->data[i];
 
 				float dist = v2_distance(enemy->pos, player->pos);
-				if(dist <= attack_range + c_enemy_size_v.y * 0.5f) {
+				if(dist <= attack_range + get_enemy_size(enemy->enemy_type).y * 0.5f) {
 					if(!highlighted_an_enemy) {
 						highlighted_an_enemy = true;
 						enemy->highlight = maybe(make_color(1, 0.6f, 0.6f));
 					}
 					if(check_action(game->update_time, soft_data->tried_to_attack_timestamp, 0.1f)) {
 						play_sound(e_sound_key, zero);
+						float knockback_to_add = 750 * get_enemy_knockback_resistance_taking_into_account_upgrades(enemy->enemy_type);
 						if(enemy->knockback.valid) {
-							enemy->knockback.value += 1000;
+							enemy->knockback.value += knockback_to_add;
 						}
 						else {
-							enemy->knockback = maybe(1000.0f);
+							enemy->knockback = maybe(knockback_to_add);
 						}
 
 						soft_data->tried_to_attack_timestamp = 0;
@@ -642,7 +683,20 @@ func void update()
 						player->attacked_enemy_pos = enemy->pos;
 						b8 dead = damage_enemy(enemy, get_player_damage());
 						if(dead) {
-							soft_data->gold += g_enemy_type_data[enemy->enemy_type].gold_reward;
+							int gold_reward = g_enemy_type_data[enemy->enemy_type].gold_reward;
+							{
+								s_entity fct = zero;
+								fct.duration = 0.66f;
+								fct.fct_type = 1;
+								fct.spawn_timestamp = game->render_time;
+								builder_add(&fct.builder, "$$ffff00+%ig$.", gold_reward);
+								fct.pos = enemy->pos;
+								fct.pos.y += get_enemy_size(enemy->enemy_type).y * 0.5f;
+								entity_manager_add(&game->soft_data.entity_arr, e_entity_fct, fct);
+							}
+							soft_data->spawn_timer += c_spawn_delay * 0.5f;
+							soft_data->enemy_type_kill_count_arr[enemy->enemy_type] += 1;
+							add_gold(gold_reward);
 							make_dying_enemy(*enemy);
 							entity_manager_remove(entity_arr, e_entity_enemy, i);
 						}
@@ -1049,7 +1103,7 @@ func void render(float interp_dt, float delta)
 				if(enemy->highlight.valid) {
 					color = enemy->highlight.value;
 				}
-				draw_atlas(enemy_pos, c_enemy_size_v, v2i(125, 25), color);
+				draw_atlas(enemy_pos, get_enemy_size(enemy->enemy_type), get_enemy_atlas_index(enemy->enemy_type), color);
 			}
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw enemies end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1061,7 +1115,7 @@ func void render(float interp_dt, float delta)
 				s_entity* enemy = &entity_arr->data[i];
 				s_v2 enemy_pos = lerp_v2(enemy->prev_pos, enemy->pos, interp_dt);
 				s_v4 color = enemy->highlight.value;
-				draw_atlas(enemy_pos, c_enemy_size_v, v2i(125, 25), color);
+				draw_atlas(enemy_pos, get_enemy_size(enemy->enemy_type), get_enemy_atlas_index(enemy->enemy_type), color);
 			}
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw dying enemies end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1129,10 +1183,12 @@ func void render(float interp_dt, float delta)
 		for(int i = c_first_index[e_entity_fct]; i < c_last_index_plus_one[e_entity_fct]; i += 1) {
 			if(!entity_arr->active[i]) { continue; }
 			s_entity* fct = &entity_arr->data[i];
-			s_v2 vel = v2(0, -400) + fct->vel;
-			fct->vel.y += 4;
-			fct->pos += vel * delta;
-			s_time_data time_data = get_time_data(game->render_time, fct->spawn_timestamp, 1.5f);
+			if(fct->fct_type == 0) {
+				s_v2 vel = v2(0, -400) + fct->vel;
+				fct->vel.y += 4;
+				fct->pos += vel * delta;
+			}
+			s_time_data time_data = get_time_data(game->render_time, fct->spawn_timestamp, fct->duration);
 			{
 				s_len_str str = builder_to_str(&fct->builder);
 				s_v4 color = make_color(1);
@@ -1156,7 +1212,7 @@ func void render(float interp_dt, float delta)
 		if(do_game_ui) {
 
 			s_rect rect = {
-				c_game_area.x, 64.0f, c_world_size.x - c_game_area.x, c_world_size.y
+				c_game_area.x, 128.0f, c_world_size.x - c_game_area.x, c_world_size.y
 			};
 			s_v2 size = v2(320, 48);
 			s_container container = make_down_center_x_container(rect, size, 10);
@@ -1181,11 +1237,20 @@ func void render(float interp_dt, float delta)
 					optional.disabled = true;
 				}
 				if(do_button_ex(str, pos, size, false, optional)) {
-					soft_data->gold -= cost;
+					add_gold(-cost);
 					apply_upgrade(upgrade_i, 1);
 				}
 			}
-			draw_text(format_text("Gold: %i", soft_data->gold), wxy(0.87f, 0.04f), 48, make_color(1), true, &game->font);
+			{
+				float passed = update_time_to_render_time(game->update_time, interp_dt) - soft_data->gold_change_timestamp;
+				float font_size = ease_out_elastic_advanced(passed, 0, 0.5f, 64, 48);
+				draw_text(format_text("Gold: %i", soft_data->gold), wxy(0.87f, 0.04f), font_size, make_color(1), true, &game->font);
+			}
+			{
+				s_time_format data = update_count_to_time_format(game->hard_data.update_count);
+				s_len_str text = format_text("%02i:%02i.%03i", data.minutes, data.seconds, data.milliseconds);
+				draw_text(text, wxy(0.87f, 0.12f), 48, make_color(1), true, &game->font);
+			}
 
 			{
 				s_render_flush_data data = make_render_flush_data(zero, zero);
@@ -1205,7 +1270,7 @@ func void render(float interp_dt, float delta)
 			s_container container = make_down_center_x_container(rect, size, 10);
 
 			if(do_button_ex(S("+1000 gold"), container_get_pos_and_advance(&container), size, false, zero)) {
-				soft_data->gold += 1000;
+				add_gold(1000);
 			}
 
 			{
@@ -1939,17 +2004,17 @@ func float get_player_speed()
 	return result;
 }
 
-func float get_enemy_max_health()
+func float get_enemy_max_health(e_enemy type)
 {
 	float result = 0;
-	result += 10;
+	result += g_enemy_type_data[type].max_health;
 	return result;
 }
 
 func b8 damage_enemy(s_entity* enemy, float damage)
 {
 	b8 dead = false;
-	float max_health = get_enemy_max_health();
+	float max_health = get_enemy_max_health(enemy->enemy_type);
 	enemy->damage_taken += damage;
 	if(enemy->damage_taken >= max_health) {
 		dead = true;
@@ -1959,6 +2024,7 @@ func b8 damage_enemy(s_entity* enemy, float damage)
 		s_entity fct = zero;
 		fct.spawn_timestamp = game->render_time;
 		builder_add(&fct.builder, "%.0f", damage);
+		fct.duration = 1.5f;
 		fct.pos = enemy->pos;
 		fct.vel.x = randf32_11(&game->rng) * 50;
 		entity_manager_add(&game->soft_data.entity_arr, e_entity_fct, fct);
@@ -2092,4 +2158,29 @@ func float get_upgrade_boost(e_upgrade id)
 {
 	float result = get_upgrade_level(id) * g_upgrade_data[id].stat_boost;
 	return result;
+}
+
+func s_v2i get_enemy_atlas_index(e_enemy type)
+{
+	s_v2i result = zero;
+	result = g_enemy_type_data[type].atlas_index;
+	return result;
+}
+
+func s_v2 get_enemy_size(e_enemy type)
+{
+	s_v2 result = g_enemy_type_data[type].size;
+	return result;
+}
+
+func float get_enemy_knockback_resistance_taking_into_account_upgrades(e_enemy type)
+{
+	float result = 1.0f - g_enemy_type_data[type].knockback_resistance + get_upgrade_boost(e_upgrade_knockback);
+	return result;
+}
+
+func void add_gold(int gold)
+{
+	game->soft_data.gold += gold;
+	game->soft_data.gold_change_timestamp = game->update_time;
 }

@@ -1,28 +1,67 @@
 global constexpr s_enemy_type_data g_enemy_type_data[e_enemy_count] = {
 	{
-		.gold_reward = 1
+		.spawn_weight = 1000,
+		.max_health = 10,
+		.gold_reward = 1,
+		.knockback_resistance = 0.0f,
+		.size = {32, 32},
+		.atlas_index = {125, 25},
+	},
+	{
+		.prev_enemy_required_kill_count = 5,
+		.spawn_weight = 2000,
+		.max_health = 20,
+		.gold_reward = 2,
+		.knockback_resistance = 0.0f,
+		.size = {32, 32},
+		.atlas_index = {125, 26},
+	},
+	{
+		.prev_enemy_required_kill_count = 5,
+		.spawn_weight = 3000,
+		.max_health = 30,
+		.gold_reward = 3,
+		.knockback_resistance = 0.0f,
+		.size = {32, 32},
+		.atlas_index = {125, 27},
+	},
+	{
+		.prev_enemy_required_kill_count = 5,
+		.spawn_weight = 4000,
+		.max_health = 10,
+		.gold_reward = 4,
+		.speed_multi = 2,
+		.knockback_resistance = -1.0f,
+		.size = {32, 32},
+		.atlas_index = {125, 28},
 	},
 };
 
 global constexpr s_upgrade_data g_upgrade_data[e_upgrade_count] = {
 	{
-		.name = S("Damage"),
+		.name = S("+ Damage"),
 		.cost = 10,
 		.extra_cost_per_level = 5,
 		.stat_boost = 50,
 	},
 	{
-		.name = S("Speed"),
+		.name = S("+ Speed"),
 		.cost = 20,
 		.extra_cost_per_level = 5,
 
 		.stat_boost = 20,
 	},
 	{
-		.name = S("Attack range"),
+		.name = S("+ Attack range"),
 		.cost = 30,
 		.extra_cost_per_level = 5,
 		.stat_boost = 20,
+	},
+	{
+		.name = S("+ Knockback"),
+		.cost = 30,
+		.extra_cost_per_level = 5,
+		.stat_boost = 0.1f,
 	},
 };
 

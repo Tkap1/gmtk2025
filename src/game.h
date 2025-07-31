@@ -173,13 +173,56 @@ data_enum(e_enemy,
 	g_enemy_type_data
 
 	basic {
-		.gold_reward = 1
+		.spawn_weight = 1000,
+		.max_health = 10,
+		.gold_reward = 1,
+		.knockback_resistance = 0.0f,
+		.size = {32, 32},
+		.atlas_index = {125, 25},
+	}
+
+	b {
+		.prev_enemy_required_kill_count = 5,
+		.spawn_weight = 2000,
+		.max_health = 20,
+		.gold_reward = 2,
+		.knockback_resistance = 0.0f,
+		.size = {32, 32},
+		.atlas_index = {125, 26},
+	}
+
+	c {
+		.prev_enemy_required_kill_count = 5,
+		.spawn_weight = 3000,
+		.max_health = 30,
+		.gold_reward = 3,
+		.knockback_resistance = 0.0f,
+		.size = {32, 32},
+		.atlas_index = {125, 27},
+	}
+
+	fast {
+		.prev_enemy_required_kill_count = 5,
+		.spawn_weight = 4000,
+		.max_health = 10,
+		.gold_reward = 4,
+		.speed_multi = 2,
+		.knockback_resistance = -1.0f,
+		.size = {32, 32},
+		.atlas_index = {125, 28},
 	}
 )
 
 struct s_enemy_type_data
 {
+	int prev_enemy_required_kill_count;
+	u32 spawn_weight;
+	int max_health;
 	int gold_reward;
+	float speed_multi = 1;
+	float knockback_resistance;
+	s_v2 size;
+	s_v2i atlas_index;
 };
 
 struct s_container
@@ -198,14 +241,14 @@ data_enum(e_upgrade,
 	g_upgrade_data
 
 	damage {
-		.name = S("Damage"),
+		.name = S("+ Damage"),
 		.cost = 10,
 		.extra_cost_per_level = 5,
 		.stat_boost = 50,
 	}
 
 	speed {
-		.name = S("Speed"),
+		.name = S("+ Speed"),
 		.cost = 20,
 		.extra_cost_per_level = 5,
 
@@ -213,10 +256,17 @@ data_enum(e_upgrade,
 	}
 
 	range {
-		.name = S("Attack range"),
+		.name = S("+ Attack range"),
 		.cost = 30,
 		.extra_cost_per_level = 5,
 		.stat_boost = 20,
+	}
+
+	knockback {
+		.name = S("+ Knockback"),
+		.cost = 30,
+		.extra_cost_per_level = 5,
+		.stat_boost = 0.1f,
 	}
 
 )
@@ -264,6 +314,8 @@ struct s_entity
 
 		// @Note(tkap, 31/07/2025): fct
 		struct {
+			float duration;
+			int fct_type;
 			s_str_builder<16> builder;
 			s_v2 vel;
 		};
@@ -274,7 +326,10 @@ struct s_soft_game_data
 {
 	int gold;
 	float spawn_timer;
+	float gold_change_timestamp;
 	float tried_to_attack_timestamp;
+	float want_to_dash_timestamp;
+	float did_dash_timestamp;
 	b8 tried_to_submit_score;
 	int update_count;
 	float shake_intensity;
@@ -291,6 +346,8 @@ struct s_soft_game_data
 	s_list<s_timed_msg, 8> timed_msg_arr;
 
 	int upgrade_count[e_upgrade_count];
+
+	int enemy_type_kill_count_arr[e_enemy_count];
 };
 
 struct s_hard_game_data
