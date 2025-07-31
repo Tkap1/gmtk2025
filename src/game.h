@@ -109,7 +109,7 @@ m_gl_funcs
 enum e_game_state1
 {
 	e_game_state1_default,
-	e_game_state1_editor,
+	e_game_state1_defeat,
 };
 
 struct s_lerpable
@@ -322,10 +322,18 @@ struct s_entity
 	};
 };
 
+struct s_frame_data
+{
+	int lives_to_lose;
+};
+
 struct s_soft_game_data
 {
+	s_frame_data frame_data;
+	int lives_lost;
 	int gold;
 	float spawn_timer;
+	float life_change_timestamp;
 	float gold_change_timestamp;
 	float tried_to_attack_timestamp;
 	float want_to_dash_timestamp;

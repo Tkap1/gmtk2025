@@ -396,7 +396,12 @@ func void input()
 				}
 				if(event.type == SDL_KEYDOWN) {
 					if(key == SDLK_r && event.key.repeat == 0) {
-						game->do_hard_reset = true;
+						if(event.key.keysym.mod & KMOD_LCTRL) {
+							game->do_hard_reset = true;
+						}
+						else if(state1 == e_game_state1_defeat) {
+							game->do_hard_reset = true;
+						}
 					}
 					else if(key == SDLK_SPACE && event.key.repeat == 0) {
 					}
@@ -492,6 +497,8 @@ func void update()
 	s_soft_game_data* soft_data = &game->soft_data;
 	auto entity_arr = &soft_data->entity_arr;
 
+	memset(&soft_data->frame_data, 0, sizeof(soft_data->frame_data));
+
 	float delta = (float)c_update_delay;
 
 	if(game->do_hard_reset) {
@@ -507,7 +514,11 @@ func void update()
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		create player start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		{
 			s_entity player = zero;
-			teleport_entity(&player, gxy(0.5f, 0.5f));
+
+			s_v2 center = gxy(0.5f);
+			center.x += cosf(player.timer) * c_circle_radius * 0.5f;
+			center.y += sinf(player.timer) * c_circle_radius * 0.5f;
+			teleport_entity(&player, center);
 
 			{
 				s_entity emitter = zero;
@@ -534,7 +545,14 @@ func void update()
 	b8 do_game = false;
 	switch(state0) {
 		case e_game_state0_play: {
-			do_game = true;
+			e_game_state1 state1 = (e_game_state1)get_state(&hard_data->state1);
+			switch(state1) {
+				xcase e_game_state1_default: {
+					do_game = true;
+				}
+				xcase e_game_state1_defeat: {
+				}
+			}
 		} break;
 
 		default: {}
@@ -608,6 +626,11 @@ func void update()
 					speed += time_data.inv_percent * 100;
 				}
 				enemy->pos += dir * speed * delta;
+				float dist = v2_distance(enemy->pos, gxy(0.5f));
+				if(dist <= 10) {
+					lose_lives(1);
+					entity_manager_remove(entity_arr, e_entity_enemy, i);
+				}
 			}
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		update enemies end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -707,11 +730,20 @@ func void update()
 
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		update player end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+		game->update_time += (float)c_update_delay;
+		hard_data->update_count += 1;
+		soft_data->update_count += 1;
 	}
 
-	game->update_time += (float)c_update_delay;
-	hard_data->update_count += 1;
-	soft_data->update_count += 1;
+	if(soft_data->frame_data.lives_to_lose > 0) {
+		game->soft_data.lives_lost += soft_data->frame_data.lives_to_lose;
+		game->soft_data.life_change_timestamp = game->render_time;
+		int curr_lives = c_max_lives - game->soft_data.lives_lost;
+		if(curr_lives <= 0) {
+			add_state(&game->hard_data.state1, e_game_state1_defeat);
+		}
+	}
 	game->input.handled = true;
 }
 
@@ -785,6 +817,7 @@ func void render(float interp_dt, float delta)
 	e_game_state0 state0 = (e_game_state0)get_state(&game->state0);
 
 	b8 do_game = false;
+	b8 do_defeat = false;
 
 	switch(state0) {
 
@@ -980,9 +1013,19 @@ func void render(float interp_dt, float delta)
 		case e_game_state0_play: {
 			game->speed = 1;
 
-			do_game = true;
 
 			handle_state(&hard_data->state1, game->render_time);
+
+			e_game_state1 state1 = (e_game_state1)get_state(&hard_data->state1);
+			switch(state1) {
+				xcase e_game_state1_default: {
+					do_game = true;
+				}
+				xcase e_game_state1_defeat: {
+					do_game = true;
+					do_defeat = true;
+				}
+			}
 
 		} break;
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		play end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1212,7 +1255,7 @@ func void render(float interp_dt, float delta)
 		if(do_game_ui) {
 
 			s_rect rect = {
-				c_game_area.x, 128.0f, c_world_size.x - c_game_area.x, c_world_size.y
+				c_game_area.x, 176.0f, c_world_size.x - c_game_area.x, c_world_size.y
 			};
 			s_v2 size = v2(320, 48);
 			s_container container = make_down_center_x_container(rect, size, 10);
@@ -1242,14 +1285,23 @@ func void render(float interp_dt, float delta)
 				}
 			}
 			{
-				float passed = update_time_to_render_time(game->update_time, interp_dt) - soft_data->gold_change_timestamp;
+				float passed = game->render_time - soft_data->gold_change_timestamp;
 				float font_size = ease_out_elastic_advanced(passed, 0, 0.5f, 64, 48);
-				draw_text(format_text("Gold: %i", soft_data->gold), wxy(0.87f, 0.04f), font_size, make_color(1), true, &game->font);
+				float t = ease_linear_advanced(passed, 0, 1, 1, 0);
+				s_v4 color = lerp_color(make_color(0.8f, 0.8f, 0), make_color(1, 1, 0.3f), t);
+				draw_text(format_text("Gold: %i", soft_data->gold), wxy(0.87f, 0.04f), font_size, color, true, &game->font);
+			}
+			{
+				float passed = game->render_time - soft_data->life_change_timestamp;
+				float font_size = ease_out_elastic_advanced(passed, 0, 0.5f, 64, 48);
+				float t = ease_linear_advanced(passed, 0, 1, 1, 0);
+				s_v4 color = lerp_color(hex_to_rgb(0xDF20AF), hex_to_rgb(0xDF204F), t);
+				draw_text(format_text("Lives: %i", c_max_lives - soft_data->lives_lost), wxy(0.87f, 0.12f), font_size, color, true, &game->font);
 			}
 			{
 				s_time_format data = update_count_to_time_format(game->hard_data.update_count);
 				s_len_str text = format_text("%02i:%02i.%03i", data.minutes, data.seconds, data.milliseconds);
-				draw_text(text, wxy(0.87f, 0.12f), 48, make_color(1), true, &game->font);
+				draw_text(text, wxy(0.87f, 0.2f), 48, make_color(1), true, &game->font);
 			}
 
 			{
@@ -1282,6 +1334,21 @@ func void render(float interp_dt, float delta)
 			}
 		}
 		#endif
+	}
+
+	if(do_defeat) {
+
+		draw_rect_topleft(v2(0), c_world_size, make_color(0, 0.75f));
+		draw_text(S("Defeat"), wxy(0.5f, 0.4f) + rand_v2_11(&game->rng) * 8, 128, make_color(1, 0.2f, 0.2f), true, &game->font);
+		draw_text(S("Press R to try again"), wxy(0.5f, 0.55f), sin_range(48, 64, game->render_time * 8), make_color(1), true, &game->font);
+
+		{
+			s_render_flush_data data = make_render_flush_data(zero, zero);
+			data.projection = ortho;
+			data.blend_mode = e_blend_mode_normal;
+			data.depth_mode = e_depth_mode_no_read_no_write;
+			render_flush(data, true);
+		}
 	}
 
 	s_state_transition transition = get_state_transition(&game->state0, game->render_time);
@@ -2182,5 +2249,10 @@ func float get_enemy_knockback_resistance_taking_into_account_upgrades(e_enemy t
 func void add_gold(int gold)
 {
 	game->soft_data.gold += gold;
-	game->soft_data.gold_change_timestamp = game->update_time;
+	game->soft_data.gold_change_timestamp = game->render_time;
+}
+
+func void lose_lives(int how_many)
+{
+	game->soft_data.frame_data.lives_to_lose += how_many;
 }
