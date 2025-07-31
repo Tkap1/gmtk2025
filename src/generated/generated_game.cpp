@@ -48,3 +48,6 @@ func b8 damage_enemy(s_entity* enemy, float damage);
 func void make_dying_enemy(s_entity enemy);
 func s_particle_emitter_a make_emitter_a();
 func s_particle_emitter_b make_emitter_b();
+func int add_emitter(s_entity emitter);
+func s_v2 gxy(float x, float y);
+func s_v2 gxy(float x);

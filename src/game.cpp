@@ -504,39 +504,7 @@ func void update()
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		create player start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		{
 			s_entity player = zero;
-			teleport_entity(&player, wxy(0.5f, 0.5f));
-
-			{
-				s_entity emitter = zero;
-				emitter.emitter_a = make_emitter_a();
-				emitter.emitter_a.particle_duration = 0.5f;
-				emitter.emitter_a.follow_emitter = true;
-				emitter.emitter_b = make_emitter_b();
-				emitter.emitter_b.duration = -1;
-				emitter.emitter_b.particles_per_second = 100;
-				emitter.emitter_b.particle_count = 1;
-				emitter.emitter_b.spawn_type = e_emitter_spawn_type_circle;
-				emitter.emitter_b.spawn_data.xy = c_player_size_v * 0.5f;
-				player.body_emitter = entity_manager_add(entity_arr, e_entity_emitter, emitter);
-			}
-
-			for(int i = 0; i < 2; i += 1) {
-				{
-					s_entity emitter = zero;
-					emitter.emitter_a = make_emitter_a();
-					emitter.emitter_a.particle_duration = 0.25f;
-					emitter.emitter_a.radius = 8;
-					// emitter.emitter_a.follow_emitter = true;
-					emitter.emitter_b = make_emitter_b();
-					emitter.emitter_b.duration = -1;
-					emitter.emitter_b.particles_per_second = 200;
-					emitter.emitter_b.particle_count = 1;
-					emitter.emitter_b.spawn_type = e_emitter_spawn_type_circle;
-					emitter.emitter_b.spawn_data.xy = c_fist_size_v * 0.5f;
-					player.fist_emitter_arr[i] = entity_manager_add(entity_arr, e_entity_emitter, emitter);
-				}
-			}
-
+			teleport_entity(&player, gxy(0.5f, 0.5f));
 			entity_manager_add(entity_arr, e_entity_player, player);
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		create player end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -569,7 +537,8 @@ func void update()
 
 				{
 					s_entity enemy = zero;
-					s_v2 pos = wxy(0.5f) + v2_from_angle(randf_range(&game->rng, 0, c_tau)) * c_world_size.x * 0.6f;
+					enemy.spawn_timestamp = game->update_time;
+					s_v2 pos = gxy(0.5f) + v2_from_angle(randf_range(&game->rng, 0, c_tau)) * c_game_area.x * 0.6f;
 					teleport_entity(&enemy, pos);
 					entity_manager_add(entity_arr, e_entity_enemy, enemy);
 				}
@@ -582,7 +551,7 @@ func void update()
 			if(!entity_arr->active[i]) { continue; }
 			s_entity* enemy = &entity_arr->data[i];
 			enemy->highlight = zero;
-			s_v2 dir = v2_dir_from_to(enemy->pos, wxy(0.5f));
+			s_v2 dir = v2_dir_from_to(enemy->pos, gxy(0.5f));
 			if(enemy->knockback.valid) {
 				enemy->pos += dir * -1 * enemy->knockback.value * delta;
 				enemy->knockback.value *= 0.9f;
@@ -591,7 +560,12 @@ func void update()
 				}
 			}
 			else {
-				enemy->pos += dir * 25 * delta;
+				float speed = 25;
+				s_time_data time_data = get_time_data(game->update_time, enemy->spawn_timestamp, 5.0f);
+				if(time_data.percent <= 1) {
+					speed += time_data.inv_percent * 100;
+				}
+				enemy->pos += dir * speed * delta;
 			}
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		update enemies end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -600,11 +574,17 @@ func void update()
 		for(int i = c_first_index[e_entity_dying_enemy]; i < c_last_index_plus_one[e_entity_dying_enemy]; i += 1) {
 			if(!entity_arr->active[i]) { continue; }
 			s_entity* enemy = &entity_arr->data[i];
-			s_v2 dir = v2_dir_from_to(enemy->pos, wxy(0.5f));
+			s_v2 dir = v2_dir_from_to(enemy->pos, gxy(0.5f));
 			enemy->pos += dir * -1 * enemy->knockback.value * delta;
 			enemy->knockback.value *= 0.9f;
-			if(enemy->knockback.value < 1.0f) {
-				entity_manager_remove(entity_arr, e_entity_dying_enemy, i);
+			if(enemy->knockback.value < 1.0f && enemy->remove_soon_timestamp <= 0) {
+				enemy->remove_soon_timestamp = game->update_time;
+			}
+			if(enemy->remove_soon_timestamp > 0) {
+				s_time_data time_data = get_time_data(game->update_time, enemy->remove_soon_timestamp, 0.25f);
+				if(time_data.percent >= 1) {
+					entity_manager_remove(entity_arr, e_entity_dying_enemy, i);
+				}
 			}
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		update dying enemies end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -612,7 +592,7 @@ func void update()
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		update player start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		{
 			s_entity* player = &soft_data->entity_arr.data[0];
-			s_v2 center = wxy(0.5f);
+			s_v2 center = gxy(0.5f);
 			player->pos.x = cosf(player->timer) * c_circle_radius * 0.5f;
 			player->pos.y = sinf(player->timer) * c_circle_radius * 0.5f;
 			player->pos += center;
@@ -1022,8 +1002,8 @@ func void render(float interp_dt, float delta)
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		tiles start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		{
 			constexpr int tile_size = 32;
-			int tiles_right = ceilfi(c_world_size.x / tile_size);
-			int tiles_down = ceilfi(c_world_size.y / tile_size);
+			int tiles_right = ceilfi(c_game_area.x / tile_size);
+			int tiles_down = ceilfi(c_game_area.y / tile_size);
 			for(int y = 0; y < tiles_down; y += 1) {
 				for(int x = 0; x < tiles_right; x += 1) {
 					s_v2 pos = v2(x * tile_size, y * tile_size) + v2(tile_size * 0.5f);
@@ -1039,7 +1019,7 @@ func void render(float interp_dt, float delta)
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		tiles end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-		// draw_circle(wxy(0.5f, 0.5f), c_circle_radius, make_color(0.5f));
+		// draw_circle(gxy(0.5f, 0.5f), c_circle_radius, make_color(0.5f));
 
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw enemies start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		{
@@ -1071,8 +1051,7 @@ func void render(float interp_dt, float delta)
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw player start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		{
 			s_v2 player_pos = lerp_v2(player->prev_pos, player->pos, interp_dt);
-			// draw_rect(player_pos, c_player_size_v, make_color(0, 1, 0));
-			entity_arr->data[player->body_emitter].emitter_a.pos = v3(player_pos, 0.0f);
+			draw_rect(player_pos, c_player_size_v, make_color(0, 1, 0));
 
 			// @Note(tkap, 31/07/2025): Fist
 			{
@@ -1109,10 +1088,8 @@ func void render(float interp_dt, float delta)
 					else {
 						player->fist_wobble_time += delta;
 					}
-					entity_arr->data[player->fist_emitter_arr[i]].emitter_a.pos = v3(pos, 0.0f);
-					entity_arr->data[player->fist_emitter_arr[i]].emitter_a.color_arr[0].color = color;
 
-					// draw_rect(pos, size, make_color(0, 1, 0));
+					draw_rect(pos, size, make_color(0, 1, 0));
 				}
 			}
 		}
@@ -1886,5 +1863,26 @@ func s_particle_emitter_b make_emitter_b()
 	s_particle_emitter_b result = zero;
 	result.particles_per_second = 1;
 	result.particle_count = 1;
+	return result;
+}
+
+func int add_emitter(s_entity emitter)
+{
+	s_soft_game_data* soft_data = &game->soft_data;
+	emitter.emitter_b.creation_timestamp = game->render_time;
+	emitter.emitter_b.last_emit_timestamp = game->render_time - 1.0f / emitter.emitter_b.particles_per_second;
+	int index = entity_manager_add(&soft_data->entity_arr, e_entity_emitter, emitter);
+	return index;
+}
+
+func s_v2 gxy(float x, float y)
+{
+	s_v2 result = {x * c_game_area.x, y * c_game_area.y};
+	return result;
+}
+
+func s_v2 gxy(float x)
+{
+	s_v2 result = gxy(x, x);
 	return result;
 }

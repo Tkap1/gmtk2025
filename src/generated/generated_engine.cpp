@@ -27,7 +27,6 @@ func s_v2 wxy(float x, float y);
 func s_v2 wxy(float x);
 func s_v2 wcxy(float x, float y);
 func void update_particles(float delta);
-func int add_emitter(s_particle_emitter_a a, s_particle_emitter_b b);
 template <typename t, int n>
 func int entity_manager_add(s_entity_manager<t, n>* manager, e_entity type, t new_entity);
 template <typename t, int n>

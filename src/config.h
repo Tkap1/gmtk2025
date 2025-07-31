@@ -36,6 +36,7 @@ global constexpr int c_max_ghost_positions = 120 * c_updates_per_second;
 global constexpr int c_music_volume = 8;
 global constexpr float c_circle_radius = 320;
 global constexpr float c_player_attack_range = 64*4;
+global constexpr s_v2 c_game_area = {c_world_size.x * 0.7f, c_world_size.y * 1.0f};
 
 global constexpr float c_game_speed_arr[] = {
 	0.0f, 0.01f, 0.1f, 0.25f, 0.5f,

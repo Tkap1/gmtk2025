@@ -910,17 +910,6 @@ func void update_particles(float delta)
 	}
 }
 
-func int add_emitter(s_particle_emitter_a a, s_particle_emitter_b b)
-{
-	s_soft_game_data* soft_data = &game->soft_data;
-	b.creation_timestamp = game->render_time;
-	b.last_emit_timestamp = game->render_time - 1.0f / b.particles_per_second;
-
-	s_entity entity = {.emitter_a = a, .emitter_b = b};
-	int index = entity_manager_add(&soft_data->entity_arr, e_entity_emitter, entity);
-	return index;
-}
-
 template <typename t, int n>
 func int entity_manager_add(s_entity_manager<t, n>* manager, e_entity type, t new_entity)
 {

@@ -192,8 +192,6 @@ struct s_entity
 
 		// @Note(tkap, 31/07/2025): Player
 		struct {
-			int body_emitter;
-			int fist_emitter_arr[2];
 			float did_attack_enemy_timestamp;
 			float fist_wobble_time;
 			s_v2 attacked_enemy_pos;
@@ -207,6 +205,8 @@ struct s_entity
 
 		// @Note(tkap, 31/07/2025): Enemy
 		struct {
+			float remove_soon_timestamp;
+			float spawn_timestamp;
 			e_enemy enemy_type;
 			s_maybe<float> knockback;
 			s_maybe<s_v4> highlight;
