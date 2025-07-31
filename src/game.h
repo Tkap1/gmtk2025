@@ -182,12 +182,61 @@ struct s_enemy_type_data
 	int gold_reward;
 };
 
+struct s_container
+{
+	s_v2 curr_pos;
+	s_v2 advance;
+};
+
+struct s_button_data
+{
+	b8 disabled;
+};
+
+data_enum(e_upgrade,
+	s_upgrade_data
+	g_upgrade_data
+
+	damage {
+		.name = S("Damage"),
+		.cost = 10,
+		.extra_cost_per_level = 5,
+		.stat_boost = 50,
+	}
+
+	speed {
+		.name = S("Speed"),
+		.cost = 20,
+		.extra_cost_per_level = 5,
+
+		.stat_boost = 20,
+	}
+
+	range {
+		.name = S("Attack range"),
+		.cost = 30,
+		.extra_cost_per_level = 5,
+		.stat_boost = 20,
+	}
+
+)
+
+struct s_upgrade_data
+{
+	s_len_str name;
+	int cost;
+	int extra_cost_per_level;
+	float stat_boost;
+};
+
+
 struct s_entity
 {
 	int id;
 	float timer;
 	s_v2 pos;
 	s_v2 prev_pos;
+	float spawn_timestamp;
 	union {
 
 		// @Note(tkap, 31/07/2025): Player
@@ -195,6 +244,7 @@ struct s_entity
 			float did_attack_enemy_timestamp;
 			float fist_wobble_time;
 			s_v2 attacked_enemy_pos;
+			int range_emitter;
 		};
 
 		// @Note(tkap, 31/07/2025): Emitter
@@ -206,11 +256,16 @@ struct s_entity
 		// @Note(tkap, 31/07/2025): Enemy
 		struct {
 			float remove_soon_timestamp;
-			float spawn_timestamp;
 			e_enemy enemy_type;
 			s_maybe<float> knockback;
 			s_maybe<s_v4> highlight;
 			float damage_taken;
+		};
+
+		// @Note(tkap, 31/07/2025): fct
+		struct {
+			s_str_builder<16> builder;
+			s_v2 vel;
 		};
 	};
 };
@@ -234,6 +289,8 @@ struct s_soft_game_data
 	s_entity_manager<s_entity, c_max_entities> entity_arr;
 
 	s_list<s_timed_msg, 8> timed_msg_arr;
+
+	int upgrade_count[e_upgrade_count];
 };
 
 struct s_hard_game_data
@@ -249,6 +306,9 @@ struct s_input
 
 struct s_game
 {
+	#if defined(m_debug)
+	b8 cheat_menu_enabled;
+	#endif
 	b8 reload_shaders;
 	b8 any_key_pressed;
 	s_linear_arena arena;

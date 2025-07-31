@@ -64,3 +64,9 @@ give enemies a speed boost at the beginning so we dont have to wait too long for
 dash button? or upgrade
 killing an enemy should speed up enemy spawns? so we can go faster
 enemy scaling
+
+button tooltip
+button hotkey
+option to turn off damage numbers
+
+add cooldown on miss attack

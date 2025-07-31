@@ -4,3 +4,11 @@ enum e_enemy
 	e_enemy_count,
 };
 
+enum e_upgrade
+{
+	e_upgrade_damage,
+	e_upgrade_speed,
+	e_upgrade_range,
+	e_upgrade_count,
+};
+

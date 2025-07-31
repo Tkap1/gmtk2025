@@ -852,6 +852,12 @@ func void update_particles(float delta)
 						xcase e_emitter_spawn_type_rect_edge: {
 							particle.pos.xy += random_point_in_rect_edges(&game->rng, b->spawn_data.xy);
 						};
+
+						xcase e_emitter_spawn_type_circle_outline: {
+							float r = randf_range(&game->rng, 0, c_tau);
+							particle.pos.x += cosf(r) * b->spawn_data.x;
+							particle.pos.y += sinf(r) * b->spawn_data.x;
+						};
 					}
 					particle.spawn_timestamp = game->render_time;
 					soft_data->particle_arr.add(particle);

@@ -425,6 +425,7 @@ func void input()
 						printf("Game speed: %f\n", c_game_speed_arr[game->speed_index]);
 					}
 					else if(key == SDLK_F1) {
+						game->cheat_menu_enabled = !game->cheat_menu_enabled;
 					}
 					else if(key == SDLK_g && event.key.repeat == 0) {
 						play_sound(e_sound_key, zero);
@@ -505,6 +506,22 @@ func void update()
 		{
 			s_entity player = zero;
 			teleport_entity(&player, gxy(0.5f, 0.5f));
+
+			{
+				s_entity emitter = zero;
+				emitter.emitter_a = make_emitter_a();
+				emitter.emitter_a.pos = v3(player.pos, 0.0f);
+				emitter.emitter_a.radius = 4;
+				emitter.emitter_a.follow_emitter = true;
+				emitter.emitter_b = make_emitter_b();
+				emitter.emitter_b.spawn_type = e_emitter_spawn_type_circle_outline;
+				emitter.emitter_b.spawn_data.x = get_player_attack_range();
+				emitter.emitter_b.duration = -1;
+				emitter.emitter_b.particles_per_second = 100;
+				emitter.emitter_b.particle_count = 1;
+				player.range_emitter = add_emitter(emitter);
+			}
+
 			entity_manager_add(entity_arr, e_entity_player, player);
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		create player end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -596,16 +613,17 @@ func void update()
 			player->pos.x = cosf(player->timer) * c_circle_radius * 0.5f;
 			player->pos.y = sinf(player->timer) * c_circle_radius * 0.5f;
 			player->pos += center;
-			player->timer += delta * 1.5f;
+			player->timer += delta * get_player_speed();
 
 			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		try to hit start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 			b8 highlighted_an_enemy = false;
+			float attack_range = get_player_attack_range();
 			for(int i = c_first_index[e_entity_enemy]; i < c_last_index_plus_one[e_entity_enemy]; i += 1) {
 				if(!entity_arr->active[i]) { continue; }
 				s_entity* enemy = &entity_arr->data[i];
 
 				float dist = v2_distance(enemy->pos, player->pos);
-				if(dist <= c_player_attack_range) {
+				if(dist <= attack_range + c_enemy_size_v.y * 0.5f) {
 					if(!highlighted_an_enemy) {
 						highlighted_an_enemy = true;
 						enemy->highlight = maybe(make_color(1, 0.6f, 0.6f));
@@ -1002,7 +1020,7 @@ func void render(float interp_dt, float delta)
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		tiles start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		{
 			constexpr int tile_size = 32;
-			int tiles_right = ceilfi(c_game_area.x / tile_size);
+			int tiles_right = floorfi(c_game_area.x / tile_size);
 			int tiles_down = ceilfi(c_game_area.y / tile_size);
 			for(int y = 0; y < tiles_down; y += 1) {
 				for(int x = 0; x < tiles_right; x += 1) {
@@ -1019,7 +1037,7 @@ func void render(float interp_dt, float delta)
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		tiles end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-		// draw_circle(gxy(0.5f, 0.5f), c_circle_radius, make_color(0.5f));
+		draw_circle(gxy(0.5f, 0.5f), c_circle_radius, make_color(0.2f));
 
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw enemies start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		{
@@ -1031,7 +1049,7 @@ func void render(float interp_dt, float delta)
 				if(enemy->highlight.valid) {
 					color = enemy->highlight.value;
 				}
-				draw_atlas(enemy_pos, c_player_size_v, v2i(125, 25), color);
+				draw_atlas(enemy_pos, c_enemy_size_v, v2i(125, 25), color);
 			}
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw enemies end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1043,7 +1061,7 @@ func void render(float interp_dt, float delta)
 				s_entity* enemy = &entity_arr->data[i];
 				s_v2 enemy_pos = lerp_v2(enemy->prev_pos, enemy->pos, interp_dt);
 				s_v4 color = enemy->highlight.value;
-				draw_atlas(enemy_pos, c_player_size_v, v2i(125, 25), color);
+				draw_atlas(enemy_pos, c_enemy_size_v, v2i(125, 25), color);
 			}
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw dying enemies end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1052,6 +1070,8 @@ func void render(float interp_dt, float delta)
 		{
 			s_v2 player_pos = lerp_v2(player->prev_pos, player->pos, interp_dt);
 			draw_rect(player_pos, c_player_size_v, make_color(0, 1, 0));
+			entity_arr->data[player->range_emitter].emitter_a.pos = v3(player_pos, 0.0f);
+			entity_arr->data[player->range_emitter].emitter_b.spawn_data.x = get_player_attack_range();
 
 			// @Note(tkap, 31/07/2025): Fist
 			{
@@ -1105,8 +1125,67 @@ func void render(float interp_dt, float delta)
 			render_flush(data, true);
 		}
 
+		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw fct start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+		for(int i = c_first_index[e_entity_fct]; i < c_last_index_plus_one[e_entity_fct]; i += 1) {
+			if(!entity_arr->active[i]) { continue; }
+			s_entity* fct = &entity_arr->data[i];
+			s_v2 vel = v2(0, -400) + fct->vel;
+			fct->vel.y += 4;
+			fct->pos += vel * delta;
+			s_time_data time_data = get_time_data(game->render_time, fct->spawn_timestamp, 1.5f);
+			{
+				s_len_str str = builder_to_str(&fct->builder);
+				s_v4 color = make_color(1);
+				color.a = powf(time_data.inv_percent, 0.5f);
+				draw_text(str, fct->pos, 32, color, true, &game->font);
+			}
+			if(time_data.percent >= 1) {
+				entity_manager_remove(entity_arr, e_entity_fct, i);
+			}
+		}
+		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw fct end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+		{
+			s_render_flush_data data = make_render_flush_data(zero, zero);
+			data.projection = ortho;
+			data.blend_mode = e_blend_mode_normal;
+			data.depth_mode = e_depth_mode_no_read_no_write;
+			render_flush(data, true);
+		}
+
 		if(do_game_ui) {
-			draw_text(format_text("Gold: %i", soft_data->gold), v2(4), 48, make_color(1), false, &game->font);
+
+			s_rect rect = {
+				c_game_area.x, 64.0f, c_world_size.x - c_game_area.x, c_world_size.y
+			};
+			s_v2 size = v2(320, 48);
+			s_container container = make_down_center_x_container(rect, size, 10);
+
+			{
+				draw_rect_topleft(v2(rect.pos.x, 0.0f), v2(rect.size.x, c_world_size.y), make_color(0.05f));
+				{
+					s_render_flush_data data = make_render_flush_data(zero, zero);
+					data.projection = ortho;
+					data.blend_mode = e_blend_mode_normal;
+					data.depth_mode = e_depth_mode_no_read_no_write;
+					render_flush(data, true);
+				}
+			}
+			for_enum(upgrade_i, e_upgrade) {
+				s_upgrade_data data = g_upgrade_data[upgrade_i];
+				s_v2 pos = container_get_pos_and_advance(&container);
+				int cost = data.cost + get_upgrade_level(upgrade_i) * data.extra_cost_per_level;
+				s_len_str str = format_text("%.*s (%i)", expand_str(data.name), cost);
+				s_button_data optional = zero;
+				if(!can_afford(soft_data->gold, cost)) {
+					optional.disabled = true;
+				}
+				if(do_button_ex(str, pos, size, false, optional)) {
+					soft_data->gold -= cost;
+					apply_upgrade(upgrade_i, 1);
+				}
+			}
+			draw_text(format_text("Gold: %i", soft_data->gold), wxy(0.87f, 0.04f), 48, make_color(1), true, &game->font);
 
 			{
 				s_render_flush_data data = make_render_flush_data(zero, zero);
@@ -1116,6 +1195,28 @@ func void render(float interp_dt, float delta)
 				render_flush(data, true);
 			}
 		}
+
+		#if defined(m_debug)
+		if(game->cheat_menu_enabled) {
+			s_rect rect = {
+				10, 10, 350, c_world_size.y
+			};
+			s_v2 size = v2(320, 48);
+			s_container container = make_down_center_x_container(rect, size, 10);
+
+			if(do_button_ex(S("+1000 gold"), container_get_pos_and_advance(&container), size, false, zero)) {
+				soft_data->gold += 1000;
+			}
+
+			{
+				s_render_flush_data data = make_render_flush_data(zero, zero);
+				data.projection = ortho;
+				data.blend_mode = e_blend_mode_normal;
+				data.depth_mode = e_depth_mode_no_read_no_write;
+				render_flush(data, true);
+			}
+		}
+		#endif
 	}
 
 	s_state_transition transition = get_state_transition(&game->state0, game->render_time);
@@ -1443,11 +1544,11 @@ func s_shader load_shader_from_file(char* file, s_linear_arena* arena)
 func b8 do_button(s_len_str text, s_v2 pos, b8 centered)
 {
 	s_v2 size = v2(256, 48);
-	b8 result = do_button_ex(text, pos, size, centered);
+	b8 result = do_button_ex(text, pos, size, centered, zero);
 	return result;
 }
 
-func b8 do_button_ex(s_len_str text, s_v2 pos, s_v2 size, b8 centered)
+func b8 do_button_ex(s_len_str text, s_v2 pos, s_v2 size, b8 centered, s_button_data optional)
 {
 	b8 result = false;
 	if(!centered) {
@@ -1456,10 +1557,16 @@ func b8 do_button_ex(s_len_str text, s_v2 pos, s_v2 size, b8 centered)
 
 	b8 hovered = mouse_vs_rect_center(g_mouse, pos, size);
 	s_v4 color = make_color(0.25f);
+	s_v4 text_color = make_color(1);
+	if(optional.disabled) {
+		hovered = false;
+		color = make_color(0.15f);
+		text_color = make_color(0.7f);
+	}
 	if(hovered) {
 		size += v2(8);
 		if(!centered) {
-			pos += v2(8) * 0.5f;
+			pos -= v2(4) * 0.5f;
 		}
 		color = make_color(0.5f);
 		if(g_click) {
@@ -1472,11 +1579,11 @@ func b8 do_button_ex(s_len_str text, s_v2 pos, s_v2 size, b8 centered)
 		s_instance_data data = zero;
 		data.model = m4_translate(v3(pos, 0));
 		data.model = m4_multiply(data.model, m4_scale(v3(size, 1)));
-		data.color = color,
+		data.color = color;
 		add_to_render_group(data, e_shader_button, e_texture_white, e_mesh_quad);
 	}
 
-	draw_text(text, pos, 32.0f, make_color(1), true, &game->font);
+	draw_text(text, pos, 32.0f, text_color, true, &game->font);
 
 	return result;
 }
@@ -1492,7 +1599,7 @@ func b8 do_bool_button_ex(s_len_str text, s_v2 pos, s_v2 size, b8 centered, b8* 
 {
 	assert(out);
 	b8 result = false;
-	if(do_button_ex(text, pos, size, centered)) {
+	if(do_button_ex(text, pos, size, centered, zero)) {
 		result = true;
 		*out = !(*out);
 	}
@@ -1811,6 +1918,24 @@ func float get_player_damage()
 {
 	float result = 0;
 	result += 10;
+	result *= 1.0f + get_upgrade_boost(e_upgrade_damage) / 100.0f;
+	return result;
+}
+
+func float get_player_attack_range()
+{
+	float result = 0;
+	result += c_player_attack_range;
+	result *= 1.0f + get_upgrade_boost(e_upgrade_range) / 100.0f;
+	return result;
+}
+
+
+func float get_player_speed()
+{
+	float result = 0;
+	result += 1.5f;
+	result *= 1.0f + get_upgrade_boost(e_upgrade_speed) / 100.0f;
 	return result;
 }
 
@@ -1829,6 +1954,16 @@ func b8 damage_enemy(s_entity* enemy, float damage)
 	if(enemy->damage_taken >= max_health) {
 		dead = true;
 	}
+
+	{
+		s_entity fct = zero;
+		fct.spawn_timestamp = game->render_time;
+		builder_add(&fct.builder, "%.0f", damage);
+		fct.pos = enemy->pos;
+		fct.vel.x = randf32_11(&game->rng) * 50;
+		entity_manager_add(&game->soft_data.entity_arr, e_entity_fct, fct);
+	}
+
 	return dead;
 }
 
@@ -1884,5 +2019,77 @@ func s_v2 gxy(float x, float y)
 func s_v2 gxy(float x)
 {
 	s_v2 result = gxy(x, x);
+	return result;
+}
+
+
+func s_container make_center_x_container(s_rect rect, s_v2 element_size, float padding, int element_count)
+{
+	assert(element_count > 0);
+
+	s_container result = zero;
+	float space_used = (element_size.x * element_count) + (padding * (element_count - 1));
+	float space_left = rect.size.x - space_used;
+	result.advance.x = element_size.x + padding;
+	result.curr_pos.x = rect.pos.x + space_left * 0.5f;
+	result.curr_pos.y = rect.pos.y + rect.size.y * 0.5f - element_size.y * 0.5f;
+	return result;
+}
+
+func s_container make_forward_container(s_rect rect, s_v2 element_size, float padding)
+{
+	s_container result = zero;
+	result.advance.x = element_size.x + padding;
+	result.curr_pos.x = rect.pos.x + padding;
+	result.curr_pos.y = rect.pos.y + rect.size.y * 0.5f - element_size.y * 0.5f;
+	return result;
+}
+
+func s_container make_down_center_x_container(s_rect rect, s_v2 element_size, float padding)
+{
+	s_container result = zero;
+	result.advance.y = element_size.y + padding;
+	result.curr_pos.x = rect.pos.x + rect.size.x * 0.5f - element_size.x * 0.5f;
+	result.curr_pos.y = rect.pos.y + padding;
+	return result;
+}
+
+func s_container make_forward_align_right_container(s_rect rect, s_v2 element_size, float padding, float edge_padding, int element_count)
+{
+	s_container result = zero;
+	float space_used = (element_size.x * element_count) + (padding * (element_count - 1));
+	result.advance.x = element_size.x + padding;
+	result.curr_pos.x = rect.size.x - space_used - edge_padding;
+	result.curr_pos.y = rect.pos.y + rect.size.y * 0.5f - element_size.y * 0.5f;
+	return result;
+}
+
+func s_v2 container_get_pos_and_advance(s_container* c)
+{
+	s_v2 result = c->curr_pos;
+	c->curr_pos += c->advance;
+	return result;
+}
+
+func b8 can_afford(int curr_gold, int cost)
+{
+	b8 result = curr_gold >= cost;
+	return result;
+}
+
+func void apply_upgrade(e_upgrade id, int count)
+{
+	game->soft_data.upgrade_count[id] += count;
+}
+
+func int get_upgrade_level(e_upgrade id)
+{
+	int result = game->soft_data.upgrade_count[id];
+	return result;
+}
+
+func float get_upgrade_boost(e_upgrade id)
+{
+	float result = get_upgrade_level(id) * g_upgrade_data[id].stat_boost;
 	return result;
 }

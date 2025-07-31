@@ -4,3 +4,25 @@ global constexpr s_enemy_type_data g_enemy_type_data[e_enemy_count] = {
 	},
 };
 
+global constexpr s_upgrade_data g_upgrade_data[e_upgrade_count] = {
+	{
+		.name = S("Damage"),
+		.cost = 10,
+		.extra_cost_per_level = 5,
+		.stat_boost = 50,
+	},
+	{
+		.name = S("Speed"),
+		.cost = 20,
+		.extra_cost_per_level = 5,
+
+		.stat_boost = 20,
+	},
+	{
+		.name = S("Attack range"),
+		.cost = 30,
+		.extra_cost_per_level = 5,
+		.stat_boost = 20,
+	},
+};
+

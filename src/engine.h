@@ -261,6 +261,7 @@ enum e_emitter_spawn_type
 	e_emitter_spawn_type_sphere,
 	e_emitter_spawn_type_rect_center,
 	e_emitter_spawn_type_rect_edge,
+	e_emitter_spawn_type_circle_outline,
 };
 
 struct s_particle_color
@@ -328,6 +329,9 @@ data_enum(e_entity,
 	emitter {
 		.max_count = 1024,
 	}
+	fct {
+		.max_count = 128,
+	}
 )
 
 struct s_entity_type_data
@@ -385,6 +389,7 @@ global constexpr int c_first_index[e_entity_count] = {
 	get_first_index(e_entity_enemy),
 	get_first_index(e_entity_dying_enemy),
 	get_first_index(e_entity_emitter),
+	get_first_index(e_entity_fct),
 };
 
 global constexpr int c_last_index_plus_one[e_entity_count] = {
@@ -392,4 +397,5 @@ global constexpr int c_last_index_plus_one[e_entity_count] = {
 	get_last_index_plus_one(e_entity_enemy),
 	get_last_index_plus_one(e_entity_dying_enemy),
 	get_last_index_plus_one(e_entity_emitter),
+	get_last_index_plus_one(e_entity_fct),
 };
