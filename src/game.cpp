@@ -110,6 +110,10 @@ m_dll_export void init(s_platform_data* platform_data)
 	u8* cursor = platform_data->memory + sizeof(s_game);
 
 	{
+		game->arena = make_arena_from_memory(cursor, 10 * c_mb);
+		cursor += 10 * c_mb;
+	}
+	{
 		game->update_frame_arena = make_arena_from_memory(cursor, 10 * c_mb);
 		cursor += 10 * c_mb;
 	}
@@ -216,13 +220,13 @@ m_dll_export void init(s_platform_data* platform_data)
 	}
 
 	for(int i = 0; i < e_sound_count; i += 1) {
-		game->sound_arr[i] = load_sound_from_file(c_sound_data_arr[i].path, c_sound_data_arr[i].volume);
+		platform_data->sound_arr[i] = platform_data->load_sound_from_file(c_sound_data_arr[i].path, c_sound_data_arr[i].volume);
 	}
 
 	Mix_Music* music = Mix_LoadMUS("assets/music.ogg");
 	if(music) {
 		Mix_VolumeMusic(c_music_volume);
-		Mix_PlayMusic(music, -1);
+		// Mix_PlayMusic(music, -1);
 	}
 
 	for(int i = 0; i < e_texture_count; i += 1) {
@@ -248,20 +252,6 @@ m_dll_export void init(s_platform_data* platform_data)
 		gl(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *texture, 0));
 		assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 		bind_framebuffer(0);
-	}
-
-	{
-		SDL_AudioSpec desired_spec;
-    desired_spec.freq = 44100;
-    desired_spec.format = AUDIO_F32SYS;
-    desired_spec.channels = 2;
-    desired_spec.samples = 512; // nocheckin
-    desired_spec.callback = my_audio_callback;
-
-		SDL_AudioSpec obtained_spec = zero;
-
-		SDL_AudioDeviceID device = SDL_OpenAudioDevice(null, 0, &desired_spec, &obtained_spec, 0);
-		SDL_PauseAudioDevice(device, 0);
 	}
 
 	#if defined(__EMSCRIPTEN__)
@@ -374,8 +364,6 @@ func void input()
 	e_game_state0 state0 = (e_game_state0)get_state(&game->state0);
 	e_game_state1 state1 = (e_game_state1)get_state(&hard_data->state1);
 
-	s_player* player = &soft_data->player;
-
 	SDL_Event event;
 	while(SDL_PollEvent(&event) != 0) {
 		switch(event.type) {
@@ -408,12 +396,13 @@ func void input()
 				}
 				if(event.type == SDL_KEYDOWN) {
 					if(key == SDLK_r && event.key.repeat == 0) {
+						game->do_hard_reset = true;
 					}
 					else if(key == SDLK_SPACE && event.key.repeat == 0) {
 						soft_data->want_to_jump_timestamp = game->update_time;
 					}
 					else if(key == SDLK_f && event.key.repeat == 0) {
-						soft_data->want_to_teleport_timestamp = game->update_time;
+						soft_data->tried_to_attack_timestamp = game->update_time;
 					}
 					else if(key == SDLK_ESCAPE && event.key.repeat == 0) {
 						if(state0 == e_game_state0_play && state1 == e_game_state1_default) {
@@ -437,22 +426,11 @@ func void input()
 						printf("Game speed: %f\n", c_game_speed_arr[game->speed_index]);
 					}
 					else if(key == SDLK_F1) {
-						if(state1 == e_game_state1_default) {
-							add_state(&hard_data->state1, e_game_state1_editor);
-							game->editor.cam_pos = (soft_data->player.pos - c_world_center);
-							game->editor.zoom = 1;
-						}
-						else if(state1 == e_game_state1_editor) {
-							pop_state(&hard_data->state1);
-						}
 					}
 					else if(key == SDLK_g && event.key.repeat == 0) {
 						play_sound(e_sound_key, zero);
 					}
 					else if(key == SDLK_j && event.key.repeat == 0) {
-						player->pos = game->last_debug_teleport_pos;
-						player->prev_pos = player->pos;
-						player->vel.y = 0;
 					}
 					else if(key == SDLK_h && event.key.repeat == 0) {
 						if(state0 == e_game_state0_play && state1 == e_game_state1_default) {
@@ -544,11 +522,140 @@ func void update()
 
 	s_hard_game_data* hard_data = &game->hard_data;
 	s_soft_game_data* soft_data = &game->soft_data;
+	auto entity_arr = &soft_data->entity_arr;
+
+	float delta = (float)c_update_delay;
 
 	if(game->do_hard_reset) {
+		game->do_hard_reset = false;
+		memset(soft_data, 0, sizeof(*soft_data));
+		game->arena.used = 0;
+		for_enum(type_i, e_entity) {
+			entity_manager_reset(entity_arr, type_i);
+		}
+
+		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		create player start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+		{
+			s_entity player = zero;
+			teleport_entity(&player, wxy(0.5f, 0.5f));
+			entity_manager_add(entity_arr, e_entity_player, player);
+		}
+		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		create player end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+	}
+	if(game->do_soft_reset) {
 	}
 
-	if(game->do_soft_reset) {
+	b8 do_game = false;
+	switch(state0) {
+		case e_game_state0_play: {
+			do_game = true;
+		} break;
+
+		default: {}
+	}
+
+	for(int i = 0; i < c_max_entities; i += 1) {
+		if(entity_arr->active[i]) {
+			entity_arr->data[i].prev_pos = entity_arr->data[i].pos;
+		}
+	}
+
+	if(do_game) {
+		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		spawn start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+		{
+			soft_data->spawn_timer += delta;
+			float spawn_delay = 2;
+			while(soft_data->spawn_timer >= spawn_delay) {
+				soft_data->spawn_timer -= spawn_delay;
+
+				{
+					s_entity enemy = zero;
+					s_v2 pos = wxy(0.5f) + v2_from_angle(randf_range(&game->rng, 0, c_tau)) * c_world_size.x * 0.6f;
+					teleport_entity(&enemy, pos);
+					entity_manager_add(entity_arr, e_entity_enemy, enemy);
+				}
+			}
+		}
+		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		spawn end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		update enemies start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+		for(int i = c_first_index[e_entity_enemy]; i < c_last_index_plus_one[e_entity_enemy]; i += 1) {
+			if(!entity_arr->active[i]) { continue; }
+			s_entity* enemy = &entity_arr->data[i];
+			enemy->highlight = zero;
+			s_v2 dir = v2_dir_from_to(enemy->pos, wxy(0.5f));
+			if(enemy->knockback.valid) {
+				enemy->pos += dir * -1 * enemy->knockback.value * delta;
+				enemy->knockback.value *= 0.9f;
+				if(enemy->knockback.value < 1.0f) {
+					enemy->knockback = zero;
+				}
+			}
+			else {
+				enemy->pos += dir * 25 * delta;
+			}
+		}
+		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		update enemies end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		update dying enemies start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+		for(int i = c_first_index[e_entity_dying_enemy]; i < c_last_index_plus_one[e_entity_dying_enemy]; i += 1) {
+			if(!entity_arr->active[i]) { continue; }
+			s_entity* enemy = &entity_arr->data[i];
+			s_v2 dir = v2_dir_from_to(enemy->pos, wxy(0.5f));
+			enemy->pos += dir * -1 * enemy->knockback.value * delta;
+			enemy->knockback.value *= 0.9f;
+			if(enemy->knockback.value < 1.0f) {
+				entity_manager_remove(entity_arr, e_entity_dying_enemy, i);
+			}
+		}
+		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		update dying enemies end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		update player start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+		{
+			s_entity* player = &soft_data->entity_arr.data[0];
+			s_v2 center = wxy(0.5f);
+			player->pos.x = cosf(player->timer) * c_circle_radius * 0.5f;
+			player->pos.y = sinf(player->timer) * c_circle_radius * 0.5f;
+			player->pos += center;
+			player->timer += delta * 1.5f;
+
+			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		try to hit start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+			b8 highlighted_an_enemy = false;
+			for(int i = c_first_index[e_entity_enemy]; i < c_last_index_plus_one[e_entity_enemy]; i += 1) {
+				if(!entity_arr->active[i]) { continue; }
+				s_entity* enemy = &entity_arr->data[i];
+
+				float dist = v2_distance(enemy->pos, player->pos);
+				if(dist <= c_player_attack_range) {
+					if(!highlighted_an_enemy) {
+						highlighted_an_enemy = true;
+						enemy->highlight = maybe(make_color(1, 0.6f, 0.6f));
+					}
+					if(check_action(game->update_time, soft_data->tried_to_attack_timestamp, 0.1f)) {
+						play_sound(e_sound_key, zero);
+						if(enemy->knockback.valid) {
+							enemy->knockback.value += 1000;
+						}
+						else {
+							enemy->knockback = maybe(1000.0f);
+						}
+
+						soft_data->tried_to_attack_timestamp = 0;
+						player->did_attack_enemy_timestamp = game->update_time;
+						player->attacked_enemy_pos = enemy->pos;
+						b8 dead = damage_enemy(enemy, get_player_damage());
+						if(dead) {
+							soft_data->gold += g_enemy_type_data[enemy->enemy_type].gold_reward;
+							make_dying_enemy(*enemy);
+							entity_manager_remove(entity_arr, e_entity_enemy, i);
+						}
+					}
+				}
+			}
+			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		try to hit end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+		}
+		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		update player end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 	}
 
 	game->update_time += (float)c_update_delay;
@@ -626,6 +733,7 @@ func void render(float interp_dt, float delta)
 
 	e_game_state0 state0 = (e_game_state0)get_state(&game->state0);
 
+	b8 do_game = false;
 
 	switch(state0) {
 
@@ -821,6 +929,8 @@ func void render(float interp_dt, float delta)
 		case e_game_state0_play: {
 			game->speed = 1;
 
+			do_game = true;
+
 			handle_state(&hard_data->state1, game->render_time);
 
 		} break;
@@ -902,6 +1012,126 @@ func void render(float interp_dt, float delta)
 			render_flush(data, true);
 
 		} break;
+	}
+
+	if(do_game) {
+		b8 do_game_ui = true;
+		auto entity_arr = &soft_data->entity_arr;
+
+		s_entity* player = &entity_arr->data[0];
+
+		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		tiles start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+		{
+			constexpr int tile_size = 32;
+			int tiles_right = ceilfi(c_world_size.x / tile_size);
+			int tiles_down = ceilfi(c_world_size.y / tile_size);
+			for(int y = 0; y < tiles_down; y += 1) {
+				for(int x = 0; x < tiles_right; x += 1) {
+					s_v2 pos = v2(x * tile_size, y * tile_size) + v2(tile_size * 0.5f);
+					draw_atlas(pos, v2(tile_size), v2i(2, 6), make_color(1));
+				}
+			}
+
+			s_render_flush_data data = make_render_flush_data(zero, zero);
+			data.projection = ortho;
+			data.blend_mode = e_blend_mode_normal;
+			data.depth_mode = e_depth_mode_no_read_no_write;
+			render_flush(data, true);
+		}
+		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		tiles end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+		draw_circle(wxy(0.5f, 0.5f), c_circle_radius, make_color(0.5f));
+
+		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw enemies start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+		{
+			for(int i = c_first_index[e_entity_enemy]; i < c_last_index_plus_one[e_entity_enemy]; i += 1) {
+				if(!entity_arr->active[i]) { continue; }
+				s_entity* enemy = &entity_arr->data[i];
+				s_v2 enemy_pos = lerp_v2(enemy->prev_pos, enemy->pos, interp_dt);
+				s_v4 color = make_color(1);
+				if(enemy->highlight.valid) {
+					color = enemy->highlight.value;
+				}
+				draw_atlas(enemy_pos, c_player_size_v, v2i(125, 25), color);
+			}
+		}
+		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw enemies end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw dying enemies start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+		{
+			for(int i = c_first_index[e_entity_dying_enemy]; i < c_last_index_plus_one[e_entity_dying_enemy]; i += 1) {
+				if(!entity_arr->active[i]) { continue; }
+				s_entity* enemy = &entity_arr->data[i];
+				s_v2 enemy_pos = lerp_v2(enemy->prev_pos, enemy->pos, interp_dt);
+				s_v4 color = enemy->highlight.value;
+				draw_atlas(enemy_pos, c_player_size_v, v2i(125, 25), color);
+			}
+		}
+		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw dying enemies end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw player start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+		{
+			s_v2 player_pos = lerp_v2(player->prev_pos, player->pos, interp_dt);
+			draw_rect(player_pos, c_player_size_v, make_color(0, 1, 0));
+
+			// @Note(tkap, 31/07/2025): Fist
+			{
+				s_v2 offset_arr[] = {
+					v2(-c_player_size_v.x, 0.0f),
+					v2(c_player_size_v.x, 0.0f),
+				};
+				for(int i = 0; i < 2; i += 1) {
+					s_v2 pos = player_pos + offset_arr[i];
+					pos.y += sinf(player->fist_wobble_time * 4) * c_player_size_v.y * 0.1f;
+					s_v2 size = c_player_size_v * 0.4f;
+
+					if(player->did_attack_enemy_timestamp > 0) {
+						float passed = update_time_to_render_time(game->update_time, interp_dt) - player->did_attack_enemy_timestamp;
+						s_animator animator = zero;
+						s_v2 temp_pos = zero;
+						s_v2 temp_size = size;
+						animate_v2(&animator, pos, player->attacked_enemy_pos, 0.1f, &temp_pos, e_ease_linear, passed);
+						animate_v2(&animator, size, size * 2, 0.1f, &temp_size, e_ease_linear, passed);
+						animator_end_keyframe(&animator, 0.0f);
+						animate_v2(&animator, player->attacked_enemy_pos, pos, 0.5f, &temp_pos, e_ease_out_elastic, passed);
+						animate_v2(&animator, size * 2, size, 0.5f, &temp_size, e_ease_out_elastic, passed);
+						float time = 0;
+						animate_float(&animator, 0.0f, 0.5f, 0.5f, &time, e_ease_linear, passed);
+						if(time >= 0.5f) {
+							player->did_attack_enemy_timestamp = false;
+						}
+						pos = temp_pos;
+						size = temp_size;
+					}
+					else {
+						player->fist_wobble_time += delta;
+					}
+
+					draw_rect(pos, size, make_color(0, 1, 0));
+				}
+			}
+		}
+		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw player end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+		{
+			s_render_flush_data data = make_render_flush_data(zero, zero);
+			data.projection = ortho;
+			data.blend_mode = e_blend_mode_premultiply_alpha;
+			data.depth_mode = e_depth_mode_no_read_no_write;
+			render_flush(data, true);
+		}
+
+		if(do_game_ui) {
+			draw_text(format_text("Gold: %i", soft_data->gold), v2(4), 48, make_color(1), false, &game->font);
+
+			{
+				s_render_flush_data data = make_render_flush_data(zero, zero);
+				data.projection = ortho;
+				data.blend_mode = e_blend_mode_normal;
+				data.depth_mode = e_depth_mode_no_read_no_write;
+				render_flush(data, true);
+			}
+		}
 	}
 
 	s_state_transition transition = get_state_transition(&game->state0, game->render_time);
@@ -1506,12 +1736,14 @@ func void draw_atlas_ex(s_v2 pos, s_v2 size, s_v2i index, s_v4 color, float rota
 	}
 	data.model *= m4_scale(v3(size, 1));
 	data.color = color;
-	data.uv_min.x = index.x * c_atlas_sprite_size / (float)c_atlas_size;
-	data.uv_max.x = data.uv_min.x + c_atlas_sprite_size / (float)c_atlas_size;
-	data.uv_min.y = index.y * c_atlas_sprite_size / (float)c_atlas_size;
-	data.uv_max.y = data.uv_min.y + c_atlas_sprite_size / (float)c_atlas_size;
+	int x = index.x * c_atlas_sprite_size + c_atlas_padding;
+	data.uv_min.x = x / (float)c_atlas_size_v.x;
+	data.uv_max.x = data.uv_min.x + (c_atlas_sprite_size - c_atlas_padding) / (float)c_atlas_size_v.x;
+	int y = index.y * c_atlas_sprite_size + c_atlas_padding;
+	data.uv_min.y = y / (float)(c_atlas_size_v.y);
+	data.uv_max.y = data.uv_min.y + (c_atlas_sprite_size - c_atlas_padding) / (float)c_atlas_size_v.y;
 
-	add_to_render_group(data, e_shader_flat, e_texture_atlas, e_mesh_quad);
+	add_to_render_group(data, e_shader_flat_remove_black, e_texture_atlas, e_mesh_quad);
 }
 
 func void draw_atlas_topleft(s_v2 pos, s_v2 size, s_v2i index, s_v4 color)
@@ -1608,15 +1840,6 @@ func void draw_player(s_v2 pos, float angle, s_draw_player dp, s_v4 color)
 	draw_atlas_ex(offset + right_foot_offset, v2(size.x), v2i(14, 2), color, angle);
 }
 
-func s_draw_player get_player_draw_data()
-{
-	s_draw_player dp = zero;
-	dp.head_offset = v2(0.0f, sinf(game->render_time * 10) * 1.5f);
-	dp.left_foot_offset = v2(0, 5);
-	dp.right_foot_offset = v2(10, 5);
-	return dp;
-}
-
 func void add_timed_msg(s_len_str str, s_v2 pos)
 {
 	s_timed_msg msg = zero;
@@ -1647,69 +1870,40 @@ func void draw_background(s_v2 player_pos, s_m4 ortho)
 	}
 }
 
-func void my_audio_callback(void* userdata, u8* stream, int len) {
-	(void)userdata;
-	assert(len % sizeof(float) == 0);
-	int sample_count = len / sizeof(float) / 2;
-	float* ptr = (float*)stream;
-	for(int i = 0; i < sample_count; i += 1) {
-		float value_left = 0;
-		float value_right = 0;
-		foreach_ptr(sound_i, sound, game->active_sound_arr) {
-			int sound_sample_count = sound->chunk->alen / sizeof(s16);
-			s16* sound_sample_arr = (s16*)sound->chunk->abuf;
-			float percent = floorfi(sound->index) * 2 / (float)sound_sample_count;
-			float fade_volume = 1;
-			if(sound->data.fade.valid) {
-				if(percent >= sound->data.fade.value.percent[0]) {
-					float t = ilerp(sound->data.fade.value.percent[0], sound->data.fade.value.percent[1], percent);
-					fade_volume = lerp(sound->data.fade.value.volume[0], sound->data.fade.value.volume[1], t);
-				}
-			}
 
-			{
-				float left_index_f = sound->index;
-				int left_index_i = floorfi(left_index_f) * 2;
-				float left_sample0 = sound_sample_arr[left_index_i] / (float)c_max_s16;
-				float left_sample1 = 0;
-				if(left_index_i + 2 >= sound_sample_count) {
-					left_sample1 = left_sample0;
-				}
-				else {
-					left_sample1 = sound_sample_arr[left_index_i + 2] / (float)c_max_s16;
-				}
-				float value = lerp(left_sample0, left_sample1, fract(sound->index));
-				value_left += value * sound->data.volume * fade_volume;
-			}
+func void teleport_entity(s_entity* entity, s_v2 pos)
+{
+	entity->pos = pos;
+	entity->prev_pos = pos;
+}
 
-			{
-				float right_index_f = sound->index + 1;
-				int right_index_i = floorfi(right_index_f) * 2 + 1;
-				float right_sample0 = sound_sample_arr[right_index_i] / (float)c_max_s16;
-				float right_sample1 = 0;
-				if(right_index_i + 2 >= sound_sample_count) {
-					right_sample1 = right_sample0;
-				}
-				else {
-					right_sample1 = sound_sample_arr[right_index_i + 2] / (float)c_max_s16;
-				}
-				float value = lerp(right_sample0, right_sample1, fract(sound->index));
-				value_right += value * sound->data.volume * fade_volume;
-			}
+func float get_player_damage()
+{
+	float result = 0;
+	result += 10;
+	return result;
+}
 
-			sound->index += sound->data.speed;
-			if(floorfi(sound->index) * 2 >= sound_sample_count) {
-				if(sound->data.loop) {
-					sound->index -= sound_sample_count / 2;
-				}
-				else {
-					game->active_sound_arr.remove_and_swap(sound_i);
-					sound_i -= 1;
-				}
-			}
-		}
-		ptr[0] = value_left;
-		ptr[1] = value_right;
-		ptr += 2;
+func float get_enemy_max_health()
+{
+	float result = 0;
+	result += 10;
+	return result;
+}
+
+func b8 damage_enemy(s_entity* enemy, float damage)
+{
+	b8 dead = false;
+	float max_health = get_enemy_max_health();
+	enemy->damage_taken += damage;
+	if(enemy->damage_taken >= max_health) {
+		dead = true;
 	}
+	return dead;
+}
+
+func void make_dying_enemy(s_entity enemy)
+{
+	s_entity dying_enemy = enemy;
+	entity_manager_add(&game->soft_data.entity_arr, e_entity_dying_enemy, dying_enemy);
 }

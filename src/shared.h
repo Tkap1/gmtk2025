@@ -1,6 +1,63 @@
 
 global constexpr int c_max_hot_files = 64;
 
+struct s_audio_fade
+{
+	float percent[2];
+	float volume[2];
+};
+
+struct s_play_sound_data
+{
+	float volume = 1;
+	float speed = 1;
+	b8 loop;
+	s_maybe<s_audio_fade> fade;
+};
+
+struct s_active_sound
+{
+	Mix_Chunk* chunk;
+	s_play_sound_data data;
+	float index;
+};
+
+enum e_sound
+{
+	e_sound_click,
+	e_sound_key,
+	e_sound_break,
+	e_sound_jump1,
+	e_sound_jump2,
+	e_sound_clap,
+	e_sound_land,
+	e_sound_restart,
+	e_sound_super_speed,
+	e_sound_shield,
+	e_sound_teleport,
+	e_sound_count,
+};
+
+struct s_sound_data
+{
+	char* path;
+	u8 volume;
+};
+
+global constexpr s_sound_data c_sound_data_arr[e_sound_count] = {
+	{"assets/click.wav", 128},
+	{"assets/key.wav", 128},
+	{"assets/break.wav", 128},
+	{"assets/jump1.wav", 128},
+	{"assets/jump2.wav", 128},
+	{"assets/clap.wav", 255},
+	{"assets/land.wav", 255},
+	{"assets/restart.wav", 128},
+	{"assets/super_speed.wav", 255},
+	{"assets/shield.wav", 255},
+	{"assets/teleport.wav", 255},
+};
+
 struct s_platform_data
 {
 	b8 quit;
@@ -12,6 +69,12 @@ struct s_platform_data
 	s_v2i window_size;
 	s_v2i prev_window_size;
 	u8* memory;
+	Mix_Chunk* sound_arr[e_sound_count];
+
+	s_list<s_active_sound, 128> active_sound_arr;
+
+	Mix_Chunk* (*load_sound_from_file)(char*, u8);
+	void (*play_sound)(e_sound, s_play_sound_data);
 
 	#if defined(_WIN32) && defined(m_debug)
 	int hot_read_index[2]; // @Note(tkap, 07/04/2025): One index for platform, other for game

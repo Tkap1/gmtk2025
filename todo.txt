@@ -43,3 +43,12 @@ IDEA 4
 	special enemy that we want to let in the circle because it doesn't take a life. it instead gives bonus gold or something
 
 	do we mess with the circle/loop size? idk
+
+
+main menu sounds too loud. are we playing them many tiems??
+
+auto puch skill that has cooldown?
+
+UPGRADES?
+	buy them with gold + enemies drop gold?
+		lets not have upgrades for enemies getting stronger. they get stornger over time

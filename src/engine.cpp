@@ -295,28 +295,6 @@ func void set_window_size(int width, int height)
 	SDL_SetWindowSize(g_platform_data->window, width, height);
 }
 
-func Mix_Chunk* load_sound_from_file(char* path, u8 volume)
-{
-	Mix_Chunk* chunk = Mix_LoadWAV(path);
-	assert(chunk);
-	chunk->volume = volume;
-	return chunk;
-}
-
-func void play_sound(e_sound sound_id, s_play_sound_data data)
-{
-	if(!game->turn_off_all_sounds) {
-		Mix_Chunk* chunk = game->sound_arr[sound_id];
-		if(!game->active_sound_arr.is_full()) {
-			s_active_sound active_sound = zero;
-			active_sound.chunk = chunk;
-			active_sound.data = data;
-			game->active_sound_arr.add(active_sound);
-		}
-		// Mix_PlayChannel(-1, chunk, 0);
-	}
-}
-
 func s_texture load_texture_from_file(char* path, u32 filtering)
 {
 	int width, height, num_channels;
@@ -811,6 +789,12 @@ func s_v2 wxy(float x, float y)
 	return result;
 }
 
+func s_v2 wxy(float x)
+{
+	s_v2 result = c_world_size * v2(x, x);
+	return result;
+}
+
 func s_v2 wcxy(float x, float y)
 {
 	s_v2 result = c_world_center * v2(x, y);
@@ -821,10 +805,10 @@ func void update_particles(float delta)
 {
 	s_soft_game_data* soft_data = &game->soft_data;
 
-	for(int i = 0; i < c_max_particle_emitters; i += 1) {
-		if(!soft_data->emitter_a_arr.active[i]) { continue; }
-		s_particle_emitter_a a = soft_data->emitter_a_arr.data[i];
-		s_particle_emitter_b* b = &soft_data->emitter_b_arr[i];
+	for(int i = c_first_index[e_entity_emitter]; i < c_last_index_plus_one[e_entity_emitter]; i += 1) {
+		if(!soft_data->entity_arr.active[i]) { continue; }
+		s_particle_emitter_a a = soft_data->entity_arr.data[i].emitter_a;
+		s_particle_emitter_b* b = &soft_data->entity_arr.data[i].emitter_b;
 		s_time_data spawn_time_data = get_time_data(game->render_time, b->last_emit_timestamp, 1.0f / b->particles_per_second);
 
 		s_time_data expire_time_data = zero;
@@ -876,7 +860,7 @@ func void update_particles(float delta)
 		}
 
 		if(expire_time_data.percent >= 1 && b->num_alive_particles <= 0) {
-			entity_manager_remove(&soft_data->emitter_a_arr, i);
+			entity_manager_remove(&soft_data->entity_arr, e_entity_emitter, i);
 		}
 		b->existed_in_previous_frame = true;
 
@@ -887,8 +871,8 @@ func void update_particles(float delta)
 
 	foreach_ptr(particle_i, particle, soft_data->particle_arr) {
 		s_rng rng = make_rng(particle->seed);
-		s_particle_emitter_a data_a = soft_data->emitter_a_arr.data[particle->emitter_index];
-		s_particle_emitter_b* data_b = &soft_data->emitter_b_arr[particle->emitter_index];
+		s_particle_emitter_a data_a = soft_data->entity_arr.data[particle->emitter_index].emitter_a;
+		s_particle_emitter_b* data_b = &soft_data->entity_arr.data[particle->emitter_index].emitter_b;
 		float duration = data_a.particle_duration * (1.0f - randf32(&rng) * data_a.particle_duration_rand);
 		s_time_data time_data = get_time_data(game->render_time, particle->spawn_timestamp, duration);
 		float radius = data_a.radius * (1.0f - randf32(&rng) * data_a.radius_rand);
@@ -932,40 +916,41 @@ func int add_emitter(s_particle_emitter_a a, s_particle_emitter_b b)
 	b.creation_timestamp = game->render_time;
 	b.last_emit_timestamp = game->render_time - 1.0f / b.particles_per_second;
 
-	int index = entity_manager_add(&soft_data->emitter_a_arr, a);
-	soft_data->emitter_b_arr[index] = b;
+	s_entity entity = {.emitter_a = a, .emitter_b = b};
+	int index = entity_manager_add(&soft_data->entity_arr, e_entity_emitter, entity);
 	return index;
 }
 
 template <typename t, int n>
-func int entity_manager_add(s_entity_manager<t, n>* manager, t new_entity)
+func int entity_manager_add(s_entity_manager<t, n>* manager, e_entity type, t new_entity)
 {
-	assert(manager->count < n);
-	int index = manager->free_list[manager->count];
+	assert(manager->count[type] < n);
+	int index = manager->free_list[type][manager->count[type]];
 	assert(!manager->active[index]);
 	manager->data[index] = new_entity;
 	manager->active[index] = true;
-	manager->count += 1;
+	manager->count[type] += 1;
 	return index;
 }
 
 template <typename t, int n>
-func void entity_manager_remove(s_entity_manager<t, n>* manager, int index)
+func void entity_manager_remove(s_entity_manager<t, n>* manager, e_entity type, int index)
 {
 	assert(manager->active[index]);
-	assert(manager->count > 0);
-	manager->count -= 1;
+	assert(manager->count[type] > 0);
+	manager->count[type] -= 1;
 	manager->active[index] = false;
-	manager->free_list[manager->count] = index;
+	manager->free_list[type][manager->count[type]] = index;
 }
 
 template <typename t, int n>
-func void entity_manager_reset(s_entity_manager<t, n>* manager)
+func void entity_manager_reset(s_entity_manager<t, n>* manager, e_entity type)
 {
-	manager->count = 0;
+	manager->count[type] = 0;
 	memset(manager->active, 0, sizeof(manager->active));
+	manager->free_list[type] = (int*)arena_alloc_zero(&game->arena, sizeof(int) * g_entity_type_data[type].max_count);
 	for(int i = 0; i < n; i += 1) {
-		manager->free_list[i] = i;
+		manager->free_list[type][i] = c_first_index[type] + i;
 	}
 }
 
@@ -1001,4 +986,11 @@ func s_v4 get_particle_color(s_rng* rng, float percent, s_list<s_particle_color,
 	}
 	s_v4 result = lerp_color(choice2[0], choice2[1], p);
 	return result;
+}
+
+func void play_sound(e_sound sound_id, s_play_sound_data data)
+{
+	if(!game->turn_off_all_sounds) {
+		g_platform_data->play_sound(sound_id, data);
+	}
 }

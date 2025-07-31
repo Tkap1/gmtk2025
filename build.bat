@@ -9,12 +9,14 @@ SETLOCAL ENABLEDELAYEDEXPANSION
 
 func_decl_gen.exe src/*
 
+build\metaprogram.exe -Dm_debug
+
 set game_file=..\src\game.cpp
 set platform_file=..\src\platform_win32.cpp
 set exe_name=main
 
 set comp=-nologo -std:c++20 -Zc:strictStrings- -Wall -FC -Gm- -GR- -EHa- -D_CRT_SECURE_NO_WARNINGS
-set comp=!comp! -wd4201 -wd4820 -wd5219 -wd4365 -wd5045 -wd4191 -wd4061 -wd4505 -wd5246 -wd4711 -wd4710
+set comp=!comp! -wd4201 -wd4820 -wd5219 -wd4365 -wd5045 -wd4191 -wd4061 -wd4505 -wd5246 -wd4711 -wd4710 -wd4623
 set comp=!comp! -I..\..\my_libs2
 @REM set comp=!comp! -fsanitize=address
 
@@ -34,6 +36,7 @@ set linker=!linker! -DYNAMICBASE:NO
 set debug=2
 if !debug!==0 (
 	set comp=!comp! -O2
+	set linker=!linker! -DYNAMICBASE:NO
 )
 if !debug!==1 (
 	set comp=!comp! -O2 -Dm_debug

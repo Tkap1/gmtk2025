@@ -1,0 +1,43 @@
+#pragma warning(push)
+#pragma warning(disable: 4505)
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wbraced-scalar-init"
+#endif
+#if defined(m_debug)
+#define assert_e_mesh(val) assert_e_mesh_(val)
+
+static void assert_e_mesh_(int val)
+{
+	assert(val >= e_mesh_quad && val < e_mesh_count);
+}
+#else
+#define assert_e_mesh(val)
+
+#endif
+#if defined(m_debug)
+#define assert_e_shader(val) assert_e_shader_(val)
+
+static void assert_e_shader_(int val)
+{
+	assert(val >= e_shader_mesh && val < e_shader_count);
+}
+#else
+#define assert_e_shader(val)
+
+#endif
+#if defined(m_debug)
+#define assert_e_entity(val) assert_e_entity_(val)
+
+static void assert_e_entity_(int val)
+{
+	assert(val >= e_entity_player && val < e_entity_count);
+}
+#else
+#define assert_e_entity(val)
+
+#endif
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+#pragma warning(pop)

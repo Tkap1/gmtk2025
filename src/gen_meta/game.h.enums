@@ -1,0 +1,6 @@
+enum e_enemy
+{
+	e_enemy_basic,
+	e_enemy_count,
+};
+

@@ -1,0 +1,21 @@
+#pragma warning(push)
+#pragma warning(disable: 4505)
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wbraced-scalar-init"
+#endif
+#if defined(m_debug)
+#define assert_e_sound(val) assert_e_sound_(val)
+
+static void assert_e_sound_(int val)
+{
+	assert(val >= e_sound_click && val < e_sound_count);
+}
+#else
+#define assert_e_sound(val)
+
+#endif
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+#pragma warning(pop)

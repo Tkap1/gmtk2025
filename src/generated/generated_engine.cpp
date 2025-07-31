@@ -7,8 +7,6 @@ func void set_cull_mode(e_cull_mode mode);
 func void set_depth_mode(e_depth_mode mode);
 func void set_blend_mode(e_blend_mode mode);
 func void set_window_size(int width, int height);
-func Mix_Chunk* load_sound_from_file(char* path, u8 volume);
-func void play_sound(e_sound sound_id, s_play_sound_data data);
 func s_texture load_texture_from_file(char* path, u32 filtering);
 func s_texture load_texture_from_data(void* data, int width, int height, int format, u32 filtering);
 func s_font load_font_from_file(char* file, int font_size, s_linear_arena* arena);
@@ -26,13 +24,15 @@ func s_time_format update_count_to_time_format(int update_count);
 func s_obj_mesh* parse_obj_mesh(char* path, s_linear_arena* arena);
 func char* skip_whitespace(char* str);
 func s_v2 wxy(float x, float y);
+func s_v2 wxy(float x);
 func s_v2 wcxy(float x, float y);
 func void update_particles(float delta);
 func int add_emitter(s_particle_emitter_a a, s_particle_emitter_b b);
 template <typename t, int n>
-func int entity_manager_add(s_entity_manager<t, n>* manager, t new_entity);
+func int entity_manager_add(s_entity_manager<t, n>* manager, e_entity type, t new_entity);
 template <typename t, int n>
-func void entity_manager_remove(s_entity_manager<t, n>* manager, int index);
+func void entity_manager_remove(s_entity_manager<t, n>* manager, e_entity type, int index);
 template <typename t, int n>
-func void entity_manager_reset(s_entity_manager<t, n>* manager);
+func void entity_manager_reset(s_entity_manager<t, n>* manager, e_entity type);
 func s_v4 get_particle_color(s_rng* rng, float percent, s_list<s_particle_color, 4> color_arr);
+func void play_sound(e_sound sound_id, s_play_sound_data data);

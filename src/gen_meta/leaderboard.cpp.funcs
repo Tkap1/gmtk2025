@@ -1,0 +1,10 @@
+#pragma warning(push)
+#pragma warning(disable: 4505)
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wbraced-scalar-init"
+#endif
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+#pragma warning(pop)

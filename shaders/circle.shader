@@ -41,6 +41,6 @@ void main()
 	float d = length(uv);
 	float a = smoothstep(0.5, 0.45, d);
 	color = v_color.rgb * a * v_color.a;
-	out_color = vec4(color, 1.0);
+	out_color = vec4(color, a);
 }
 #endif

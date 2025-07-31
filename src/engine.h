@@ -1,4 +1,5 @@
 
+#include "gen_meta/engine.h.enums"
 
 enum e_mesh
 {
@@ -20,6 +21,7 @@ enum e_shader
 	e_shader_line,
 	e_shader_light,
 	e_shader_portal,
+	e_shader_flat_remove_black,
 	e_shader_count,
 };
 
@@ -33,6 +35,7 @@ global constexpr char* c_shader_path_arr[e_shader_count] = {
 	"shaders/line.shader",
 	"shaders/light.shader",
 	"shaders/portal.shader",
+	"shaders/flat_remove_black.shader",
 };
 
 
@@ -104,44 +107,6 @@ enum e_blend_mode
 	e_blend_mode_additive_no_alpha,
 };
 
-
-struct s_sound_data
-{
-	char* path;
-	u8 volume;
-};
-
-enum e_sound
-{
-	e_sound_click,
-	e_sound_key,
-	e_sound_break,
-	e_sound_jump1,
-	e_sound_jump2,
-	e_sound_clap,
-	e_sound_land,
-	e_sound_restart,
-	e_sound_super_speed,
-	e_sound_shield,
-	e_sound_teleport,
-	e_sound_count,
-};
-
-global constexpr s_sound_data c_sound_data_arr[e_sound_count] = {
-	{"assets/click.wav", 128},
-	{"assets/key.wav", 128},
-	{"assets/break.wav", 128},
-	{"assets/jump1.wav", 128},
-	{"assets/jump2.wav", 128},
-	{"assets/clap.wav", 255},
-	{"assets/land.wav", 255},
-	{"assets/restart.wav", 128},
-	{"assets/super_speed.wav", 255},
-	{"assets/shield.wav", 255},
-	{"assets/teleport.wav", 255},
-};
-
-
 struct s_text_iterator
 {
 	int index;
@@ -150,20 +115,6 @@ struct s_text_iterator
 	s_v4 color;
 };
 
-
-struct s_audio_fade
-{
-	float percent[2];
-	float volume[2];
-};
-
-struct s_play_sound_data
-{
-	float volume = 1;
-	float speed = 1;
-	b8 loop;
-	s_maybe<s_audio_fade> fade;
-};
 
 struct s_time_format
 {
@@ -345,8 +296,10 @@ struct s_particle_emitter_b
 	float duration;
 	float creation_timestamp;
 	float last_emit_timestamp;
-	float particles_per_second = 1;
-	int particle_count = 1;
+	// float particles_per_second = 1; // nocheckin
+	float particles_per_second;
+	// int particle_count = 1; // nocheckin
+	int particle_count;
 	int num_alive_particles;
 	e_emitter_spawn_type spawn_type;
 	s_v3 spawn_data;
@@ -360,15 +313,85 @@ struct s_particle
 	float spawn_timestamp;
 };
 
+data_enum(e_entity,
+
+	s_entity_type_data
+	g_entity_type_data
+
+	player {
+		.max_count = 1,
+	}
+	enemy {
+		.max_count = 1024,
+	}
+	dying_enemy {
+		.max_count = 1024,
+	}
+	emitter {
+		.max_count = 1024,
+	}
+)
+
+struct s_entity_type_data
+{
+	int max_count;
+};
+
 template <typename t, int n>
 struct s_entity_manager
 {
-	int count;
+	int count[e_entity_count];
 	b8 active[n];
-	int free_list[n];
+	int* free_list[e_entity_count];
 	t data[n];
 };
 
 
-
 #include "generated/generated_engine.cpp"
+#include "gen_meta/engine.h.globals"
+
+
+func constexpr int get_max_entities()
+{
+	int result = 0;
+	for_enum(type_i, e_entity) {
+		result += g_entity_type_data[type_i].max_count;
+	}
+	return result;
+}
+
+func constexpr int get_first_index(e_entity type)
+{
+	int result = 0;
+	for_enum(type_i, e_entity) {
+		if(type_i == type) { break; }
+		result += g_entity_type_data[type_i].max_count;
+	}
+	return result;
+}
+
+func constexpr int get_last_index_plus_one(e_entity type)
+{
+	int result = 0;
+	for_enum(type_i, e_entity) {
+		result += g_entity_type_data[type_i].max_count;
+		if(type_i == type) { break; }
+	}
+	return result;
+}
+
+
+global constexpr int c_max_entities = get_max_entities();
+global constexpr int c_first_index[e_entity_count] = {
+	get_first_index(e_entity_player),
+	get_first_index(e_entity_enemy),
+	get_first_index(e_entity_dying_enemy),
+	get_first_index(e_entity_emitter),
+};
+
+global constexpr int c_last_index_plus_one[e_entity_count] = {
+	get_last_index_plus_one(e_entity_player),
+	get_last_index_plus_one(e_entity_enemy),
+	get_last_index_plus_one(e_entity_dying_enemy),
+	get_last_index_plus_one(e_entity_emitter),
+};

@@ -1,4 +1,6 @@
 
+#include "gen_meta/game.h.enums"
+
 #if defined(__EMSCRIPTEN__)
 
 #define m_gl_funcs \
@@ -161,26 +163,6 @@ struct s_draw_player
 	s_v2 right_foot_offset;
 };
 
-struct s_player
-{
-	float last_x_dir;
-	float last_x_vel;
-	s_v2 pos;
-	s_v2 prev_pos;
-	s_v2 vel;
-	int jumps_done;
-	b8 jumping;
-	float on_ground_timestamp;
-
-	float jump_timestamp;
-	float jump_x_dir;
-	float start_run_timestamp;
-
-	s_v2 left_foot_offset;
-	s_v2 right_foot_offset;
-	s_v2 head_offset;
-};
-
 enum e_game_state0
 {
 	e_game_state0_main_menu,
@@ -234,8 +216,58 @@ struct s_timed_msg
 	s_str_builder<64> builder;
 };
 
+
+data_enum(e_enemy,
+
+	s_enemy_type_data
+	g_enemy_type_data
+
+	basic {
+		.gold_reward = 1
+	}
+)
+
+struct s_enemy_type_data
+{
+	int gold_reward;
+};
+
+struct s_entity
+{
+	int id;
+	float timer;
+	s_v2 pos;
+	s_v2 prev_pos;
+	union {
+
+		// @Note(tkap, 31/07/2025): Player
+		struct {
+			float did_attack_enemy_timestamp;
+			float fist_wobble_time;
+			s_v2 attacked_enemy_pos;
+		};
+
+		// @Note(tkap, 31/07/2025): Emitter
+		struct {
+			s_particle_emitter_a emitter_a;
+			s_particle_emitter_b emitter_b;
+		};
+
+		// @Note(tkap, 31/07/2025): Enemy
+		struct {
+			e_enemy enemy_type;
+			s_maybe<float> knockback;
+			s_maybe<s_v4> highlight;
+			float damage_taken;
+		};
+	};
+};
+
 struct s_soft_game_data
 {
+	int gold;
+	float spawn_timer;
+	float tried_to_attack_timestamp;
 	b8 tried_to_submit_score;
 	int update_count;
 	s_ghost curr_ghost;
@@ -253,14 +285,13 @@ struct s_soft_game_data
 	float used_shield_timestamp;
 	float stop_jump_timestamp;
 	float want_to_jump_timestamp;
-	s_player player;
-	s_entity_manager<s_particle_emitter_a, c_max_particle_emitters> emitter_a_arr;
-	s_particle_emitter_b emitter_b_arr[c_max_particle_emitters];
 	s_list<s_particle, 65536> particle_arr;
 	b8 broken_tile_arr[c_max_tiles][c_max_tiles];
 
 	b8 added_particle_emitter_arr[c_max_tiles][c_max_tiles];
 	int particle_emitter_index_arr[c_max_tiles][c_max_tiles];
+
+	s_entity_manager<s_entity, c_max_entities> entity_arr;
 
 	s_list<s_timed_msg, 8> timed_msg_arr;
 };
@@ -297,19 +328,13 @@ struct s_input
 	b8 right;
 };
 
-struct s_active_sound
-{
-	Mix_Chunk* chunk;
-	s_play_sound_data data;
-	float index;
-};
-
 struct s_game
 {
 	b8 freeze_loop;
 	b8 reload_shaders;
 	b8 any_key_pressed;
 	s_v2 last_debug_teleport_pos;
+	s_linear_arena arena;
 	s_linear_arena update_frame_arena;
 	s_linear_arena render_frame_arena;
 	s_circular_arena circular_arena;
@@ -322,14 +347,11 @@ struct s_game
 	f64 accumulator;
 	f64 time_before;
 	u32 curr_fbo;
-	Mix_Chunk* sound_arr[e_sound_count];
 	int speed_index;
 	s_font font;
 	s_rng rng;
 	float speed;
 	s_input_name_state input_name_state;
-
-	s_list<s_active_sound, 128> active_sound_arr;
 
 	s_editor editor;
 	s_map map;
@@ -379,3 +401,4 @@ struct s_game
 
 
 #include "generated/generated_game.cpp"
+#include "gen_meta/game.h.globals"

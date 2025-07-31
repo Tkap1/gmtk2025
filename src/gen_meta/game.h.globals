@@ -1,0 +1,6 @@
+global constexpr s_enemy_type_data g_enemy_type_data[e_enemy_count] = {
+	{
+		.gold_reward = 1
+	},
+};
+
