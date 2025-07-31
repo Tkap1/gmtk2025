@@ -339,8 +339,8 @@ func void input()
 	if(game->input.handled) {
 		game->input = zero;
 	}
-	game->input.left = game->input.left || keyboard_state[SDL_SCANCODE_A];
-	game->input.right = game->input.right || keyboard_state[SDL_SCANCODE_D];
+	// game->input.left = game->input.left || keyboard_state[SDL_SCANCODE_A];
+	// game->input.right = game->input.right || keyboard_state[SDL_SCANCODE_D];
 
 
 	for(int i = 0; i < c_max_keys; i += 1) {
@@ -399,7 +399,6 @@ func void input()
 						game->do_hard_reset = true;
 					}
 					else if(key == SDLK_SPACE && event.key.repeat == 0) {
-						soft_data->want_to_jump_timestamp = game->update_time;
 					}
 					else if(key == SDLK_f && event.key.repeat == 0) {
 						soft_data->tried_to_attack_timestamp = game->update_time;
@@ -433,29 +432,14 @@ func void input()
 					else if(key == SDLK_j && event.key.repeat == 0) {
 					}
 					else if(key == SDLK_h && event.key.repeat == 0) {
-						if(state0 == e_game_state0_play && state1 == e_game_state1_default) {
-							game->freeze_loop = !game->freeze_loop;
-						}
 					}
 					#endif // m_debug
 
-					for(int i = 1; i < e_tile_type_count; i += 1) {
-						int check_key = SDLK_1 + (i - 1);
-						if(i == e_tile_type_count - 1) {
-							check_key = SDLK_0;
-						}
-						if(key == check_key && event.key.repeat == 0) {
-							if(state0 == e_game_state0_play && state1 == e_game_state1_editor) {
-								game->editor.curr_tile = (e_tile_type)i;
-							}
-						}
-					}
 				}
 
 				// @Note(tkap, 28/06/2025): Key up
 				else {
 					if(key == SDLK_SPACE) {
-						soft_data->stop_jump_timestamp = game->update_time;
 					}
 				}
 			} break;
@@ -465,10 +449,8 @@ func void input()
 			{
 				if(event.type == SDL_MOUSEBUTTONDOWN && event.button.button == 1) {
 					g_click = true;
-					soft_data->want_to_teleport_timestamp = game->update_time;
 				}
 				if(event.type == SDL_MOUSEBUTTONDOWN && event.button.button == 3) {
-					soft_data->want_to_super_speed_timestamp = game->update_time;
 				}
 				// int key = sdl_key_to_windows_key(event.button.button);
 				// b8 is_down = event.type == SDL_MOUSEBUTTONDOWN;
@@ -494,21 +476,6 @@ func void input()
 			} break;
 
 			case SDL_MOUSEWHEEL: {
-				// float movement = (float)event.wheel.y;
-				// g_platform_data->input.wheel_movement = movement / 120;
-				if(state0 == e_game_state0_play && state1 == e_game_state1_editor) {
-					if(is_key_down(c_left_shift)) {
-						int movement = event.wheel.y > 0 ? -1 : 1;
-						game->editor.curr_tile = (e_tile_type)circular_index(game->editor.curr_tile + movement, e_tile_type_count);
-						if(game->editor.curr_tile == e_tile_type_none) {
-							game->editor.curr_tile = (e_tile_type)circular_index(game->editor.curr_tile + movement, e_tile_type_count);
-						}
-					}
-					else {
-						float movement = event.wheel.y > 0 ? 1.1f : 0.9f;
-						game->editor.zoom *= movement;
-					}
-				}
 			} break;
 		}
 	}
@@ -538,6 +505,38 @@ func void update()
 		{
 			s_entity player = zero;
 			teleport_entity(&player, wxy(0.5f, 0.5f));
+
+			{
+				s_entity emitter = zero;
+				emitter.emitter_a = make_emitter_a();
+				emitter.emitter_a.particle_duration = 0.5f;
+				emitter.emitter_a.follow_emitter = true;
+				emitter.emitter_b = make_emitter_b();
+				emitter.emitter_b.duration = -1;
+				emitter.emitter_b.particles_per_second = 100;
+				emitter.emitter_b.particle_count = 1;
+				emitter.emitter_b.spawn_type = e_emitter_spawn_type_circle;
+				emitter.emitter_b.spawn_data.xy = c_player_size_v * 0.5f;
+				player.body_emitter = entity_manager_add(entity_arr, e_entity_emitter, emitter);
+			}
+
+			for(int i = 0; i < 2; i += 1) {
+				{
+					s_entity emitter = zero;
+					emitter.emitter_a = make_emitter_a();
+					emitter.emitter_a.particle_duration = 0.25f;
+					emitter.emitter_a.radius = 8;
+					// emitter.emitter_a.follow_emitter = true;
+					emitter.emitter_b = make_emitter_b();
+					emitter.emitter_b.duration = -1;
+					emitter.emitter_b.particles_per_second = 200;
+					emitter.emitter_b.particle_count = 1;
+					emitter.emitter_b.spawn_type = e_emitter_spawn_type_circle;
+					emitter.emitter_b.spawn_data.xy = c_fist_size_v * 0.5f;
+					player.fist_emitter_arr[i] = entity_manager_add(entity_arr, e_entity_emitter, emitter);
+				}
+			}
+
 			entity_manager_add(entity_arr, e_entity_player, player);
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		create player end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1040,7 +1039,7 @@ func void render(float interp_dt, float delta)
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		tiles end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-		draw_circle(wxy(0.5f, 0.5f), c_circle_radius, make_color(0.5f));
+		// draw_circle(wxy(0.5f, 0.5f), c_circle_radius, make_color(0.5f));
 
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw enemies start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		{
@@ -1072,7 +1071,8 @@ func void render(float interp_dt, float delta)
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw player start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		{
 			s_v2 player_pos = lerp_v2(player->prev_pos, player->pos, interp_dt);
-			draw_rect(player_pos, c_player_size_v, make_color(0, 1, 0));
+			// draw_rect(player_pos, c_player_size_v, make_color(0, 1, 0));
+			entity_arr->data[player->body_emitter].emitter_a.pos = v3(player_pos, 0.0f);
 
 			// @Note(tkap, 31/07/2025): Fist
 			{
@@ -1083,7 +1083,8 @@ func void render(float interp_dt, float delta)
 				for(int i = 0; i < 2; i += 1) {
 					s_v2 pos = player_pos + offset_arr[i];
 					pos.y += sinf(player->fist_wobble_time * 4) * c_player_size_v.y * 0.1f;
-					s_v2 size = c_player_size_v * 0.4f;
+					s_v2 size = c_fist_size_v;
+					s_v4 color = make_color(1);
 
 					if(player->did_attack_enemy_timestamp > 0) {
 						float passed = update_time_to_render_time(game->update_time, interp_dt) - player->did_attack_enemy_timestamp;
@@ -1092,9 +1093,11 @@ func void render(float interp_dt, float delta)
 						s_v2 temp_size = size;
 						animate_v2(&animator, pos, player->attacked_enemy_pos, 0.1f, &temp_pos, e_ease_linear, passed);
 						animate_v2(&animator, size, size * 2, 0.1f, &temp_size, e_ease_linear, passed);
+						animate_color(&animator, make_color(1), make_color(1, 0, 0), 0.1f, &color, e_ease_linear, passed);
 						animator_end_keyframe(&animator, 0.0f);
 						animate_v2(&animator, player->attacked_enemy_pos, pos, 0.5f, &temp_pos, e_ease_out_elastic, passed);
 						animate_v2(&animator, size * 2, size, 0.5f, &temp_size, e_ease_out_elastic, passed);
+						animate_color(&animator, make_color(1, 0, 0), make_color(1), 0.5f, &color, e_ease_linear, passed);
 						float time = 0;
 						animate_float(&animator, 0.0f, 0.5f, 0.5f, &time, e_ease_linear, passed);
 						if(time >= 0.5f) {
@@ -1106,17 +1109,21 @@ func void render(float interp_dt, float delta)
 					else {
 						player->fist_wobble_time += delta;
 					}
+					entity_arr->data[player->fist_emitter_arr[i]].emitter_a.pos = v3(pos, 0.0f);
+					entity_arr->data[player->fist_emitter_arr[i]].emitter_a.color_arr[0].color = color;
 
-					draw_rect(pos, size, make_color(0, 1, 0));
+					// draw_rect(pos, size, make_color(0, 1, 0));
 				}
 			}
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw player end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+		update_particles(delta);
+
 		{
 			s_render_flush_data data = make_render_flush_data(zero, zero);
 			data.projection = ortho;
-			data.blend_mode = e_blend_mode_premultiply_alpha;
+			data.blend_mode = e_blend_mode_additive;
 			data.depth_mode = e_depth_mode_no_read_no_write;
 			render_flush(data, true);
 		}
@@ -1752,38 +1759,6 @@ func void draw_atlas_topleft(s_v2 pos, s_v2 size, s_v2i index, s_v4 color)
 	draw_atlas(pos, size, index, color);
 }
 
-func b8 has_upgrade(e_upgrade id)
-{
-	s_hard_game_data* hard_data = &game->hard_data;
-	b8 result = hard_data->upgrade_arr[id] > 0;
-	return result;
-}
-
-func s_v2i get_tile_atlas_index(e_tile_type tile)
-{
-	s_v2i result = v2i(-1, -1);
-	switch(tile) {
-		xcase e_tile_type_block: { result = v2i(0, 0); }
-		xcase e_tile_type_breakable: { result = v2i(2, 0); }
-		xcase e_tile_type_upgrade_jump: { result = v2i(4, 0); }
-		xcase e_tile_type_spike: { result = v2i(6, 0); }
-		xcase e_tile_type_upgrade_speed: { result = v2i(8, 0); }
-		xcase e_tile_type_upgrade_anti_spike: { result = v2i(10, 0); }
-		xcase e_tile_type_upgrade_more_loop_time: { result = v2i(8, 2); }
-		xcase e_tile_type_upgrade_less_run_time: { result = v2i(12, 0); }
-		xcase e_tile_type_spawn: { result = v2i(0, 2); }
-		xcase e_tile_type_goal: { result = v2i(0, 2); }
-		xcase e_tile_type_upgrade_teleport: { result = v2i(2, 2); }
-		xcase e_tile_type_upgrade_break_tiles: { result = v2i(4, 2); }
-		xcase e_tile_type_upgrade_super_speed: { result = v2i(14, 0); }
-		xcase e_tile_type_platform: { result = v2i(6, 2); }
-
-		break; invalid_default_case;
-	}
-	return result;
-}
-
-
 func void draw_circle(s_v2 pos, float radius, s_v4 color)
 {
 	s_instance_data data = zero;
@@ -1811,33 +1786,11 @@ func s_v2 get_upgrade_offset(float interp_dt)
 	return result;
 }
 
-func s_v2 get_player_spawn_pos()
-{
-	s_v2 result = v2(
-		game->map.spawn_tile_index.x * c_tile_size + c_tile_size * 0.5f,
-		game->map.spawn_tile_index.y * c_tile_size + c_tile_size * 0.5f
-	);
-	return result;
-}
-
 func void do_screen_shake(float intensity)
 {
 	s_soft_game_data* soft_data = &game->soft_data;
 	soft_data->start_screen_shake_timestamp = game->render_time;
 	soft_data->shake_intensity = intensity;
-}
-
-func void draw_player(s_v2 pos, float angle, s_draw_player dp, s_v4 color)
-{
-	s_v2 left_foot_offset = v2_rotated(dp.left_foot_offset, angle);
-	s_v2 right_foot_offset = v2_rotated(dp.right_foot_offset, angle);
-	s_v2 head_offset = v2_rotated(dp.head_offset, angle);
-	s_v2 offset = orbit_around_2d(pos, 2, angle);
-	s_v2 size = c_player_size_v * v2(1.25f, 1.15f);
-	draw_atlas_ex(offset, size, v2i(12, 2), multiply_rgb(color, 0.7f), angle);
-	draw_atlas_ex(offset + head_offset, v2(size.x * 1.1f), v2i(10, 2), color, angle);
-	draw_atlas_ex(offset + left_foot_offset, v2(size.x), v2i(14, 2), color, angle);
-	draw_atlas_ex(offset + right_foot_offset, v2(size.x), v2i(14, 2), color, angle);
 }
 
 func void add_timed_msg(s_len_str str, s_v2 pos)
@@ -1906,4 +1859,32 @@ func void make_dying_enemy(s_entity enemy)
 {
 	s_entity dying_enemy = enemy;
 	entity_manager_add(&game->soft_data.entity_arr, e_entity_dying_enemy, dying_enemy);
+}
+
+func s_particle_emitter_a make_emitter_a()
+{
+	s_particle_emitter_a result = zero;
+	result.particle_duration = 1;
+	result.radius = 16;
+	result.speed = 128;
+	{
+		s_particle_color color = zero;
+		color.color = make_color(1);
+		result.color_arr.add(color);
+	}
+	{
+		s_particle_color color = zero;
+		color.color = make_color(0.0f);
+		color.percent = 1;
+		result.color_arr.add(color);
+	}
+	return result;
+}
+
+func s_particle_emitter_b make_emitter_b()
+{
+	s_particle_emitter_b result = zero;
+	result.particles_per_second = 1;
+	result.particle_count = 1;
+	return result;
 }

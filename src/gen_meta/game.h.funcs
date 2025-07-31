@@ -15,17 +15,6 @@ static void assert_e_enemy_(int val)
 #define assert_e_enemy(val)
 
 #endif
-#if defined(m_debug)
-#define assert_e_upgrade(val) assert_e_upgrade_(val)
-
-static void assert_e_upgrade_(int val)
-{
-	assert(val >= e_upgrade_break_tiles && val < e_upgrade_count);
-}
-#else
-#define assert_e_upgrade(val)
-
-#endif
 #if defined(__clang__)
 #pragma clang diagnostic pop
 #endif

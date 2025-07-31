@@ -46,9 +46,21 @@ IDEA 4
 
 
 main menu sounds too loud. are we playing them many tiems??
-
-auto puch skill that has cooldown?
+	or is our volume on load not being used? probably not
 
 UPGRADES?
 	buy them with gold + enemies drop gold?
 		lets not have upgrades for enemies getting stronger. they get stornger over time
+
+	damage
+	rotation speed
+	auto attack with cooldown
+	knockback?
+	tower kind of thing that shoots enemies?
+
+give enemies a speed boost at the beginning so we dont have to wait too long for the action to start
+dash button? or upgrade
+killing an enemy should speed up enemy spawns? so we can go faster
+enemy scaling
+let's try particles for art?
+there is some bug with restarting + particles

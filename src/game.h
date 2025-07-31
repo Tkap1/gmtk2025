@@ -118,51 +118,6 @@ struct s_lerpable
 	float target;
 };
 
-enum e_player_state
-{
-	e_player_state_default,
-};
-
-enum e_tile_type : s8
-{
-	e_tile_type_none,
-	e_tile_type_block,
-	e_tile_type_breakable,
-	e_tile_type_spike,
-	e_tile_type_upgrade_jump,
-	e_tile_type_upgrade_speed,
-	e_tile_type_upgrade_anti_spike,
-	e_tile_type_upgrade_less_run_time,
-	e_tile_type_spawn,
-	e_tile_type_goal,
-	e_tile_type_upgrade_teleport,
-	e_tile_type_upgrade_break_tiles,
-	e_tile_type_upgrade_super_speed,
-	e_tile_type_platform,
-	e_tile_type_upgrade_more_loop_time,
-	e_tile_type_count,
-};
-
-struct s_editor
-{
-	e_tile_type curr_tile;
-	s_v2 cam_pos;
-	float zoom;
-};
-
-struct s_map
-{
-	s_v2i spawn_tile_index;
-	e_tile_type tile_arr[c_max_tiles][c_max_tiles];
-};
-
-struct s_draw_player
-{
-	s_v2 head_offset;
-	s_v2 left_foot_offset;
-	s_v2 right_foot_offset;
-};
-
 enum e_game_state0
 {
 	e_game_state0_main_menu,
@@ -204,11 +159,6 @@ struct s_input_name_state
 	s_str_builder<64> error_str;
 };
 
-struct s_ghost
-{
-	s_list<s_v2, c_max_ghost_positions> pos_arr;
-};
-
 struct s_timed_msg
 {
 	float spawn_timestamp;
@@ -242,6 +192,8 @@ struct s_entity
 
 		// @Note(tkap, 31/07/2025): Player
 		struct {
+			int body_emitter;
+			int fist_emitter_arr[2];
 			float did_attack_enemy_timestamp;
 			float fist_wobble_time;
 			s_v2 attacked_enemy_pos;
@@ -270,21 +222,9 @@ struct s_soft_game_data
 	float tried_to_attack_timestamp;
 	b8 tried_to_submit_score;
 	int update_count;
-	s_ghost curr_ghost;
-	b8 collected_upgrade_this_run;
-	s_maybe<int> super_speed_emitter_index;
 	float shake_intensity;
-	s_v2 player_pos_when_restart_started;
 	float start_screen_shake_timestamp;
 	float start_restart_timestamp;
-	float super_speed_timestamp;
-	float want_to_super_speed_timestamp;
-	float teleport_timestamp;
-	float want_to_teleport_timestamp;
-	float run_start_timestamp;
-	float used_shield_timestamp;
-	float stop_jump_timestamp;
-	float want_to_jump_timestamp;
 	s_list<s_particle, 65536> particle_arr;
 	b8 broken_tile_arr[c_max_tiles][c_max_tiles];
 
@@ -296,44 +236,21 @@ struct s_soft_game_data
 	s_list<s_timed_msg, 8> timed_msg_arr;
 };
 
-enum e_upgrade
-{
-	e_upgrade_break_tiles,
-	e_upgrade_one_more_jump,
-	e_upgrade_speed,
-	e_upgrade_anti_spike,
-	e_upgrade_less_run_time,
-	e_upgrade_teleport,
-	e_upgrade_super_speed,
-	e_upgrade_more_loop_time,
-	e_upgrade_count,
-};
-
 struct s_hard_game_data
 {
 	s_state state1;
 	int update_count;
-	int upgrade_arr[e_upgrade_count];
-	b8 consumed_tile_arr[c_max_tiles][c_max_tiles];
-
-	// @Note(tkap, 30/06/2025): Circular buffer
-	int ghost_count;
-	s_ghost ghost_arr[c_max_ghosts];
 };
 
 struct s_input
 {
 	b8 handled;
-	b8 left;
-	b8 right;
 };
 
 struct s_game
 {
-	b8 freeze_loop;
 	b8 reload_shaders;
 	b8 any_key_pressed;
-	s_v2 last_debug_teleport_pos;
 	s_linear_arena arena;
 	s_linear_arena update_frame_arena;
 	s_linear_arena render_frame_arena;
@@ -352,9 +269,6 @@ struct s_game
 	s_rng rng;
 	float speed;
 	s_input_name_state input_name_state;
-
-	s_editor editor;
-	s_map map;
 
 	s_input input;
 

@@ -296,9 +296,7 @@ struct s_particle_emitter_b
 	float duration;
 	float creation_timestamp;
 	float last_emit_timestamp;
-	// float particles_per_second = 1; // nocheckin
 	float particles_per_second;
-	// int particle_count = 1; // nocheckin
 	int particle_count;
 	int num_alive_particles;
 	e_emitter_spawn_type spawn_type;

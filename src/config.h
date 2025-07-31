@@ -18,6 +18,7 @@ global constexpr float c_max_gravity = 9.0f;
 global constexpr float c_movement_speed = 3;
 global constexpr float c_increased_movement_speed_per_upgrade = 0.1f;
 global constexpr s_v2 c_player_size_v = {32, 32};
+global constexpr s_v2 c_fist_size_v = {c_player_size_v.x * 0.4f, c_player_size_v.y * 0.4f};
 global constexpr int c_map_version = 1;
 global constexpr s_v2i c_atlas_size_v = {2679, 651};
 global constexpr int c_atlas_padding = 1;
