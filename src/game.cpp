@@ -611,6 +611,7 @@ func void update()
 		for(int i = c_first_index[e_entity_enemy]; i < c_last_index_plus_one[e_entity_enemy]; i += 1) {
 			if(!entity_arr->active[i]) { continue; }
 			s_entity* enemy = &entity_arr->data[i];
+			s_enemy_type_data enemy_type_data = g_enemy_type_data[enemy->enemy_type];
 			enemy->highlight = zero;
 			s_v2 dir = v2_dir_from_to(enemy->pos, gxy(0.5f));
 			if(enemy->knockback.valid) {
@@ -621,12 +622,22 @@ func void update()
 				}
 			}
 			else {
-				float speed = 13 * g_enemy_type_data[enemy->enemy_type].speed_multi;
+				float speed = 13 * enemy_type_data.speed_multi;
+				float dist_before_moving = v2_distance(enemy->pos, gxy(0.5f));
 				{
-					float dist = v2_distance(enemy->pos, gxy(0.5f));
 					float limit = c_circle_radius * 1.0f;
-					float t = smoothstep(limit, limit + 50, dist);
+					float t = smoothstep(limit, limit + 50, dist_before_moving);
 					speed += t * 300;
+				}
+				switch(enemy_type_data.movement_type) {
+					xcase e_enemy_movement_zig_zag: {
+						dir = v2_rotated(dir, sinf(game->update_time - enemy->spawn_timestamp) * c_pi * 0.4f);
+					}
+					xcase e_enemy_movement_spiral: {
+						float t = smoothstep(0.0f, c_circle_radius * 2, dist_before_moving);
+						dir = v2_rotated(dir, c_pi * 0.45f * powf(t, 0.25f));
+					}
+					break; default: {}
 				}
 				enemy->pos += dir * speed * delta;
 				float dist = v2_distance(enemy->pos, gxy(0.5f));

@@ -166,6 +166,12 @@ struct s_timed_msg
 	s_str_builder<64> builder;
 };
 
+enum e_enemy_movement
+{
+	e_enemy_movement_normal,
+	e_enemy_movement_zig_zag,
+	e_enemy_movement_spiral,
+};
 
 data_enum(e_enemy,
 
@@ -182,7 +188,7 @@ data_enum(e_enemy,
 	}
 
 	b {
-		.prev_enemy_required_kill_count = 5,
+		.prev_enemy_required_kill_count = 10,
 		.spawn_weight = 3000,
 		.health_multi = 2.0f,
 		.gold_reward = 2,
@@ -192,7 +198,7 @@ data_enum(e_enemy,
 	}
 
 	c {
-		.prev_enemy_required_kill_count = 5,
+		.prev_enemy_required_kill_count = 10,
 		.spawn_weight = 5000,
 		.health_multi = 3.0f,
 		.gold_reward = 3,
@@ -202,7 +208,7 @@ data_enum(e_enemy,
 	}
 
 	fast {
-		.prev_enemy_required_kill_count = 5,
+		.prev_enemy_required_kill_count = 10,
 		.spawn_weight = 7000,
 		.health_multi = 1.0f,
 		.gold_reward = 4,
@@ -212,9 +218,33 @@ data_enum(e_enemy,
 		.atlas_index = {125, 28},
 	}
 
-	boss {
-		.prev_enemy_required_kill_count = 5,
+	big_slow {
+		.prev_enemy_required_kill_count = 20,
 		.spawn_weight = 9000,
+		.health_multi = 20.0f,
+		.gold_reward = 10,
+		.speed_multi = 0.5f,
+		.knockback_resistance = 0.5f,
+		.movement_type = e_enemy_movement_spiral,
+		.size = {64, 64},
+		.atlas_index = {113, 16},
+	}
+
+	fast_zig_zag {
+		.prev_enemy_required_kill_count = 5,
+		.spawn_weight = 11000,
+		.health_multi = 2.0f,
+		.gold_reward = 8,
+		.speed_multi = 4,
+		.knockback_resistance = -1.0f,
+		.movement_type = e_enemy_movement_zig_zag,
+		.size = {32, 32},
+		.atlas_index = {104, 14},
+	}
+
+	boss {
+		.prev_enemy_required_kill_count = 20,
+		.spawn_weight = 1000000,
 		.health_multi = 100.0f,
 		.gold_reward = 100,
 		.speed_multi = 0.5f,
@@ -232,6 +262,7 @@ struct s_enemy_type_data
 	int gold_reward;
 	float speed_multi = 1;
 	float knockback_resistance;
+	e_enemy_movement movement_type;
 	s_v2 size;
 	s_v2i atlas_index;
 };
