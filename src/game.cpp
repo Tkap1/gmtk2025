@@ -627,7 +627,12 @@ func void update()
 				enemy->pos += dir * speed * delta;
 				float dist = v2_distance(enemy->pos, gxy(0.5f));
 				if(dist <= 10) {
-					lose_lives(1);
+					if(enemy->enemy_type == e_enemy_boss) {
+						lose_lives(99999);
+					}
+					else {
+						lose_lives(1);
+					}
 					entity_manager_remove(entity_arr, e_entity_enemy, i);
 				}
 			}

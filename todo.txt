@@ -59,6 +59,7 @@ UPGRADES?
 	tower kind of thing that shoots enemies?
 	can hit more enemies per punch
 	attack range
+	+lives?
 
 give enemies a speed boost at the beginning so we dont have to wait too long for the action to start
 dash button? or upgrade
@@ -73,3 +74,5 @@ buy x10 and x100
 add cooldown on miss attack
 PARTICLESSSS
 health bars?
+enemies with different movement pattern
+maybe boss shoulndt stop spawns

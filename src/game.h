@@ -215,11 +215,11 @@ data_enum(e_enemy,
 	boss {
 		.prev_enemy_required_kill_count = 5,
 		.spawn_weight = 5000,
-		.health_multi = 10.0f,
-		.gold_reward = 10,
+		.health_multi = 100.0f,
+		.gold_reward = 100,
 		.speed_multi = 0.5f,
-		.knockback_resistance = 0.0f,
-		.size = {64, 64},
+		.knockback_resistance = 0.9f,
+		.size = {128, 128},
 		.atlas_index = {125, 29},
 	}
 )
