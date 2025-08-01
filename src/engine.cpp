@@ -1050,3 +1050,22 @@ func s_time_data timer_get_cooldown_time_data(s_timer timer, float time_now, flo
 	s_time_data time_data = get_time_data(time_now, timer.used_timestamp, cooldown);
 	return time_data;
 }
+
+func float get_rand_sound_speed(float x, s_rng* rng)
+{
+	assert(x > 1);
+	float low = 1.0f / x;
+	float high = x;
+	float result = randf_range(rng, low, high);
+	return result;
+}
+
+func s_audio_fade make_simple_fade(float p0, float p1)
+{
+	s_audio_fade fade = zero;
+	fade.percent[0] = p0;
+	fade.percent[1] = p1;
+	fade.volume[0] = 1;
+	fade.volume[1] = 0;
+	return fade;
+}

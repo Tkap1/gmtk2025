@@ -42,3 +42,5 @@ func b8 timer_can_and_want_activate(s_timer timer, float time_now, float duratio
 func b8 timer_is_active(s_timer timer, float time_now, float duration);
 func s_time_data timer_get_time_data(s_timer timer, float time_now, float duration, b8* active);
 func s_time_data timer_get_cooldown_time_data(s_timer timer, float time_now, float cooldown, b8* is_on_cooldown);
+func float get_rand_sound_speed(float x, s_rng* rng);
+func s_audio_fade make_simple_fade(float p0, float p1);

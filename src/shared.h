@@ -34,8 +34,9 @@ enum e_sound
 	e_sound_restart,
 	e_sound_super_speed,
 	e_sound_dash,
-	e_sound_teleport,
 	e_sound_miss_attack,
+	e_sound_punch,
+	e_sound_lightning_bolt,
 	e_sound_count,
 };
 
@@ -56,8 +57,9 @@ global constexpr s_sound_data c_sound_data_arr[e_sound_count] = {
 	{"assets/restart.wav", 1.0f},
 	{"assets/super_speed.wav", 1.0f},
 	{"assets/dash.wav", 1.0f},
-	{"assets/teleport.wav", 1.0f},
 	{"assets/miss_attack.wav", 0.25f},
+	{"assets/punch.wav", 0.2f},
+	{"assets/lightning_bolt.wav", 0.05f},
 };
 
 struct s_platform_data
@@ -75,7 +77,7 @@ struct s_platform_data
 
 	s_list<s_active_sound, 128> active_sound_arr;
 
-	Mix_Chunk* (*load_sound_from_file)(char*, u8);
+	Mix_Chunk* (*load_sound_from_file)(char*);
 	void (*play_sound)(e_sound, s_play_sound_data);
 
 	#if defined(_WIN32) && defined(m_debug)

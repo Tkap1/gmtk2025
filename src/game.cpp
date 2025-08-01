@@ -221,7 +221,7 @@ m_dll_export void init(s_platform_data* platform_data)
 	}
 
 	for(int i = 0; i < e_sound_count; i += 1) {
-		platform_data->sound_arr[i] = platform_data->load_sound_from_file(c_sound_data_arr[i].path, c_sound_data_arr[i].volume);
+		platform_data->sound_arr[i] = platform_data->load_sound_from_file(c_sound_data_arr[i].path);
 	}
 
 	Mix_Music* music = Mix_LoadMUS("assets/music.ogg");
@@ -335,7 +335,7 @@ func void input()
 	game->char_events.count = 0;
 	game->key_events.count = 0;
 
-	u8* keyboard_state = (u8*)SDL_GetKeyboardState(null);
+	// u8* keyboard_state = (u8*)SDL_GetKeyboardState(null);
 
 	if(game->input.handled) {
 		game->input = zero;
@@ -711,6 +711,10 @@ func void update()
 							knockback_multi = 0.1f;
 							can_auto_attack = false;
 							timer_activate(&soft_data->auto_attack_timer, game->update_time);
+							{
+								s_audio_fade fade = make_simple_fade(0.8f, 1.0f);
+								play_sound(e_sound_lightning_bolt, {.speed = get_rand_sound_speed(1.1f, &game->rng), .fade = maybe(fade)});
+							}
 
 							{
 								s_entity effect = zero;
@@ -767,7 +771,7 @@ func void update()
 				play_sound(e_sound_miss_attack, zero);
 			}
 			if(num_enemies_hit > 0) {
-				play_sound(e_sound_key, zero);
+				play_sound(e_sound_punch, {.speed = get_rand_sound_speed(1.1f, &game->rng)});
 				soft_data->attack_timer.want_to_use_timestamp = 0;
 				player->did_attack_enemy_timestamp = game->update_time;
 			}

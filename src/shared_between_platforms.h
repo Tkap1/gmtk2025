@@ -1,11 +1,10 @@
 
 #include "generated/generated_shared_between_platforms.h"
 
-func Mix_Chunk* load_sound_from_file(char* path, u8 volume)
+func Mix_Chunk* load_sound_from_file(char* path)
 {
 	Mix_Chunk* chunk = Mix_LoadWAV(path);
 	assert(chunk);
-	chunk->volume = volume;
 	return chunk;
 }
 

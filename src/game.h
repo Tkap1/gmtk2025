@@ -297,7 +297,7 @@ data_enum(e_upgrade,
 	}
 
 	more_hits_per_attack {
-		.name = S("+ Hits per attack"),
+		.name = S("Multistrike"),
 		.cost = 100,
 		.extra_cost_per_level = 100,
 		.stat_boost = 1,
@@ -305,7 +305,7 @@ data_enum(e_upgrade,
 	}
 
 	auto_attack {
-		.name = S("+ Auto attack"),
+		.name = S("Lightning bolt"),
 		.cost = 50,
 		.extra_cost_per_level = 100,
 		.stat_boost = 15,
