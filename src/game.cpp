@@ -388,6 +388,9 @@ func void input()
 				if(key == SDLK_LSHIFT) {
 					key = c_left_shift;
 				}
+				else if(key == SDLK_LCTRL) {
+					key = c_left_ctrl;
+				}
 				b8 is_down = event.type == SDL_KEYDOWN;
 				handle_key_event(key, is_down, event.key.repeat != 0);
 
@@ -1409,23 +1412,47 @@ func void render(float interp_dt, float delta)
 			}
 			for_enum(upgrade_i, e_upgrade) {
 				s_upgrade_data data = g_upgrade_data[upgrade_i];
+				int how_many_to_buy = 1;
+				if(is_key_down(c_left_ctrl)) {
+					how_many_to_buy *= 5;
+				}
+				if(is_key_down(c_left_shift)) {
+					how_many_to_buy *= 10;
+				}
+				if(data.max_upgrades > 0) {
+					int curr_level = get_upgrade_level(upgrade_i);
+					int how_many_to_reach_max = data.max_upgrades - curr_level;
+					how_many_to_buy = at_most(how_many_to_reach_max, how_many_to_buy);
+				}
 				s_v2 pos = container_get_pos_and_advance(&container);
-				int cost = data.cost + get_upgrade_level(upgrade_i) * data.extra_cost_per_level;
+				int cost_all = 0;
+				int how_many_can_afford = 0;
+				int fake_gold = soft_data->gold;
+				int gold_to_spend = 0;
+				for(int i = 0; i < how_many_to_buy; i += 1) {
+					int cost = data.cost + (get_upgrade_level(upgrade_i) + i) * data.extra_cost_per_level;
+					cost_all += cost;
+					if(can_afford(fake_gold, cost)) {
+						fake_gold -= cost;
+						gold_to_spend += cost;
+						how_many_can_afford += 1;
+					}
+				}
 				s_len_str str = zero;
 				s_button_data optional = zero;
+				if(how_many_can_afford == 0) {
+					optional.disabled = true;
+				}
 				if(is_upgrade_maxed(upgrade_i)) {
 					str = format_text("%.*s (MAX)", expand_str(data.name));
 					optional.disabled = true;
 				}
 				else {
-					str = format_text("%.*s (%i)", expand_str(data.name), cost);
-					if(!can_afford(soft_data->gold, cost)) {
-						optional.disabled = true;
-					}
+					str = format_text("%.*s (%i)", expand_str(data.name), cost_all);
 				}
 				if(do_button_ex(str, pos, size, false, optional)) {
-					add_gold(-cost);
-					apply_upgrade(upgrade_i, 1);
+					add_gold(-gold_to_spend);
+					apply_upgrade(upgrade_i, how_many_can_afford);
 				}
 			}
 			{
@@ -1473,8 +1500,8 @@ func void render(float interp_dt, float delta)
 			s_v2 size = v2(320, 48);
 			s_container container = make_down_center_x_container(rect, size, 10);
 
-			if(do_button_ex(S("+10000 gold"), container_get_pos_and_advance(&container), size, false, zero)) {
-				add_gold(10000);
+			if(do_button_ex(S("+100000 gold"), container_get_pos_and_advance(&container), size, false, zero)) {
+				add_gold(100000);
 			}
 			if(do_button_ex(S("Spawn boss"), container_get_pos_and_advance(&container), size, false, zero)) {
 				spawn_enemy(e_enemy_boss);

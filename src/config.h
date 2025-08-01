@@ -36,6 +36,7 @@ global constexpr int c_max_keys = 1024;
 global constexpr int c_left_button = c_max_keys - 2;
 global constexpr int c_right_button = c_max_keys - 1;
 global constexpr int c_left_shift = c_max_keys - 3;
+global constexpr int c_left_ctrl = c_max_keys - 4;
 
 global constexpr int c_max_leaderboard_entries = 16;
 
