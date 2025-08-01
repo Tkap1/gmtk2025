@@ -288,6 +288,14 @@ data_enum(e_upgrade,
 		.max_upgrades = 5,
 	}
 
+	max_lives {
+		.name = S("+ Lives"),
+		.cost = 30,
+		.extra_cost_per_level = 20,
+		.stat_boost = 5,
+		.max_upgrades = 4,
+	}
+
 )
 
 struct s_upgrade_data

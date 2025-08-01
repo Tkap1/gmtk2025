@@ -49,18 +49,10 @@ main menu sounds too loud. are we playing them many tiems??
 	or is our volume on load not being used? probably not
 
 UPGRADES?
-	buy them with gold + enemies drop gold?
-		lets not have upgrades for enemies getting stronger. they get stornger over time
-
-	damage
-	rotation speed
 	auto attack with cooldown
-	knockback?
 	tower kind of thing that shoots enemies?
 	can hit more enemies per punch
-	attack range
 	+lives?
-	dash cooldown?
 
 give enemies a speed boost at the beginning so we dont have to wait too long for the action to start
 should dash be upgrade?

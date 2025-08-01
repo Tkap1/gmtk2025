@@ -15,6 +15,7 @@ enum e_upgrade
 	e_upgrade_range,
 	e_upgrade_knockback,
 	e_upgrade_dash_cooldown,
+	e_upgrade_max_lives,
 	e_upgrade_count,
 };
 

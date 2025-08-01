@@ -744,7 +744,7 @@ func void update()
 	if(soft_data->frame_data.lives_to_lose > 0) {
 		game->soft_data.lives_lost += soft_data->frame_data.lives_to_lose;
 		game->soft_data.life_change_timestamp = game->render_time;
-		int curr_lives = c_max_lives - game->soft_data.lives_lost;
+		int curr_lives = get_max_lives() - game->soft_data.lives_lost;
 		if(curr_lives <= 0) {
 			add_state(&game->hard_data.state1, e_game_state1_defeat);
 		}
@@ -1321,7 +1321,7 @@ func void render(float interp_dt, float delta)
 				float font_size = ease_out_elastic_advanced(passed, 0, 0.5f, 64, 48);
 				float t = ease_linear_advanced(passed, 0, 1, 1, 0);
 				s_v4 color = lerp_color(hex_to_rgb(0xDF20AF), hex_to_rgb(0xDF204F), t);
-				draw_text(format_text("Lives: %i", c_max_lives - soft_data->lives_lost), wxy(0.87f, 0.12f), font_size, color, true, &game->font);
+				draw_text(format_text("Lives: %i", get_max_lives() - soft_data->lives_lost), wxy(0.87f, 0.12f), font_size, color, true, &game->font);
 			}
 			{
 				s_time_format data = update_count_to_time_format(game->hard_data.update_count);
@@ -2315,5 +2315,12 @@ func b8 is_upgrade_maxed(e_upgrade id)
 	if(max_upgrades > 0 && game->soft_data.upgrade_count[id] >= max_upgrades) {
 		result = true;
 	}
+	return result;
+}
+
+func int get_max_lives()
+{
+	int result = c_max_lives;
+	result += (int)get_upgrade_boost(e_upgrade_max_lives);
 	return result;
 }
