@@ -183,7 +183,7 @@ data_enum(e_enemy,
 
 	b {
 		.prev_enemy_required_kill_count = 5,
-		.spawn_weight = 2000,
+		.spawn_weight = 3000,
 		.health_multi = 2.0f,
 		.gold_reward = 2,
 		.knockback_resistance = 0.0f,
@@ -193,7 +193,7 @@ data_enum(e_enemy,
 
 	c {
 		.prev_enemy_required_kill_count = 5,
-		.spawn_weight = 3000,
+		.spawn_weight = 5000,
 		.health_multi = 3.0f,
 		.gold_reward = 3,
 		.knockback_resistance = 0.0f,
@@ -203,7 +203,7 @@ data_enum(e_enemy,
 
 	fast {
 		.prev_enemy_required_kill_count = 5,
-		.spawn_weight = 4000,
+		.spawn_weight = 7000,
 		.health_multi = 1.0f,
 		.gold_reward = 4,
 		.speed_multi = 2,
@@ -214,7 +214,7 @@ data_enum(e_enemy,
 
 	boss {
 		.prev_enemy_required_kill_count = 5,
-		.spawn_weight = 5000,
+		.spawn_weight = 9000,
 		.health_multi = 100.0f,
 		.gold_reward = 100,
 		.speed_multi = 0.5f,
@@ -304,6 +304,14 @@ data_enum(e_upgrade,
 		.max_upgrades = 4,
 	}
 
+	auto_attack {
+		.name = S("+ Auto attack"),
+		.cost = 50,
+		.extra_cost_per_level = 100,
+		.stat_boost = 15,
+		.max_upgrades = 6,
+	}
+
 )
 
 struct s_upgrade_data
@@ -352,6 +360,7 @@ struct s_entity
 		struct {
 			float duration;
 			int fct_type;
+			s_v2 effect_size;
 			s_str_builder<16> builder;
 			s_v2 vel;
 		};
@@ -375,6 +384,7 @@ struct s_soft_game_data
 	float gold_change_timestamp;
 	float tried_to_attack_timestamp;
 	s_timer dash_timer;
+	s_timer auto_attack_timer;
 	b8 tried_to_submit_score;
 	int update_count;
 	float shake_intensity;

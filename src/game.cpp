@@ -565,10 +565,8 @@ func void update()
 	if(do_game) {
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		spawn start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		{
-			if(!soft_data->boss_spawned) {
-				soft_data->spawn_timer += delta;
-			}
-			while(soft_data->spawn_timer >= c_spawn_delay && !soft_data->boss_spawned) {
+			soft_data->spawn_timer += delta;
+			while(soft_data->spawn_timer >= c_spawn_delay) {
 				soft_data->spawn_timer -= c_spawn_delay;
 
 				s_list<e_enemy, e_enemy_count> possible_spawn_arr;
@@ -579,6 +577,9 @@ func void update()
 						if(soft_data->enemy_type_kill_count_arr[type_i - 1] >= g_enemy_type_data[type_i].prev_enemy_required_kill_count) {
 							valid = true;
 						}
+					}
+					if(type_i == e_enemy_boss && soft_data->boss_spawned) {
+						valid = false;
 					}
 					if(valid) {
 						possible_spawn_arr.add(type_i);
@@ -684,18 +685,42 @@ func void update()
 			int num_enemies_hit = 0;
 			int num_possible_hits = get_hits_per_attack();
 			float attack_range = get_player_attack_range();
+			soft_data->auto_attack_timer.want_to_use_timestamp = game->update_time;
+			b8 can_auto_attack = get_upgrade_level(e_upgrade_auto_attack) > 0 &&
+				timer_can_and_want_activate(soft_data->auto_attack_timer, game->update_time, 0.0f, get_auto_attack_cooldown(), 0.0f);
 			for(int i = c_first_index[e_entity_enemy]; i < c_last_index_plus_one[e_entity_enemy]; i += 1) {
 				if(num_enemies_hit >= num_possible_hits) { break; }
 				if(!entity_arr->active[i]) { continue; }
 				s_entity* enemy = &entity_arr->data[i];
-
+				s_v2 enemy_size = get_enemy_size(enemy->enemy_type);
 
 				float dist = v2_distance(enemy->pos, player->pos);
-				if(dist <= attack_range + get_enemy_size(enemy->enemy_type).y * 0.5f) {
+				if(dist <= attack_range + enemy_size.y * 0.5f) {
 					enemy->highlight = maybe(make_color(1, 0.6f, 0.6f));
-					if(check_action(game->update_time, soft_data->tried_to_attack_timestamp, 0.1f)) {
-						num_enemies_hit += 1;
-						float knockback_to_add = 750 * get_enemy_knockback_resistance_taking_into_account_upgrades(enemy->enemy_type);
+					if(check_action(game->update_time, soft_data->tried_to_attack_timestamp, 0.1f) || can_auto_attack) {
+						float knockback_multi = 0;
+						float damage_multi = 0;
+						if(can_auto_attack) {
+							damage_multi = 0.5f;
+							knockback_multi = 0.1f;
+							can_auto_attack = false;
+							timer_activate(&soft_data->auto_attack_timer, game->update_time);
+
+							{
+								s_entity effect = zero;
+								effect.pos = enemy->pos;
+								effect.spawn_timestamp = game->render_time;
+								effect.effect_size = enemy_size;
+								entity_manager_add(entity_arr, e_entity_visual_effect, effect);
+							}
+						}
+						else {
+							damage_multi = 1;
+							num_enemies_hit += 1;
+							knockback_multi = 1;
+							player->attacked_enemy_pos = enemy->pos;
+						}
+						float knockback_to_add = 750 * knockback_multi * get_enemy_knockback_resistance_taking_into_account_upgrades(enemy->enemy_type);
 						if(enemy->knockback.valid) {
 							enemy->knockback.value += knockback_to_add;
 						}
@@ -703,8 +728,7 @@ func void update()
 							enemy->knockback = maybe(knockback_to_add);
 						}
 
-						player->attacked_enemy_pos = enemy->pos;
-						b8 dead = damage_enemy(enemy, get_player_damage());
+						b8 dead = damage_enemy(enemy, get_player_damage() * damage_multi);
 						if(dead) {
 							if(enemy->enemy_type == e_enemy_boss) {
 								soft_data->frame_data.boss_defeated = true;
@@ -1233,6 +1257,39 @@ func void render(float interp_dt, float delta)
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw player end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+		{
+			s_render_flush_data data = make_render_flush_data(zero, zero);
+			data.projection = ortho;
+			data.blend_mode = e_blend_mode_normal;
+			data.depth_mode = e_depth_mode_no_read_no_write;
+			render_flush(data, true);
+		}
+
+		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw visual effects start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+		for(int i = c_first_index[e_entity_visual_effect]; i < c_last_index_plus_one[e_entity_visual_effect]; i += 1) {
+				if(!entity_arr->active[i]) { continue; }
+				s_entity* effect = &entity_arr->data[i];
+				s_time_data time_data = get_time_data(game->render_time, effect->spawn_timestamp, 1.0f);
+
+				{
+					s_v2 size = effect->effect_size * 2;
+					float bottom = effect->pos.y + effect->effect_size.y * 0.5f;
+					s_v2 pos = effect->pos;
+					pos.y = bottom - size.y * 0.5f;
+					s_instance_data data = zero;
+					data.model = m4_translate(v3(pos, 0));
+					data.model = m4_multiply(data.model, m4_scale(v3(size, 1)));
+					data.color = make_color(1, powf(time_data.inv_percent, 0.5f));
+					add_to_render_group(data, e_shader_lightning, e_texture_white, e_mesh_quad);
+					// draw_rect(effect->pos, v2(64), make_color(1));
+				}
+
+				if(time_data.percent >= 1) {
+					entity_manager_remove(entity_arr, e_entity_visual_effect, i);
+				}
+		}
+		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw visual effects end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 		update_particles(delta);
 
 		{
@@ -1349,8 +1406,8 @@ func void render(float interp_dt, float delta)
 			s_v2 size = v2(320, 48);
 			s_container container = make_down_center_x_container(rect, size, 10);
 
-			if(do_button_ex(S("+1000 gold"), container_get_pos_and_advance(&container), size, false, zero)) {
-				add_gold(1000);
+			if(do_button_ex(S("+10000 gold"), container_get_pos_and_advance(&container), size, false, zero)) {
+				add_gold(10000);
 			}
 			if(do_button_ex(S("Spawn boss"), container_get_pos_and_advance(&container), size, false, zero)) {
 				spawn_enemy(e_enemy_boss);
@@ -2335,5 +2392,12 @@ func int get_hits_per_attack()
 {
 	int result = 1;
 	result += (int)get_upgrade_boost(e_upgrade_more_hits_per_attack);
+	return result;
+}
+
+func float get_auto_attack_cooldown()
+{
+	float result = c_auto_attack_cooldown;
+	result *= 1.0f - get_upgrade_boost(e_upgrade_auto_attack) / 100.0f;
 	return result;
 }

@@ -22,6 +22,7 @@ enum e_shader
 	e_shader_light,
 	e_shader_portal,
 	e_shader_flat_remove_black,
+	e_shader_lightning,
 	e_shader_count,
 };
 
@@ -36,6 +37,7 @@ global constexpr char* c_shader_path_arr[e_shader_count] = {
 	"shaders/light.shader",
 	"shaders/portal.shader",
 	"shaders/flat_remove_black.shader",
+	"shaders/lightning.shader",
 };
 
 
@@ -338,6 +340,9 @@ data_enum(e_entity,
 	fct {
 		.max_count = 128,
 	}
+	visual_effect {
+		.max_count = 128,
+	}
 )
 
 struct s_entity_type_data
@@ -396,6 +401,7 @@ global constexpr int c_first_index[e_entity_count] = {
 	get_first_index(e_entity_dying_enemy),
 	get_first_index(e_entity_emitter),
 	get_first_index(e_entity_fct),
+	get_first_index(e_entity_visual_effect),
 };
 
 global constexpr int c_last_index_plus_one[e_entity_count] = {
@@ -404,4 +410,5 @@ global constexpr int c_last_index_plus_one[e_entity_count] = {
 	get_last_index_plus_one(e_entity_dying_enemy),
 	get_last_index_plus_one(e_entity_emitter),
 	get_last_index_plus_one(e_entity_fct),
+	get_last_index_plus_one(e_entity_visual_effect),
 };

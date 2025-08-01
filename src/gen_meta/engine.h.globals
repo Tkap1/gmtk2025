@@ -14,5 +14,8 @@ global constexpr s_entity_type_data g_entity_type_data[e_entity_count] = {
 	{
 		.max_count = 128,
 	},
+	{
+		.max_count = 128,
+	},
 };
 
