@@ -681,20 +681,20 @@ func void update()
 			player->timer += delta * get_player_speed() * dash_speed;
 
 			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		try to hit start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-			b8 highlighted_an_enemy = false;
+			int num_enemies_hit = 0;
+			int num_possible_hits = get_hits_per_attack();
 			float attack_range = get_player_attack_range();
 			for(int i = c_first_index[e_entity_enemy]; i < c_last_index_plus_one[e_entity_enemy]; i += 1) {
+				if(num_enemies_hit >= num_possible_hits) { break; }
 				if(!entity_arr->active[i]) { continue; }
 				s_entity* enemy = &entity_arr->data[i];
 
+
 				float dist = v2_distance(enemy->pos, player->pos);
 				if(dist <= attack_range + get_enemy_size(enemy->enemy_type).y * 0.5f) {
-					if(!highlighted_an_enemy) {
-						highlighted_an_enemy = true;
-						enemy->highlight = maybe(make_color(1, 0.6f, 0.6f));
-					}
+					enemy->highlight = maybe(make_color(1, 0.6f, 0.6f));
 					if(check_action(game->update_time, soft_data->tried_to_attack_timestamp, 0.1f)) {
-						play_sound(e_sound_key, zero);
+						num_enemies_hit += 1;
 						float knockback_to_add = 750 * get_enemy_knockback_resistance_taking_into_account_upgrades(enemy->enemy_type);
 						if(enemy->knockback.valid) {
 							enemy->knockback.value += knockback_to_add;
@@ -703,8 +703,6 @@ func void update()
 							enemy->knockback = maybe(knockback_to_add);
 						}
 
-						soft_data->tried_to_attack_timestamp = 0;
-						player->did_attack_enemy_timestamp = game->update_time;
 						player->attacked_enemy_pos = enemy->pos;
 						b8 dead = damage_enemy(enemy, get_player_damage());
 						if(dead) {
@@ -730,6 +728,11 @@ func void update()
 						}
 					}
 				}
+			}
+			if(num_enemies_hit > 0) {
+				play_sound(e_sound_key, zero);
+				soft_data->tried_to_attack_timestamp = 0;
+				player->did_attack_enemy_timestamp = game->update_time;
 			}
 			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		try to hit end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1357,6 +1360,9 @@ func void render(float interp_dt, float delta)
 			}
 			if(do_button_ex(S("Lose"), container_get_pos_and_advance(&container), size, false, zero)) {
 				soft_data->frame_data.lives_to_lose = 99999;
+			}
+			if(do_button_ex(S("Spawn basic enemy"), container_get_pos_and_advance(&container), size, false, zero)) {
+				spawn_enemy(e_enemy_basic);
 			}
 
 			{
@@ -2322,5 +2328,12 @@ func int get_max_lives()
 {
 	int result = c_max_lives;
 	result += (int)get_upgrade_boost(e_upgrade_max_lives);
+	return result;
+}
+
+func int get_hits_per_attack()
+{
+	int result = 1;
+	result += (int)get_upgrade_boost(e_upgrade_more_hits_per_attack);
 	return result;
 }

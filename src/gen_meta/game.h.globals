@@ -87,5 +87,12 @@ global constexpr s_upgrade_data g_upgrade_data[e_upgrade_count] = {
 		.stat_boost = 5,
 		.max_upgrades = 4,
 	},
+	{
+		.name = S("+ Hits per attack"),
+		.cost = 100,
+		.extra_cost_per_level = 100,
+		.stat_boost = 1,
+		.max_upgrades = 4,
+	},
 };
 

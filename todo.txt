@@ -51,8 +51,6 @@ main menu sounds too loud. are we playing them many tiems??
 UPGRADES?
 	auto attack with cooldown
 	tower kind of thing that shoots enemies?
-	can hit more enemies per punch
-	+lives?
 
 give enemies a speed boost at the beginning so we dont have to wait too long for the action to start
 should dash be upgrade?
@@ -69,3 +67,5 @@ PARTICLESSSS
 health bars?
 enemies with different movement pattern
 maybe boss shoulndt stop spawns
+
+power up drops?????

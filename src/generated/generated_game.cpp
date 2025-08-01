@@ -71,3 +71,4 @@ func void spawn_enemy(e_enemy type);
 func float get_dash_cooldown();
 func b8 is_upgrade_maxed(e_upgrade id);
 func int get_max_lives();
+func int get_hits_per_attack();

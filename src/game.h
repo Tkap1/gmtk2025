@@ -296,6 +296,14 @@ data_enum(e_upgrade,
 		.max_upgrades = 4,
 	}
 
+	more_hits_per_attack {
+		.name = S("+ Hits per attack"),
+		.cost = 100,
+		.extra_cost_per_level = 100,
+		.stat_boost = 1,
+		.max_upgrades = 4,
+	}
+
 )
 
 struct s_upgrade_data
