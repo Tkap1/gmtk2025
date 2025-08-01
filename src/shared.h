@@ -57,7 +57,7 @@ global constexpr s_sound_data c_sound_data_arr[e_sound_count] = {
 	{"assets/super_speed.wav", 1.0f},
 	{"assets/dash.wav", 1.0f},
 	{"assets/teleport.wav", 1.0f},
-	{"assets/miss_attack.wav", 1.0f},
+	{"assets/miss_attack.wav", 0.25f},
 };
 
 struct s_platform_data

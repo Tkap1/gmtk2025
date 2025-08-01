@@ -98,6 +98,7 @@ func void my_audio_callback(void* userdata, u8* stream, int len) {
 
 func void play_sound(e_sound sound_id, s_play_sound_data data)
 {
+	data.volume *= c_sound_data_arr[sound_id].volume;
 	Mix_Chunk* chunk = g_platform_data.sound_arr[sound_id];
 	if(!g_platform_data.active_sound_arr.is_full()) {
 		s_active_sound active_sound = zero;
@@ -105,5 +106,4 @@ func void play_sound(e_sound sound_id, s_play_sound_data data)
 		active_sound.data = data;
 		g_platform_data.active_sound_arr.add(active_sound);
 	}
-	// Mix_PlayChannel(-1, chunk, 0);
 }

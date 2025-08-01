@@ -1041,3 +1041,12 @@ func s_time_data timer_get_time_data(s_timer timer, float time_now, float durati
 	s_time_data time_data = get_time_data(time_now, timer.used_timestamp, duration);
 	return time_data;
 }
+
+func s_time_data timer_get_cooldown_time_data(s_timer timer, float time_now, float cooldown, b8* is_on_cooldown)
+{
+	if(is_on_cooldown) {
+		*is_on_cooldown = !timer_can_activate(timer, time_now, 0.0f, cooldown);
+	}
+	s_time_data time_data = get_time_data(time_now, timer.used_timestamp, cooldown);
+	return time_data;
+}

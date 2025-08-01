@@ -621,11 +621,11 @@ func void update()
 				}
 			}
 			else {
-				float speed = 25 * g_enemy_type_data[enemy->enemy_type].speed_multi;
+				float speed = 13 * g_enemy_type_data[enemy->enemy_type].speed_multi;
 				{
 					float dist = v2_distance(enemy->pos, gxy(0.5f));
-					float limit = c_circle_radius * 1.3f;
-					float t = smoothstep(limit, limit + 100, dist);
+					float limit = c_circle_radius * 1.0f;
+					float t = smoothstep(limit, limit + 50, dist);
 					speed += t * 300;
 				}
 				enemy->pos += dir * speed * delta;
@@ -726,7 +726,7 @@ func void update()
 							knockback_multi = 1;
 							player->attacked_enemy_pos = enemy->pos;
 						}
-						float knockback_to_add = 750 * knockback_multi * get_enemy_knockback_resistance_taking_into_account_upgrades(enemy->enemy_type);
+						float knockback_to_add = 400 * knockback_multi * get_enemy_knockback_resistance_taking_into_account_upgrades(enemy->enemy_type);
 						if(enemy->knockback.valid) {
 							enemy->knockback.value += knockback_to_add;
 						}
@@ -1219,9 +1219,9 @@ func void render(float interp_dt, float delta)
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw dying enemies end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+		s_v2 player_pos = lerp_v2(player->prev_pos, player->pos, interp_dt);
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw player start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		{
-			s_v2 player_pos = lerp_v2(player->prev_pos, player->pos, interp_dt);
 			draw_rect(player_pos, c_player_size_v, make_color(0, 1, 0));
 			entity_arr->data[player->range_emitter].emitter_a.pos = v3(player_pos, 0.0f);
 			entity_arr->data[player->range_emitter].emitter_b.spawn_data.x = get_player_attack_range();
@@ -1341,14 +1341,38 @@ func void render(float interp_dt, float delta)
 			render_flush(data, true);
 		}
 
-		if(do_game_ui) {
+		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw attack cooldown start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+		{
+			b8 is_on_cooldown = false;
+			float time = update_time_to_render_time(game->update_time, interp_dt);
+			s_time_data time_data = timer_get_cooldown_time_data(soft_data->attack_timer, time, c_attack_cooldown, &is_on_cooldown);
+			if(is_on_cooldown) {
+				s_v2 size = v2(64, 10);
+				s_v2 pos = player_pos;
+				pos.y += c_player_size_v.y * 0.5f;
+				pos.y += size.y * 0.8f;
+				s_v2 over_pos = pos;
+				s_v2 over_size = size;
+				over_size.x *= time_data.percent;
+				over_pos.x -= size.x * 0.5f;
+				over_pos.x += over_size.x * 0.5f;
+				s_v4 color = hex_to_rgb(0x14A12C);
+				color.a = ease_linear_advanced(time_data.percent, 0.8f, 1.0f, 1, 0.0f);
+				draw_rect(pos, size, color);
+				draw_rect(over_pos, over_size, multiply_rgb(color, 2));
 
-			if(game->hover_over_upgrade_pauses_game && g_mouse.x > c_game_area.x) {
-				game->speed = 0;
+				{
+					s_render_flush_data data = make_render_flush_data(zero, zero);
+					data.projection = ortho;
+					data.blend_mode = e_blend_mode_normal;
+					data.depth_mode = e_depth_mode_no_read_no_write;
+					render_flush(data, true);
+				}
 			}
-			else {
-				game->speed = 1;
-			}
+		}
+		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw attack cooldown end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+		if(do_game_ui) {
 
 			s_rect rect = {
 				c_game_area.x, 176.0f, c_world_size.x - c_game_area.x, c_world_size.y
@@ -1405,6 +1429,14 @@ func void render(float interp_dt, float delta)
 				s_time_format data = update_count_to_time_format(game->hard_data.update_count);
 				s_len_str text = format_text("%02i:%02i.%03i", data.minutes, data.seconds, data.milliseconds);
 				draw_text(text, wxy(0.87f, 0.2f), 48, make_color(1), true, &game->font);
+			}
+
+			if(game->hover_over_upgrade_pauses_game && g_mouse.x > c_game_area.x) {
+				game->speed = 0;
+				draw_text(S("Paused"), gxy(0.5f, 0.1f), sin_range(64, 80, game->render_time * 8), make_color(1), true, &game->font);
+			}
+			else {
+				game->speed = 1;
 			}
 
 			{

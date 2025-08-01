@@ -391,10 +391,6 @@ struct s_soft_game_data
 	float start_screen_shake_timestamp;
 	float start_restart_timestamp;
 	s_list<s_particle, 65536> particle_arr;
-	b8 broken_tile_arr[c_max_tiles][c_max_tiles];
-
-	b8 added_particle_emitter_arr[c_max_tiles][c_max_tiles];
-	int particle_emitter_index_arr[c_max_tiles][c_max_tiles];
 
 	s_entity_manager<s_entity, c_max_entities> entity_arr;
 

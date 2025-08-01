@@ -41,3 +41,4 @@ func b8 timer_want_activate(s_timer timer, float time_now, float grace_period);
 func b8 timer_can_and_want_activate(s_timer timer, float time_now, float duration, float cooldown, float grace_period);
 func b8 timer_is_active(s_timer timer, float time_now, float duration);
 func s_time_data timer_get_time_data(s_timer timer, float time_now, float duration, b8* active);
+func s_time_data timer_get_cooldown_time_data(s_timer timer, float time_now, float cooldown, b8* is_on_cooldown);
