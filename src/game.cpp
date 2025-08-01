@@ -760,7 +760,9 @@ func void update()
 				}
 			}
 			// @Note(tkap, 01/08/2025): We pressed the attack key but there were no enemies in range
-			if(should_attack && !was_there_an_enemy_in_range) {
+			float time_since_last_auto_attack = game->update_time - soft_data->auto_attack_timer.used_timestamp;
+			b8 auto_attacked_recently = time_since_last_auto_attack <= 0.25f && soft_data->auto_attack_timer.used_timestamp > 0;
+			if(should_attack && !was_there_an_enemy_in_range && !auto_attacked_recently) {
 				timer_activate(&soft_data->attack_timer, game->update_time);
 				play_sound(e_sound_miss_attack, zero);
 			}

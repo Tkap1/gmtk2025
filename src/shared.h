@@ -46,7 +46,7 @@ struct s_sound_data
 };
 
 global constexpr s_sound_data c_sound_data_arr[e_sound_count] = {
-	{"assets/click.wav", 1.0f},
+	{"assets/click.wav", 0.2f},
 	{"assets/key.wav", 1.0f},
 	{"assets/break.wav", 1.0f},
 	{"assets/jump1.wav", 1.0f},

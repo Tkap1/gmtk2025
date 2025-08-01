@@ -33,11 +33,8 @@ more keys for the different actions
 
 ending is dogshit, we need some pause or something
 
-make sure you dont get cucked by your own auto attack
 
 OPTIONS:
 	hover over upgrade pause
 
 fix volumes
-fix speed
-	slower enemies, faster speed until they get close
