@@ -665,7 +665,7 @@ func void update()
 			player->pos.x = cosf(player->timer) * c_circle_radius * 0.5f;
 			player->pos.y = sinf(player->timer) * c_circle_radius * 0.5f;
 			player->pos += center;
-			if(timer_can_and_want_activate(soft_data->dash_timer, game->update_time, c_dash_duration, c_dash_cooldown, 0.1f)) {
+			if(timer_can_and_want_activate(soft_data->dash_timer, game->update_time, c_dash_duration, get_dash_cooldown(), 0.1f)) {
 				play_sound(e_sound_dash, {.volume = 0.1f});
 				timer_activate(&soft_data->dash_timer, game->update_time);
 			}
@@ -1292,10 +1292,17 @@ func void render(float interp_dt, float delta)
 				s_upgrade_data data = g_upgrade_data[upgrade_i];
 				s_v2 pos = container_get_pos_and_advance(&container);
 				int cost = data.cost + get_upgrade_level(upgrade_i) * data.extra_cost_per_level;
-				s_len_str str = format_text("%.*s (%i)", expand_str(data.name), cost);
+				s_len_str str = zero;
 				s_button_data optional = zero;
-				if(!can_afford(soft_data->gold, cost)) {
+				if(is_upgrade_maxed(upgrade_i)) {
+					str = format_text("%.*s (MAX)", expand_str(data.name));
 					optional.disabled = true;
+				}
+				else {
+					str = format_text("%.*s (%i)", expand_str(data.name), cost);
+					if(!can_afford(soft_data->gold, cost)) {
+						optional.disabled = true;
+					}
 				}
 				if(do_button_ex(str, pos, size, false, optional)) {
 					add_gold(-cost);
@@ -2292,4 +2299,21 @@ func void spawn_enemy(e_enemy type)
 	s_v2 pos = gxy(0.5f) + v2_from_angle(randf_range(&game->rng, 0, c_tau)) * c_game_area.x * 0.6f;
 	teleport_entity(&enemy, pos);
 	entity_manager_add(&game->soft_data.entity_arr, e_entity_enemy, enemy);
+}
+
+func float get_dash_cooldown()
+{
+	float result = c_dash_cooldown;
+	result *= 1.0f - get_upgrade_boost(e_upgrade_dash_cooldown) / 100.0f;
+	return result;
+}
+
+func b8 is_upgrade_maxed(e_upgrade id)
+{
+	int max_upgrades = g_upgrade_data[id].max_upgrades;
+	b8 result = false;
+	if(max_upgrades > 0 && game->soft_data.upgrade_count[id] >= max_upgrades) {
+		result = true;
+	}
+	return result;
 }

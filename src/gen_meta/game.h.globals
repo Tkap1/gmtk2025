@@ -73,5 +73,12 @@ global constexpr s_upgrade_data g_upgrade_data[e_upgrade_count] = {
 		.extra_cost_per_level = 5,
 		.stat_boost = 0.1f,
 	},
+	{
+		.name = S("- Dash cooldown"),
+		.cost = 30,
+		.extra_cost_per_level = 20,
+		.stat_boost = 20,
+		.max_upgrades = 5,
+	},
 };
 

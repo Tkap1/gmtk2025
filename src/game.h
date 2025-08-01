@@ -280,6 +280,14 @@ data_enum(e_upgrade,
 		.stat_boost = 0.1f,
 	}
 
+	dash_cooldown {
+		.name = S("- Dash cooldown"),
+		.cost = 30,
+		.extra_cost_per_level = 20,
+		.stat_boost = 20,
+		.max_upgrades = 5,
+	}
+
 )
 
 struct s_upgrade_data
@@ -288,6 +296,7 @@ struct s_upgrade_data
 	int cost;
 	int extra_cost_per_level;
 	float stat_boost;
+	int max_upgrades;
 };
 
 

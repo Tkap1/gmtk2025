@@ -1002,7 +1002,7 @@ func b8 timer_can_activate(s_timer timer, float time_now, float duration, float 
 {
 	b8 result = false;
 	float time_passed_since_last_activation = time_now - (timer.used_timestamp + duration);
-	if(time_passed_since_last_activation >= cooldown) {
+	if(time_passed_since_last_activation >= cooldown || timer.used_timestamp <= 0) {
 		result = true;
 	}
 	return result;

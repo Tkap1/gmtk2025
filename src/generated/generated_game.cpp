@@ -68,3 +68,5 @@ func float get_enemy_knockback_resistance_taking_into_account_upgrades(e_enemy t
 func void add_gold(int gold);
 func void lose_lives(int how_many);
 func void spawn_enemy(e_enemy type);
+func float get_dash_cooldown();
+func b8 is_upgrade_maxed(e_upgrade id);
