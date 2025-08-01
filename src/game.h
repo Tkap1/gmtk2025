@@ -174,7 +174,7 @@ data_enum(e_enemy,
 
 	basic {
 		.spawn_weight = 1000,
-		.max_health = 10,
+		.health_multi = 1.0f,
 		.gold_reward = 1,
 		.knockback_resistance = 0.0f,
 		.size = {32, 32},
@@ -184,7 +184,7 @@ data_enum(e_enemy,
 	b {
 		.prev_enemy_required_kill_count = 5,
 		.spawn_weight = 2000,
-		.max_health = 20,
+		.health_multi = 2.0f,
 		.gold_reward = 2,
 		.knockback_resistance = 0.0f,
 		.size = {32, 32},
@@ -194,7 +194,7 @@ data_enum(e_enemy,
 	c {
 		.prev_enemy_required_kill_count = 5,
 		.spawn_weight = 3000,
-		.max_health = 30,
+		.health_multi = 3.0f,
 		.gold_reward = 3,
 		.knockback_resistance = 0.0f,
 		.size = {32, 32},
@@ -204,12 +204,23 @@ data_enum(e_enemy,
 	fast {
 		.prev_enemy_required_kill_count = 5,
 		.spawn_weight = 4000,
-		.max_health = 10,
+		.health_multi = 1.0f,
 		.gold_reward = 4,
 		.speed_multi = 2,
 		.knockback_resistance = -1.0f,
 		.size = {32, 32},
 		.atlas_index = {125, 28},
+	}
+
+	boss {
+		.prev_enemy_required_kill_count = 5,
+		.spawn_weight = 5000,
+		.health_multi = 10.0f,
+		.gold_reward = 10,
+		.speed_multi = 0.5f,
+		.knockback_resistance = 0.0f,
+		.size = {64, 64},
+		.atlas_index = {125, 29},
 	}
 )
 
@@ -217,7 +228,7 @@ struct s_enemy_type_data
 {
 	int prev_enemy_required_kill_count;
 	u32 spawn_weight;
-	int max_health;
+	float health_multi;
 	int gold_reward;
 	float speed_multi = 1;
 	float knockback_resistance;
@@ -324,11 +335,13 @@ struct s_entity
 
 struct s_frame_data
 {
+	b8 boss_defeated;
 	int lives_to_lose;
 };
 
 struct s_soft_game_data
 {
+	b8 boss_spawned;
 	s_frame_data frame_data;
 	int lives_lost;
 	int gold;

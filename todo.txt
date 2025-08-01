@@ -70,3 +70,4 @@ button hotkey
 option to turn off damage numbers
 
 add cooldown on miss attack
+rework how speed up for enemies offscreen works

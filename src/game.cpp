@@ -497,8 +497,6 @@ func void update()
 	s_soft_game_data* soft_data = &game->soft_data;
 	auto entity_arr = &soft_data->entity_arr;
 
-	memset(&soft_data->frame_data, 0, sizeof(soft_data->frame_data));
-
 	float delta = (float)c_update_delay;
 
 	if(game->do_hard_reset) {
@@ -567,8 +565,10 @@ func void update()
 	if(do_game) {
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		spawn start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		{
-			soft_data->spawn_timer += delta;
-			while(soft_data->spawn_timer >= c_spawn_delay) {
+			if(!soft_data->boss_spawned) {
+				soft_data->spawn_timer += delta;
+			}
+			while(soft_data->spawn_timer >= c_spawn_delay && !soft_data->boss_spawned) {
 				soft_data->spawn_timer -= c_spawn_delay;
 
 				s_list<e_enemy, e_enemy_count> possible_spawn_arr;
@@ -594,14 +594,11 @@ func void update()
 				int chosen_index = pick_rand_from_weight_arr(&weight_arr, &game->rng);
 				e_enemy chosen_enemy_type = possible_spawn_arr[chosen_index];
 
-				{
-					s_entity enemy = zero;
-					enemy.enemy_type = chosen_enemy_type;
-					enemy.spawn_timestamp = game->update_time;
-					s_v2 pos = gxy(0.5f) + v2_from_angle(randf_range(&game->rng, 0, c_tau)) * c_game_area.x * 0.6f;
-					teleport_entity(&enemy, pos);
-					entity_manager_add(entity_arr, e_entity_enemy, enemy);
+				if(chosen_enemy_type == e_enemy_boss) {
+					soft_data->boss_spawned = true;
 				}
+
+				spawn_enemy(chosen_enemy_type);
 			}
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		spawn end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -706,6 +703,9 @@ func void update()
 						player->attacked_enemy_pos = enemy->pos;
 						b8 dead = damage_enemy(enemy, get_player_damage());
 						if(dead) {
+							if(enemy->enemy_type == e_enemy_boss) {
+								soft_data->frame_data.boss_defeated = true;
+							}
 							int gold_reward = g_enemy_type_data[enemy->enemy_type].gold_reward;
 							{
 								s_entity fct = zero;
@@ -744,7 +744,22 @@ func void update()
 			add_state(&game->hard_data.state1, e_game_state1_defeat);
 		}
 	}
+	if(soft_data->frame_data.boss_defeated) {
+		if(game->leaderboard_nice_name.count <= 0 && c_on_web) {
+			add_temporary_state_transition(&game->state0, e_game_state0_input_name, game->render_time, c_transition_time);
+		}
+		else if(!soft_data->tried_to_submit_score) {
+			soft_data->tried_to_submit_score = true;
+			add_state_transition(&game->state0, e_game_state0_win_leaderboard, game->render_time, c_transition_time);
+			game->update_count_at_win_time = hard_data->update_count;
+
+			#if defined(__EMSCRIPTEN__)
+			submit_leaderboard_score(hard_data->update_count, c_leaderboard_id);
+			#endif
+		}
+	}
 	game->input.handled = true;
+	memset(&soft_data->frame_data, 0, sizeof(soft_data->frame_data));
 }
 
 func void render(float interp_dt, float delta)
@@ -1321,6 +1336,15 @@ func void render(float interp_dt, float delta)
 
 			if(do_button_ex(S("+1000 gold"), container_get_pos_and_advance(&container), size, false, zero)) {
 				add_gold(1000);
+			}
+			if(do_button_ex(S("Spawn boss"), container_get_pos_and_advance(&container), size, false, zero)) {
+				spawn_enemy(e_enemy_boss);
+			}
+			if(do_button_ex(S("Win"), container_get_pos_and_advance(&container), size, false, zero)) {
+				soft_data->frame_data.boss_defeated = true;
+			}
+			if(do_button_ex(S("Lose"), container_get_pos_and_advance(&container), size, false, zero)) {
+				soft_data->frame_data.lives_to_lose = 99999;
 			}
 
 			{
@@ -2071,8 +2095,8 @@ func float get_player_speed()
 
 func float get_enemy_max_health(e_enemy type)
 {
-	float result = 0;
-	result += g_enemy_type_data[type].max_health;
+	float result = c_enemy_health;
+	result *= g_enemy_type_data[type].health_multi;
 	return result;
 }
 
@@ -2253,4 +2277,14 @@ func void add_gold(int gold)
 func void lose_lives(int how_many)
 {
 	game->soft_data.frame_data.lives_to_lose += how_many;
+}
+
+func void spawn_enemy(e_enemy type)
+{
+	s_entity enemy = zero;
+	enemy.enemy_type = type;
+	enemy.spawn_timestamp = game->update_time;
+	s_v2 pos = gxy(0.5f) + v2_from_angle(randf_range(&game->rng, 0, c_tau)) * c_game_area.x * 0.6f;
+	teleport_entity(&enemy, pos);
+	entity_manager_add(&game->soft_data.entity_arr, e_entity_enemy, enemy);
 }

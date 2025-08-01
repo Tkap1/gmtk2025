@@ -67,3 +67,4 @@ func s_v2 get_enemy_size(e_enemy type);
 func float get_enemy_knockback_resistance_taking_into_account_upgrades(e_enemy type);
 func void add_gold(int gold);
 func void lose_lives(int how_many);
+func void spawn_enemy(e_enemy type);

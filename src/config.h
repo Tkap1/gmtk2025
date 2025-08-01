@@ -41,6 +41,7 @@ global constexpr float c_spawn_delay = 2;
 global constexpr float c_dash_duration = 0.25f;
 global constexpr float c_dash_cooldown = 3;
 global constexpr int c_max_lives = 10;
+global constexpr float c_enemy_health = 10;
 
 global constexpr float c_game_speed_arr[] = {
 	0.0f, 0.01f, 0.1f, 0.25f, 0.5f,
@@ -60,4 +61,4 @@ global constexpr float c_pre_victory_duration = 2.0f;
 
 global constexpr int c_leaderboard_id = 31492;
 
-global constexpr s_len_str c_game_name = S("Loopscape");
+global constexpr s_len_str c_game_name = S("IDK");
