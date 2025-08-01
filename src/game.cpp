@@ -99,7 +99,7 @@ m_dll_export void init(s_platform_data* platform_data)
 	game->speed_index = 5;
 	game->rng = make_rng(1234);
 	game->reload_shaders = true;
-	game->speed = 1;
+	game->speed = 0;
 
 	SDL_StartTextInput();
 
@@ -672,7 +672,7 @@ func void update()
 			float dash_speed = 1;
 			{
 				s_time_data time_data = get_time_data(game->update_time, soft_data->did_dash_timestamp, c_dash_duration);
-				if(time_data.percent >= 0.0f && time_data.percent <= 1.0f) {
+				if(soft_data->did_dash_timestamp > 0 && time_data.percent >= 0.0f && time_data.percent <= 1.0f) {
 					dash_speed = time_data.inv_percent * 10;
 				}
 			}
@@ -807,8 +807,6 @@ func void render(float interp_dt, float delta)
 	s_v3 sun_dir = v3_normalized(v3(1, 1, -1));
 	s_m4 ortho = make_orthographic(0, c_world_size.x, c_world_size.y, 0, -1, 1);
 	s_m4 perspective = make_perspective(60.0f, c_world_size.x / c_world_size.y, 0.01f, 100.0f);
-
-	game->speed = 1;
 
 	bind_framebuffer(0);
 	clear_framebuffer_depth(0);
