@@ -409,7 +409,7 @@ func void input()
 						soft_data->tried_to_attack_timestamp = game->update_time;
 					}
 					else if(key == SDLK_g && event.key.repeat == 0) {
-						soft_data->want_to_dash_timestamp = game->update_time;
+						soft_data->dash_timer.want_to_use_timestamp = game->update_time;
 					}
 					else if(key == SDLK_ESCAPE && event.key.repeat == 0) {
 						if(state0 == e_game_state0_play && state1 == e_game_state1_default) {
@@ -665,18 +665,16 @@ func void update()
 			player->pos.x = cosf(player->timer) * c_circle_radius * 0.5f;
 			player->pos.y = sinf(player->timer) * c_circle_radius * 0.5f;
 			player->pos += center;
-			float time_since_dash_ended = game->update_time - (soft_data->did_dash_timestamp + c_dash_duration);
-			b8 is_dash_on_cooldown = time_since_dash_ended < c_dash_cooldown && soft_data->did_dash_timestamp > 0;
-			if(check_action(game->update_time, soft_data->want_to_dash_timestamp, 0.1f) && !is_dash_on_cooldown) {
+			if(timer_can_and_want_activate(soft_data->dash_timer, game->update_time, c_dash_duration, c_dash_cooldown, 0.1f)) {
 				play_sound(e_sound_dash, {.volume = 0.1f});
-				soft_data->did_dash_timestamp = game->update_time;
-				soft_data->want_to_dash_timestamp = 0;
+				timer_activate(&soft_data->dash_timer, game->update_time);
 			}
 
 			float dash_speed = 1;
 			{
-				s_time_data time_data = get_time_data(game->update_time, soft_data->did_dash_timestamp, c_dash_duration);
-				if(soft_data->did_dash_timestamp > 0 && time_data.percent >= 0.0f && time_data.percent <= 1.0f) {
+				b8 active = false;
+				s_time_data time_data = timer_get_time_data(soft_data->dash_timer, game->update_time, c_dash_duration, &active);
+				if(active) {
 					dash_speed = time_data.inv_percent * 10;
 				}
 			}

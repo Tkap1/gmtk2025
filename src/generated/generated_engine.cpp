@@ -35,3 +35,9 @@ template <typename t, int n>
 func void entity_manager_reset(s_entity_manager<t, n>* manager, e_entity type);
 func s_v4 get_particle_color(s_rng* rng, float percent, s_list<s_particle_color, 4> color_arr);
 func void play_sound(e_sound sound_id, s_play_sound_data data);
+func void timer_activate(s_timer* timer, float time_now);
+func b8 timer_can_activate(s_timer timer, float time_now, float duration, float cooldown);
+func b8 timer_want_activate(s_timer timer, float time_now, float grace_period);
+func b8 timer_can_and_want_activate(s_timer timer, float time_now, float duration, float cooldown, float grace_period);
+func b8 timer_is_active(s_timer timer, float time_now, float duration);
+func s_time_data timer_get_time_data(s_timer timer, float time_now, float duration, b8* active);

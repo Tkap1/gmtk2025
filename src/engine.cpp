@@ -991,3 +991,53 @@ func void play_sound(e_sound sound_id, s_play_sound_data data)
 		g_platform_data->play_sound(sound_id, data);
 	}
 }
+
+func void timer_activate(s_timer* timer, float time_now)
+{
+	timer->used_timestamp = time_now;
+	timer->want_to_use_timestamp = 0;
+}
+
+func b8 timer_can_activate(s_timer timer, float time_now, float duration, float cooldown)
+{
+	b8 result = false;
+	float time_passed_since_last_activation = time_now - (timer.used_timestamp + duration);
+	if(time_passed_since_last_activation >= cooldown) {
+		result = true;
+	}
+	return result;
+}
+
+func b8 timer_want_activate(s_timer timer, float time_now, float grace_period)
+{
+	b8 result = false;
+	float passed = time_now - timer.want_to_use_timestamp;
+	if(passed <= grace_period && timer.want_to_use_timestamp > 0) {
+		result = true;
+	}
+	return result;
+}
+
+func b8 timer_can_and_want_activate(s_timer timer, float time_now, float duration, float cooldown, float grace_period)
+{
+	b8 can = timer_can_activate(timer, time_now, duration, cooldown);
+	b8 want = timer_want_activate(timer, time_now, grace_period);
+	b8 result = can && want;
+	return result;
+}
+
+func b8 timer_is_active(s_timer timer, float time_now, float duration)
+{
+	float passed = time_now - timer.used_timestamp;
+	b8 result = passed <= duration && timer.used_timestamp > 0;
+	return result;
+}
+
+func s_time_data timer_get_time_data(s_timer timer, float time_now, float duration, b8* active)
+{
+	if(active) {
+		*active = timer_is_active(timer, time_now, duration);
+	}
+	s_time_data time_data = get_time_data(time_now, timer.used_timestamp, duration);
+	return time_data;
+}

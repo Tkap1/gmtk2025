@@ -254,6 +254,12 @@ struct s_shader
 	u32 id;
 };
 
+struct s_timer
+{
+	float want_to_use_timestamp;
+	float used_timestamp;
+};
+
 enum e_emitter_spawn_type
 {
 	e_emitter_spawn_type_point,
