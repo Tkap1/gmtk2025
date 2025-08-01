@@ -421,6 +421,7 @@ struct s_game
 	#if defined(m_debug)
 	b8 cheat_menu_enabled;
 	#endif
+	b8 hover_over_upgrade_pauses_game;
 	b8 reload_shaders;
 	b8 any_key_pressed;
 	s_linear_arena arena;

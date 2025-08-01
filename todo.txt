@@ -69,3 +69,6 @@ enemies with different movement pattern
 power up drops?????
 
 make sure you dont get cucked by your own auto attack
+
+OPTIONS:
+	hover over upgrade pause

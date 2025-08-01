@@ -100,6 +100,7 @@ m_dll_export void init(s_platform_data* platform_data)
 	game->rng = make_rng(1234);
 	game->reload_shaders = true;
 	game->speed = 0;
+	game->hover_over_upgrade_pauses_game = true;
 
 	SDL_StartTextInput();
 
@@ -1331,6 +1332,13 @@ func void render(float interp_dt, float delta)
 		}
 
 		if(do_game_ui) {
+
+			if(game->hover_over_upgrade_pauses_game && g_mouse.x > c_game_area.x) {
+				game->speed = 0;
+			}
+			else {
+				game->speed = 1;
+			}
 
 			s_rect rect = {
 				c_game_area.x, 176.0f, c_world_size.x - c_game_area.x, c_world_size.y
