@@ -618,9 +618,11 @@ func void update()
 			}
 			else {
 				float speed = 25 * g_enemy_type_data[enemy->enemy_type].speed_multi;
-				s_time_data time_data = get_time_data(game->update_time, enemy->spawn_timestamp, 5.0f);
-				if(time_data.percent <= 1) {
-					speed += time_data.inv_percent * 100;
+				{
+					float dist = v2_distance(enemy->pos, gxy(0.5f));
+					float limit = c_circle_radius * 1.3f;
+					float t = smoothstep(limit, limit + 100, dist);
+					speed += t * 300;
 				}
 				enemy->pos += dir * speed * delta;
 				float dist = v2_distance(enemy->pos, gxy(0.5f));

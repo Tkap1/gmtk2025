@@ -68,6 +68,8 @@ enemy scaling
 button tooltip
 button hotkey
 option to turn off damage numbers
+buy x10 and x100
 
 add cooldown on miss attack
-rework how speed up for enemies offscreen works
+PARTICLESSSS
+health bars?
