@@ -382,9 +382,9 @@ struct s_soft_game_data
 	float spawn_timer;
 	float life_change_timestamp;
 	float gold_change_timestamp;
-	float tried_to_attack_timestamp;
 	s_timer dash_timer;
 	s_timer auto_attack_timer;
+	s_timer attack_timer;
 	b8 tried_to_submit_score;
 	int update_count;
 	float shake_intensity;

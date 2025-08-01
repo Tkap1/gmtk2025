@@ -407,7 +407,7 @@ func void input()
 					else if(key == SDLK_SPACE && event.key.repeat == 0) {
 					}
 					else if(key == SDLK_f && event.key.repeat == 0) {
-						soft_data->tried_to_attack_timestamp = game->update_time;
+						soft_data->attack_timer.want_to_use_timestamp = game->update_time;
 					}
 					else if(key == SDLK_g && event.key.repeat == 0) {
 						soft_data->dash_timer.want_to_use_timestamp = game->update_time;
@@ -509,6 +509,8 @@ func void update()
 		for_enum(type_i, e_entity) {
 			entity_manager_reset(entity_arr, type_i);
 		}
+
+		soft_data->spawn_timer += c_spawn_delay;
 
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		create player start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		{
@@ -685,8 +687,10 @@ func void update()
 			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		try to hit start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 			int num_enemies_hit = 0;
 			int num_possible_hits = get_hits_per_attack();
+			b8 was_there_an_enemy_in_range = false;
 			float attack_range = get_player_attack_range();
 			soft_data->auto_attack_timer.want_to_use_timestamp = game->update_time;
+			b8 should_attack = timer_can_and_want_activate(soft_data->attack_timer, game->update_time, 0.0f, c_attack_cooldown, 0.1f);
 			b8 can_auto_attack = get_upgrade_level(e_upgrade_auto_attack) > 0 &&
 				timer_can_and_want_activate(soft_data->auto_attack_timer, game->update_time, 0.0f, get_auto_attack_cooldown(), 0.0f);
 			for(int i = c_first_index[e_entity_enemy]; i < c_last_index_plus_one[e_entity_enemy]; i += 1) {
@@ -698,7 +702,8 @@ func void update()
 				float dist = v2_distance(enemy->pos, player->pos);
 				if(dist <= attack_range + enemy_size.y * 0.5f) {
 					enemy->highlight = maybe(make_color(1, 0.6f, 0.6f));
-					if(check_action(game->update_time, soft_data->tried_to_attack_timestamp, 0.1f) || can_auto_attack) {
+					if(should_attack || can_auto_attack) {
+						was_there_an_enemy_in_range = true;
 						float knockback_multi = 0;
 						float damage_multi = 0;
 						if(can_auto_attack) {
@@ -754,9 +759,14 @@ func void update()
 					}
 				}
 			}
+			// @Note(tkap, 01/08/2025): We pressed the attack key but there were no enemies in range
+			if(should_attack && !was_there_an_enemy_in_range) {
+				timer_activate(&soft_data->attack_timer, game->update_time);
+				play_sound(e_sound_miss_attack, zero);
+			}
 			if(num_enemies_hit > 0) {
 				play_sound(e_sound_key, zero);
-				soft_data->tried_to_attack_timestamp = 0;
+				soft_data->attack_timer.want_to_use_timestamp = 0;
 				player->did_attack_enemy_timestamp = game->update_time;
 			}
 			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		try to hit end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

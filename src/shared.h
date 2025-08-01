@@ -35,27 +35,29 @@ enum e_sound
 	e_sound_super_speed,
 	e_sound_dash,
 	e_sound_teleport,
+	e_sound_miss_attack,
 	e_sound_count,
 };
 
 struct s_sound_data
 {
 	char* path;
-	u8 volume;
+	float volume;
 };
 
 global constexpr s_sound_data c_sound_data_arr[e_sound_count] = {
-	{"assets/click.wav", 128},
-	{"assets/key.wav", 128},
-	{"assets/break.wav", 128},
-	{"assets/jump1.wav", 128},
-	{"assets/jump2.wav", 128},
-	{"assets/clap.wav", 255},
-	{"assets/land.wav", 255},
-	{"assets/restart.wav", 128},
-	{"assets/super_speed.wav", 255},
-	{"assets/dash.wav", 255},
-	{"assets/teleport.wav", 255},
+	{"assets/click.wav", 1.0f},
+	{"assets/key.wav", 1.0f},
+	{"assets/break.wav", 1.0f},
+	{"assets/jump1.wav", 1.0f},
+	{"assets/jump2.wav", 1.0f},
+	{"assets/clap.wav", 1.0f},
+	{"assets/land.wav", 1.0f},
+	{"assets/restart.wav", 1.0f},
+	{"assets/super_speed.wav", 1.0f},
+	{"assets/dash.wav", 1.0f},
+	{"assets/teleport.wav", 1.0f},
+	{"assets/miss_attack.wav", 1.0f},
 };
 
 struct s_platform_data

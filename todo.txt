@@ -1,47 +1,8 @@
 
 
-
-THEME: LOOP
-WE DONT WANT JUMPING OR DODGING SHIT
-
-IDEA 1
-	POP BLOONS INCREMENTAL GAME
-	dart loops from left to right of screen with y = mouse
-	bloons drop from top of screen (if they reach the bottom the loop around)
-	dart hit bloon = pop it = gain gold = buy shit = get better at popping
-	as time goes on? stronger / more bloons drop from sky
-
-IDEA 2
-	you launch penguin trying to reach the sky. when you fail you'll land on water and go back to starting point
-	there are coins? in the air that give you gold
-	buy upgrades to launch higher
-	???
-	how to fun?
-
-IDEA 3
-	PUZZLE GAME? OH GOD
-
-
 IDEA 4
-	you are going around in a circle/loop (no control of this)
-	enemies are trying to enter the circle
-	when they are close, you can press KEY to punch them or whatever (it kills them, maybe some of them have life and get knocked back instead)
-	your spin faster and faster (so it's harder)
 	maybe enemies get faster (so it's harder)
-	are there upgrades? surely
-
-	enemies entering the circle takes a life
-	you have limited lives? (people suck at games be careful)
-
-	after certain amount of time boss shows up? kill it to win?
-	the game should not only be time based, but also speed up if you kill enemies fast enough? that way the game can be beat faster and leaderboards are cool
-
-	attacking has a cooldown, but it is reset if you hit something (to prevent spamming)
-
-	key to go faster? riskier but possibly save time?
-
 	special enemy that we want to let in the circle because it doesn't take a life. it instead gives bonus gold or something
-
 	do we mess with the circle/loop size? idk
 
 
@@ -68,7 +29,13 @@ enemies with different movement pattern
 
 power up drops?????
 
+more keys for the different actions
+
 make sure you dont get cucked by your own auto attack
 
 OPTIONS:
 	hover over upgrade pause
+
+fix volumes
+fix speed
+	slower enemies, faster speed until they get close
