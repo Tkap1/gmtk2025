@@ -80,7 +80,6 @@ global constexpr s_upgrade_data g_upgrade_data[e_upgrade_count] = {
 		.name = S("+ Speed"),
 		.cost = 20,
 		.extra_cost_per_level = 5,
-
 		.stat_boost = 20,
 	},
 	{
@@ -93,7 +92,7 @@ global constexpr s_upgrade_data g_upgrade_data[e_upgrade_count] = {
 		.name = S("+ Knockback"),
 		.cost = 30,
 		.extra_cost_per_level = 5,
-		.stat_boost = 0.1f,
+		.stat_boost = 20,
 	},
 	{
 		.name = S("- Dash cooldown"),
@@ -120,8 +119,7 @@ global constexpr s_upgrade_data g_upgrade_data[e_upgrade_count] = {
 		.name = S("Lightning bolt"),
 		.cost = 50,
 		.extra_cost_per_level = 100,
-		.stat_boost = 15,
-		.max_upgrades = 6,
+		.stat_boost = 20,
 	},
 };
 

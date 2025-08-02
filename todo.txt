@@ -10,24 +10,15 @@ main menu sounds too loud. are we playing them many tiems??
 	or is our volume on load not being used? probably not
 
 UPGRADES?
-	tower kind of thing that shoots enemies?
+	very long range tower kind of thing that shoots enemies?
 
-give enemies a speed boost at the beginning so we dont have to wait too long for the action to start
 should dash be upgrade?
-killing an enemy should speed up enemy spawns? so we can go faster
-enemy scaling
 
-button tooltip
 button hotkey
-option to turn off damage numbers
-buy x10 and x100
 
-add cooldown on miss attack
 PARTICLESSSS
 health bars?
 enemies with different movement pattern
-
-power up drops?????
 
 more keys for the different actions
 
@@ -37,5 +28,13 @@ higher enemy spawn rate
 
 OPTIONS:
 	hover over upgrade pause
+	turn off damage numbers
+	turn off gold numbers
+	show timer
+
+UNLIKELY:
+	power up drops?????
 
 fix volumes
+better targeting
+enemy flash on hit

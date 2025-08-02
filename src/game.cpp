@@ -744,7 +744,7 @@ func void update()
 							knockback_multi = 1;
 							player->attacked_enemy_pos = enemy->pos;
 						}
-						float knockback_to_add = 400 * knockback_multi * get_enemy_knockback_resistance_taking_into_account_upgrades(enemy->enemy_type);
+						float knockback_to_add = get_player_knockback() * knockback_multi * (1.0f - g_enemy_type_data[enemy->enemy_type].knockback_resistance);
 						if(enemy->knockback.valid) {
 							enemy->knockback.value += knockback_to_add;
 						}
@@ -1397,8 +1397,8 @@ func void render(float interp_dt, float delta)
 			s_rect rect = {
 				c_game_area.x, 176.0f, c_world_size.x - c_game_area.x, c_world_size.y
 			};
-			s_v2 size = v2(320, 48);
-			s_container container = make_down_center_x_container(rect, size, 10);
+			s_v2 button_size = v2(320, 48);
+			s_container container = make_down_center_x_container(rect, button_size, 10);
 
 			{
 				draw_rect_topleft(v2(rect.pos.x, 0.0f), v2(rect.size.x, c_world_size.y), make_color(0.05f));
@@ -1450,7 +1450,8 @@ func void render(float interp_dt, float delta)
 				else {
 					str = format_text("%.*s (%i)", expand_str(data.name), cost_all);
 				}
-				if(do_button_ex(str, pos, size, false, optional)) {
+				optional.tooltip = get_upgrade_description(upgrade_i);
+				if(do_button_ex(str, pos, button_size, false, optional)) {
 					add_gold(-gold_to_spend);
 					apply_upgrade(upgrade_i, how_many_can_afford);
 				}
@@ -1490,8 +1491,30 @@ func void render(float interp_dt, float delta)
 				data.depth_mode = e_depth_mode_no_read_no_write;
 				render_flush(data, true);
 			}
+
+			if(game->tooltip.count > 0) {
+				float font_size = 32;
+				s_v2 size = get_text_size(game->tooltip, &game->font, font_size);
+				s_v2 rect_pos = zero;
+				rect_pos -= v2(8);
+				size += v2(16);
+				rect_pos = topleft_to_bottomleft_mouse(rect_pos, size, g_mouse);
+				rect_pos = prevent_offscreen(rect_pos, size);
+				s_v2 text_pos = rect_pos + v2(8);
+				draw_rect_topleft(rect_pos, size, make_color(0.0f, 0.95f));
+				draw_text(game->tooltip, text_pos, font_size, make_color(1), false, &game->font);
+				{
+					s_render_flush_data data = make_render_flush_data(zero, zero);
+					data.projection = ortho;
+					data.blend_mode = e_blend_mode_normal;
+					data.depth_mode = e_depth_mode_no_read_no_write;
+					render_flush(data, true);
+				}
+			}
+			game->tooltip = zero;
 		}
 
+		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		cheat menu start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		#if defined(m_debug)
 		if(game->cheat_menu_enabled) {
 			s_rect rect = {
@@ -1525,6 +1548,7 @@ func void render(float interp_dt, float delta)
 			}
 		}
 		#endif
+		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		cheat menu end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 	}
 
 	if(do_defeat) {
@@ -1878,9 +1902,13 @@ func b8 do_button_ex(s_len_str text, s_v2 pos, s_v2 size, b8 centered, s_button_
 		pos += size * 0.5f;
 	}
 
+	b8 do_tooltip = false;
 	b8 hovered = mouse_vs_rect_center(g_mouse, pos, size);
 	s_v4 color = make_color(0.25f);
 	s_v4 text_color = make_color(1);
+	if(hovered) {
+		do_tooltip = true;
+	}
 	if(optional.disabled) {
 		hovered = false;
 		color = make_color(0.15f);
@@ -1907,6 +1935,10 @@ func b8 do_button_ex(s_len_str text, s_v2 pos, s_v2 size, b8 centered, s_button_
 	}
 
 	draw_text(text, pos, 32.0f, text_color, true, &game->font);
+
+	if(do_tooltip && optional.tooltip.count > 0) {
+		game->tooltip = optional.tooltip;
+	}
 
 	return result;
 }
@@ -2414,7 +2446,11 @@ func int get_upgrade_level(e_upgrade id)
 
 func float get_upgrade_boost(e_upgrade id)
 {
-	float result = get_upgrade_level(id) * g_upgrade_data[id].stat_boost;
+	int level = get_upgrade_level(id);
+	if(level > 0 && id == e_upgrade_auto_attack) {
+		level -= 1;
+	}
+	float result = level * g_upgrade_data[id].stat_boost;
 	return result;
 }
 
@@ -2431,9 +2467,10 @@ func s_v2 get_enemy_size(e_enemy type)
 	return result;
 }
 
-func float get_enemy_knockback_resistance_taking_into_account_upgrades(e_enemy type)
+func float get_player_knockback()
 {
-	float result = 1.0f - g_enemy_type_data[type].knockback_resistance + get_upgrade_boost(e_upgrade_knockback);
+	float result = c_knockback;
+	result *= 1.0f + get_upgrade_boost(e_upgrade_knockback) / 100.0f;
 	return result;
 }
 
@@ -2491,7 +2528,88 @@ func int get_hits_per_attack()
 
 func float get_auto_attack_cooldown()
 {
-	float result = c_auto_attack_cooldown;
-	result *= 1.0f - get_upgrade_boost(e_upgrade_auto_attack) / 100.0f;
+	float frequency = 1.0f / c_auto_attack_cooldown;
+	frequency *= 1.0f + get_upgrade_boost(e_upgrade_auto_attack) / 100.0f;
+	float result = 1.0f / frequency;
+	return result;
+}
+
+func float get_auto_attack_frequency()
+{
+	float cd = get_auto_attack_cooldown();
+	float result = 1.0f / cd;
+	return result;
+}
+
+func s_v2 topleft_to_bottomleft_mouse(s_v2 pos, s_v2 size, s_v2 mouse)
+{
+	s_v2 result = pos;
+	result += mouse;
+	result.x -= pos.x;
+	result.y -= pos.y;
+	result.y -= size.y;
+	return result;
+}
+
+func s_v2 prevent_offscreen(s_v2 pos, s_v2 size)
+{
+	s_v2 result = pos;
+	float* ptr[4] = {
+		&result.x, &result.x, &result.y, &result.y
+	};
+	// left, right, up, down
+	float diff[4] = {
+		pos.x - 0,
+		c_world_size.x - (pos.x + size.x),
+		pos.y - 0,
+		c_world_size.y - (pos.y + size.y),
+	};
+	for(int i = 0; i < 4; i += 1) {
+		if(diff[i] < 0) {
+			float x = i % 2 == 0 ? -1.0f : 1.0f;
+			*ptr[i] += diff[i] * x;
+		}
+	}
+	return result;
+}
+
+func s_len_str get_upgrade_description(e_upgrade id)
+{
+	int level = game->soft_data.upgrade_count[id];
+	s_upgrade_data data = g_upgrade_data[id];
+
+	s_len_str result = zero;
+	switch(id) {
+		xcase e_upgrade_damage: {
+			result = format_text("+%.0f%% damage\n\nCurrent: %.0f", data.stat_boost, get_player_damage());
+		};
+		xcase e_upgrade_speed: {
+			result = format_text("+%.0f%% movement speed\n\nCurrent: %.2f", data.stat_boost, get_player_speed());
+		};
+		xcase e_upgrade_range: {
+			result = format_text("+%.0f%% attack range\n\nCurrent: %.0f", data.stat_boost, get_player_attack_range());
+		};
+		xcase e_upgrade_knockback: {
+			result = format_text("+%.0f%% knockback\n\nCurrent: %.0f", data.stat_boost, get_player_knockback());
+		};
+		xcase e_upgrade_dash_cooldown: {
+			result = format_text("-%.0f%% dash cooldown\n\nCurrent: %.2f", data.stat_boost, get_dash_cooldown());
+		};
+		xcase e_upgrade_max_lives: {
+			result = format_text("+%.0f max lives\n\nCurrent: %i", data.stat_boost, get_max_lives());
+		};
+		xcase e_upgrade_more_hits_per_attack: {
+			result = format_text("+%.0f enemy hit per attack\n\nCurrent: %i", data.stat_boost, get_hits_per_attack());
+		};
+		xcase e_upgrade_auto_attack: {
+			if(level == 0) {
+				result = format_text("A lightning bolt strikes an enemy\nin range every %.2f seconds", get_auto_attack_cooldown());
+			}
+			else {
+				result = format_text("Lightning bolts strike with %.0f%% increased frequency\n\nCurrent: %.2f hits per second", data.stat_boost, get_auto_attack_frequency());
+			}
+		};
+		break; invalid_default_case;
+	}
 	return result;
 }

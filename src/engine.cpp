@@ -614,7 +614,12 @@ func s_len_str format_text(const char* text, ...)
 	index += 1;
 	if(index >= max_format_text_buffers) { index = 0; }
 
-	return S(current_buffer);
+	int len = (int)strlen(current_buffer);
+	s_len_str result = zero;
+	result.count = len;
+	result.str = (char*)circular_arena_alloc(&game->circular_arena, len);
+	memcpy(result.str, current_buffer, len);
+	return result;
 }
 
 
@@ -922,6 +927,9 @@ template <typename t, int n>
 func int entity_manager_add(s_entity_manager<t, n>* manager, e_entity type, t new_entity)
 {
 	assert(manager->count[type] < n);
+	#if !defined(m_debug)
+	if(manager->count[type] >= n) { return -10000000; }
+	#endif
 	int index = manager->free_list[type][manager->count[type]];
 	assert(!manager->active[index]);
 	manager->data[index] = new_entity;

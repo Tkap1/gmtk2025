@@ -276,6 +276,7 @@ struct s_container
 struct s_button_data
 {
 	b8 disabled;
+	s_len_str tooltip;
 };
 
 data_enum(e_upgrade,
@@ -293,7 +294,6 @@ data_enum(e_upgrade,
 		.name = S("+ Speed"),
 		.cost = 20,
 		.extra_cost_per_level = 5,
-
 		.stat_boost = 20,
 	}
 
@@ -308,7 +308,7 @@ data_enum(e_upgrade,
 		.name = S("+ Knockback"),
 		.cost = 30,
 		.extra_cost_per_level = 5,
-		.stat_boost = 0.1f,
+		.stat_boost = 20,
 	}
 
 	dash_cooldown {
@@ -339,8 +339,7 @@ data_enum(e_upgrade,
 		.name = S("Lightning bolt"),
 		.cost = 50,
 		.extra_cost_per_level = 100,
-		.stat_boost = 15,
-		.max_upgrades = 6,
+		.stat_boost = 20,
 	}
 
 )
@@ -469,6 +468,8 @@ struct s_game
 	s_rng rng;
 	float speed;
 	s_input_name_state input_name_state;
+
+	s_len_str tooltip;
 
 	s_input input;
 

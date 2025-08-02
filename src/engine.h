@@ -338,10 +338,10 @@ data_enum(e_entity,
 		.max_count = 1024,
 	}
 	fct {
-		.max_count = 128,
+		.max_count = 256,
 	}
 	visual_effect {
-		.max_count = 128,
+		.max_count = 256,
 	}
 )
 
