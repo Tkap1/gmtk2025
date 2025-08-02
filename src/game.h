@@ -284,35 +284,35 @@ data_enum(e_upgrade,
 	g_upgrade_data
 
 	damage {
-		.name = S("+ Damage"),
+		.name = S("Damage"),
 		.cost = 10,
 		.extra_cost_per_level = 5,
 		.stat_boost = 50,
 	}
 
 	speed {
-		.name = S("+ Speed"),
+		.name = S("Speed"),
 		.cost = 20,
 		.extra_cost_per_level = 5,
 		.stat_boost = 20,
 	}
 
 	range {
-		.name = S("+ Attack range"),
+		.name = S("Attack range"),
 		.cost = 30,
 		.extra_cost_per_level = 5,
 		.stat_boost = 20,
 	}
 
 	knockback {
-		.name = S("+ Knockback"),
+		.name = S("Knockback"),
 		.cost = 30,
 		.extra_cost_per_level = 5,
 		.stat_boost = 20,
 	}
 
 	dash_cooldown {
-		.name = S("- Dash cooldown"),
+		.name = S("Dash cooldown"),
 		.cost = 30,
 		.extra_cost_per_level = 20,
 		.stat_boost = 20,
@@ -320,7 +320,7 @@ data_enum(e_upgrade,
 	}
 
 	max_lives {
-		.name = S("+ Lives"),
+		.name = S("Lives"),
 		.cost = 30,
 		.extra_cost_per_level = 20,
 		.stat_boost = 5,

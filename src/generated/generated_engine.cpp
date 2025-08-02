@@ -44,3 +44,4 @@ func s_time_data timer_get_time_data(s_timer timer, float time_now, float durati
 func s_time_data timer_get_cooldown_time_data(s_timer timer, float time_now, float cooldown, b8* is_on_cooldown);
 func float get_rand_sound_speed(float x, s_rng* rng);
 func s_audio_fade make_simple_fade(float p0, float p1);
+func char scancode_to_char(SDL_Scancode scancode);

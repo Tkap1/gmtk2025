@@ -385,7 +385,7 @@ func void input()
 			case SDL_KEYDOWN:
 			case SDL_KEYUP: {
 				int key = event.key.keysym.sym;
-				int scancode = event.key.keysym.scancode;
+				SDL_Scancode scancode = event.key.keysym.scancode;
 				if(key == SDLK_LSHIFT) {
 					key = c_left_shift;
 				}
@@ -2582,9 +2582,11 @@ func s_len_str get_upgrade_description(e_upgrade id)
 
 	s_str_builder<512> builder;
 	builder.count = 0;
+	char* key_color = "$$26A5D9";
 	switch(id) {
 		xcase e_upgrade_damage: {
-			builder_add(&builder, "+%.0f%% damage\n\n", data.stat_boost);
+			builder_add(&builder, "+%.0f%% damage\n", data.stat_boost);
+			builder_add(&builder, "Press %sleft click$. or %s%c$. to attack\n\n", key_color, key_color, to_upper_case(scancode_to_char(SDL_SCANCODE_S)));
 			builder_add(&builder, "Current: %.0f", get_player_damage());
 		};
 		xcase e_upgrade_speed: {
@@ -2600,7 +2602,8 @@ func s_len_str get_upgrade_description(e_upgrade id)
 			builder_add(&builder, "Current: %.0f", get_player_knockback());
 		};
 		xcase e_upgrade_dash_cooldown: {
-			builder_add(&builder, "-%.0f%% dash cooldown\n\n", data.stat_boost);
+			builder_add(&builder, "-%.0f%% dash cooldown\n", data.stat_boost);
+			builder_add(&builder, "Press %sright click$. or %s%c$. to dash\n\n", key_color, key_color, to_upper_case(scancode_to_char(SDL_SCANCODE_A)));
 			builder_add(&builder, "Current: %.2f", get_dash_cooldown());
 		};
 		xcase e_upgrade_max_lives: {
@@ -2623,7 +2626,7 @@ func s_len_str get_upgrade_description(e_upgrade id)
 		break; invalid_default_case;
 	}
 	int key = (int)SDLK_1 + id;
-	builder_add(&builder, "\n\nHotkey [%c]", '1' + key - SDLK_1);
+	builder_add(&builder, "\n\nHotkey [%s%c$.]", key_color, '1' + key - SDLK_1);
 
 	s_len_str temp = builder_to_len_str(&builder);
 	s_len_str result = format_text("%.*s", expand_str(temp));

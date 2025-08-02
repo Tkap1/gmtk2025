@@ -71,38 +71,38 @@ global constexpr s_enemy_type_data g_enemy_type_data[e_enemy_count] = {
 
 global constexpr s_upgrade_data g_upgrade_data[e_upgrade_count] = {
 	{
-		.name = S("+ Damage"),
+		.name = S("Damage"),
 		.cost = 10,
 		.extra_cost_per_level = 5,
 		.stat_boost = 50,
 	},
 	{
-		.name = S("+ Speed"),
+		.name = S("Speed"),
 		.cost = 20,
 		.extra_cost_per_level = 5,
 		.stat_boost = 20,
 	},
 	{
-		.name = S("+ Attack range"),
+		.name = S("Attack range"),
 		.cost = 30,
 		.extra_cost_per_level = 5,
 		.stat_boost = 20,
 	},
 	{
-		.name = S("+ Knockback"),
+		.name = S("Knockback"),
 		.cost = 30,
 		.extra_cost_per_level = 5,
 		.stat_boost = 20,
 	},
 	{
-		.name = S("- Dash cooldown"),
+		.name = S("Dash cooldown"),
 		.cost = 30,
 		.extra_cost_per_level = 20,
 		.stat_boost = 20,
 		.max_upgrades = 5,
 	},
 	{
-		.name = S("+ Lives"),
+		.name = S("Lives"),
 		.cost = 30,
 		.extra_cost_per_level = 20,
 		.stat_boost = 5,

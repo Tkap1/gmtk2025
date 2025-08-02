@@ -1077,3 +1077,10 @@ func s_audio_fade make_simple_fade(float p0, float p1)
 	fade.volume[1] = 0;
 	return fade;
 }
+
+func char scancode_to_char(SDL_Scancode scancode)
+{
+	SDL_Keycode key = SDL_GetKeyFromScancode(scancode);
+	char result = (char)key;
+	return result;
+}
