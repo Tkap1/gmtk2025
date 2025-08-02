@@ -77,3 +77,4 @@ func float get_lightning_bolt_frequency();
 func s_v2 topleft_to_bottomleft_mouse(s_v2 pos, s_v2 size, s_v2 mouse);
 func s_v2 prevent_offscreen(s_v2 pos, s_v2 size);
 func s_len_str get_upgrade_description(e_upgrade id);
+func b8 are_we_hovering_over_ui(s_v2 mouse);

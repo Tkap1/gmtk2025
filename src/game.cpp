@@ -84,7 +84,7 @@ global constexpr b8 c_on_web = false;
 global s_platform_data* g_platform_data;
 global s_game* game;
 global s_v2 g_mouse;
-global b8 g_click;
+global b8 g_left_click;
 
 #if defined(__EMSCRIPTEN__)
 #include "leaderboard.cpp"
@@ -348,7 +348,7 @@ func void input()
 		game->input_arr[i].half_transition_count = 0;
 	}
 
-	g_click = false;
+	g_left_click = false;
 	{
 		int x;
 		int y;
@@ -459,9 +459,15 @@ func void input()
 			case SDL_MOUSEBUTTONUP:
 			{
 				if(event.type == SDL_MOUSEBUTTONDOWN && event.button.button == 1) {
-					g_click = true;
+					g_left_click = true;
+					if(!are_we_hovering_over_ui(g_mouse)) {
+						soft_data->attack_timer.want_to_use_timestamp = game->update_time;
+					}
 				}
 				if(event.type == SDL_MOUSEBUTTONDOWN && event.button.button == 3) {
+					if(!are_we_hovering_over_ui(g_mouse)) {
+						soft_data->dash_timer.want_to_use_timestamp = game->update_time;
+					}
 				}
 				// int key = sdl_key_to_windows_key(event.button.button);
 				// b8 is_down = event.type == SDL_MOUSEBUTTONDOWN;
@@ -780,7 +786,7 @@ func void update()
 			}
 			// @Note(tkap, 01/08/2025): We pressed the attack key but there were no enemies in range
 			float time_since_last_lightning_bolt = game->update_time - soft_data->lightning_bolt_timer.used_timestamp;
-			b8 lightning_bolted_recently = time_since_last_lightning_bolt <= 0.25f && soft_data->lightning_bolt_timer.used_timestamp > 0;
+			b8 lightning_bolted_recently = time_since_last_lightning_bolt <= 0.33f && soft_data->lightning_bolt_timer.used_timestamp > 0;
 			if(should_attack && !was_there_an_enemy_in_range && !lightning_bolted_recently) {
 				timer_activate(&soft_data->attack_timer, game->update_time);
 				play_sound(e_sound_miss_attack, zero);
@@ -1478,7 +1484,7 @@ func void render(float interp_dt, float delta)
 				draw_text(text, wxy(0.87f, 0.2f), 48, make_color(1), true, &game->font);
 			}
 
-			if(game->hover_over_upgrade_pauses_game && g_mouse.x > c_game_area.x && !game->do_hard_reset) {
+			if(game->hover_over_upgrade_pauses_game && are_we_hovering_over_ui(g_mouse) && !game->do_hard_reset) {
 				game->speed = 0;
 				draw_text(S("Paused"), gxy(0.5f, 0.1f), sin_range(64, 80, game->render_time * 8), make_color(1), true, &game->font);
 			}
@@ -1922,7 +1928,7 @@ func b8 do_button_ex(s_len_str text, s_v2 pos, s_v2 size, b8 centered, s_button_
 			pos -= v2(4) * 0.5f;
 		}
 		color = make_color(0.5f);
-		if(g_click) {
+		if(g_left_click) {
 			result = true;
 			play_sound(e_sound_click, zero);
 		}
@@ -2630,5 +2636,11 @@ func s_len_str get_upgrade_description(e_upgrade id)
 
 	s_len_str temp = builder_to_len_str(&builder);
 	s_len_str result = format_text("%.*s", expand_str(temp));
+	return result;
+}
+
+func b8 are_we_hovering_over_ui(s_v2 mouse)
+{
+	b8 result = mouse.x > c_game_area.x;
 	return result;
 }
