@@ -1269,6 +1269,10 @@ func void render(float interp_dt, float delta)
 				if(enemy->hit_timestamp > 0 && time_data.percent <= 1) {
 					draw_data.mix_weight = smoothstep(1.0f, 0.7f, time_data.percent);
 				}
+				s_v2 dir = v2_dir_from_to(enemy_pos, gxy(0.5f));
+				if(dir.x > 0) {
+					draw_data.flip_x = true;
+				}
 				draw_atlas_ex(enemy_pos, get_enemy_size(enemy->enemy_type), get_enemy_atlas_index(enemy->enemy_type), color, 0, draw_data);
 			}
 		}
@@ -1296,7 +1300,7 @@ func void render(float interp_dt, float delta)
 		s_v2 player_pos = lerp_v2(player->prev_pos, player->pos, interp_dt);
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw player start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		{
-			draw_rect(player_pos, c_player_size_v, make_color(0, 1, 0));
+			draw_atlas(player_pos, c_player_size_v, v2i(123, 42), make_color(1));
 			entity_arr->data[player->range_emitter].emitter_a.pos = v3(player_pos, 0.0f);
 			entity_arr->data[player->range_emitter].emitter_b.spawn_data.x = get_player_attack_range();
 
@@ -1311,8 +1315,10 @@ func void render(float interp_dt, float delta)
 					pos.y += sinf(player->fist_wobble_time * 4) * c_player_size_v.y * 0.1f;
 					s_v2 size = c_fist_size_v;
 					s_v4 color = make_color(1);
+					float target_rotation = i == 0 ? 0.33f : -0.33f;
 
 					if(player->did_attack_enemy_timestamp > 0) {
+						target_rotation += v2_angle(player->attacked_enemy_pos - player_pos) + c_pi * 0.5f;
 						float passed = update_time_to_render_time(game->update_time, interp_dt) - player->did_attack_enemy_timestamp;
 						s_animator animator = zero;
 						s_v2 temp_pos = zero;
@@ -1336,7 +1342,9 @@ func void render(float interp_dt, float delta)
 						player->fist_wobble_time += delta;
 					}
 
-					draw_rect(pos, size, make_color(0, 1, 0));
+					b8 flip_x = i == 1;
+					player->fist_rotation[i] = lerp_angle(player->fist_rotation[i], target_rotation, at_most(1.0f, delta * 10));
+					draw_atlas_ex(pos, size, v2i(122, 42), make_color(1), player->fist_rotation[i], {.flip_x = flip_x});
 				}
 			}
 		}
@@ -2299,6 +2307,10 @@ func void draw_atlas_ex(s_v2 pos, s_v2 size, s_v2i index, s_v4 color, float rota
 	data.uv_max.y = data.uv_min.y + (c_atlas_sprite_size - c_atlas_padding) / (float)c_atlas_size_v.y;
 	data.mix_weight = draw_data.mix_weight;
 	data.mix_color = draw_data.mix_color;
+
+	if(draw_data.flip_x) {
+		swap(&data.uv_min.x, &data.uv_max.x);
+	}
 
 	add_to_render_group(data, e_shader_flat_remove_black, e_texture_atlas, e_mesh_quad);
 }

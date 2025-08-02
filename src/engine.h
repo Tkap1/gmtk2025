@@ -86,6 +86,7 @@ struct s_instance_data1
 
 struct s_draw_data
 {
+	b8 flip_x;
 	float mix_weight;
 	s_v4 mix_color;
 };

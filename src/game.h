@@ -378,6 +378,7 @@ struct s_entity
 			float fist_wobble_time;
 			s_v2 attacked_enemy_pos;
 			int range_emitter;
+			float fist_rotation[2];
 		};
 
 		// @Note(tkap, 31/07/2025): Emitter

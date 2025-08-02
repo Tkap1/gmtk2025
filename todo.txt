@@ -32,6 +32,9 @@ OPTIONS:
 	turn off gold numbers
 	show timer
 
+MAYBE:
+	better leaderboard display
+
 UNLIKELY:
 	power up drops?????
 
@@ -40,3 +43,6 @@ shake + different sound when dash hit?
 better highlighting of enemies that will be hit
 dont display "paused" text unless we are in default state1
 explain attack and dash
+trees? just stuff around so the map is not as empty?
+make fire particles move away from the player?
+dash last longer, slower
