@@ -1383,36 +1383,65 @@ func void render(float interp_dt, float delta)
 			render_flush(data, true);
 		}
 
-		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw attack cooldown start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		{
-			b8 is_on_cooldown = false;
-			float time = update_time_to_render_time(game->update_time, interp_dt);
-			s_time_data time_data = timer_get_cooldown_time_data(soft_data->attack_timer, time, get_attack_or_auto_attack_cooldown(), &is_on_cooldown);
-			if(is_on_cooldown) {
-				s_v2 size = v2(64, 10);
-				s_v2 pos = player_pos;
-				pos.y += c_player_size_v.y * 0.5f;
-				pos.y += size.y * 0.8f;
-				s_v2 over_pos = pos;
-				s_v2 over_size = size;
-				over_size.x *= time_data.percent;
-				over_pos.x -= size.x * 0.5f;
-				over_pos.x += over_size.x * 0.5f;
-				s_v4 color = hex_to_rgb(0x14A12C);
-				color.a = ease_linear_advanced(time_data.percent, 0.8f, 1.0f, 1, 0.0f);
-				draw_rect(pos, size, color);
-				draw_rect(over_pos, over_size, multiply_rgb(color, 2));
-
-				{
-					s_render_flush_data data = make_render_flush_data(zero, zero);
-					data.projection = ortho;
-					data.blend_mode = e_blend_mode_normal;
-					data.depth_mode = e_depth_mode_no_read_no_write;
-					render_flush(data, true);
+			b8 do_flush = false;
+			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw attack cooldown start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+			{
+				b8 is_on_cooldown = false;
+				float time = update_time_to_render_time(game->update_time, interp_dt);
+				s_time_data time_data = timer_get_cooldown_time_data(soft_data->attack_timer, time, get_attack_or_auto_attack_cooldown(), &is_on_cooldown);
+				if(is_on_cooldown) {
+					do_flush = true;
+					s_v2 size = v2(64, 10);
+					s_v2 pos = player_pos;
+					pos.y += c_player_size_v.y * 0.5f;
+					pos.y += size.y * 0.8f;
+					s_v2 over_pos = pos;
+					s_v2 over_size = size;
+					over_size.x *= time_data.percent;
+					over_pos.x -= size.x * 0.5f;
+					over_pos.x += over_size.x * 0.5f;
+					s_v4 color = hex_to_rgb(0x14A12C);
+					color.a = ease_linear_advanced(time_data.percent, 0.9f, 1.0f, 1, 0.0f);
+					draw_rect(pos, size, color);
+					draw_rect(over_pos, over_size, multiply_rgb(color, 2));
 				}
 			}
+			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw attack cooldown end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw dash cooldown start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+			{
+				b8 is_on_cooldown = false;
+				float time = update_time_to_render_time(game->update_time, interp_dt);
+				s_time_data time_data = timer_get_cooldown_time_data(soft_data->dash_timer, time, get_dash_cooldown(), &is_on_cooldown);
+				if(is_on_cooldown) {
+					do_flush = true;
+					s_v2 size = v2(64, 10);
+					s_v2 pos = player_pos;
+					pos.y += c_player_size_v.y * 0.5f;
+					pos.y += size.y * 0.8f;
+					pos.y += 16;
+					s_v2 over_pos = pos;
+					s_v2 over_size = size;
+					over_size.x *= time_data.percent;
+					over_pos.x -= size.x * 0.5f;
+					over_pos.x += over_size.x * 0.5f;
+					s_v4 color = hex_to_rgb(0x106BA8);
+					color.a = ease_linear_advanced(time_data.percent, 0.9f, 1.0f, 1, 0.0f);
+					draw_rect(pos, size, color);
+					draw_rect(over_pos, over_size, multiply_rgb(color, 2));
+				}
+			}
+			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw dash cooldown end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+			if(do_flush) {
+				s_render_flush_data data = make_render_flush_data(zero, zero);
+				data.projection = ortho;
+				data.blend_mode = e_blend_mode_normal;
+				data.depth_mode = e_depth_mode_no_read_no_write;
+				render_flush(data, true);
+			}
 		}
-		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw attack cooldown end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 		if(do_game_ui) {
 

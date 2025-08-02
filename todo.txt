@@ -40,4 +40,3 @@ better targeting
 enemy flash on hit
 buttons can overflow
 make attacks do more damage while dashing?
-dash indicator, like attack miss
