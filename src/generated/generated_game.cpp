@@ -83,3 +83,5 @@ func float get_auto_attack_cooldown();
 func float get_auto_attack_frequency();
 func float get_attack_or_auto_attack_cooldown();
 func char* handle_plural(float x);
+func s_entity make_enemy_death_particles(s_v2 pos);
+func s_entity make_enemy_hit_particles(s_v2 pos);

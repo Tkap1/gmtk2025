@@ -911,9 +911,10 @@ func void update_particles(float delta)
 		{
 			s_instance_data data = zero;
 			data.model = m4_translate(pos);
-			scale_m4_by_radius(&data.model, radius);
+			data.model *= m4_scale(v3(radius, radius, 1));
+			// scale_m4_by_radius(&data.model, radius);
 			data.color = color;
-			add_to_render_group(data, e_shader_circle, e_texture_white, e_mesh_quad);
+			add_to_render_group(data, e_shader_flat, e_texture_white, e_mesh_quad);
 		}
 		if(time_data.percent >= 1) {
 			soft_data->particle_arr.remove_and_swap(particle_i);

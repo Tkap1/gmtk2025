@@ -678,6 +678,9 @@ func void update()
 				s_time_data time_data = get_time_data(game->update_time, enemy->remove_soon_timestamp, 0.25f);
 				if(time_data.percent >= 1) {
 					entity_manager_remove(entity_arr, e_entity_dying_enemy, i);
+					play_sound(e_sound_enemy_death2, {.speed = get_rand_sound_speed(1.1f, &game->rng)});
+					s_entity emitter = make_enemy_death_particles(enemy->pos);
+					add_emitter(emitter);
 				}
 			}
 		}
@@ -753,6 +756,10 @@ func void update()
 							num_enemies_hit += 1;
 							knockback_multi = 1;
 							player->attacked_enemy_pos = enemy->pos;
+
+							s_entity emitter = make_enemy_hit_particles(enemy->pos);
+							add_emitter(emitter);
+
 						}
 						float knockback_to_add = get_player_knockback() * knockback_multi * (1.0f - g_enemy_type_data[enemy->enemy_type].knockback_resistance);
 						if(enemy->knockback.valid) {
@@ -2709,4 +2716,52 @@ func char* handle_plural(float x)
 		result = "";
 	}
 	return result;
+}
+
+func s_entity make_enemy_death_particles(s_v2 pos)
+{
+	s_entity emitter = zero;
+
+	emitter.emitter_a = make_emitter_a();
+	emitter.emitter_a.pos = v3(pos, 0.0f);
+	emitter.emitter_a.dir.x = 0.5f;
+	emitter.emitter_a.dir.y = -1.0f;
+	emitter.emitter_a.dir_rand = zero;
+	emitter.emitter_a.dir_rand.x = 1;
+	emitter.emitter_a.particle_duration *= 0.5f;
+	emitter.emitter_a.radius *= 0.5f;
+	emitter.emitter_a.color_arr[0].color = make_color(0.1f);
+
+	emitter.emitter_a.particle_duration_rand = 1.0f;
+	emitter.emitter_a.radius_rand = 1.0f;
+	emitter.emitter_a.speed_rand = 1.0f;
+
+	emitter.emitter_b = make_emitter_b();
+	emitter.emitter_b.spawn_type = e_emitter_spawn_type_circle;
+	emitter.emitter_b.spawn_data.x = 10;
+	emitter.emitter_b.particle_count = 200;
+
+	return emitter;
+}
+
+func s_entity make_enemy_hit_particles(s_v2 pos)
+{
+	s_entity emitter = zero;
+
+	emitter.emitter_a = make_emitter_a();
+	emitter.emitter_a.dir = v3(1, 1, 0);
+	emitter.emitter_a.dir_rand = v3(1, 1, 0);
+	emitter.emitter_a.pos = v3(pos, 0.0f);
+	emitter.emitter_a.particle_duration *= 0.33f;
+	emitter.emitter_a.radius *= 0.5f;
+	emitter.emitter_a.color_arr[0].color = make_color(0.5f, 0.1f, 0.1f);
+
+	emitter.emitter_a.particle_duration_rand = 1.0f;
+	emitter.emitter_a.radius_rand = 1.0f;
+	emitter.emitter_a.speed_rand = 1.0f;
+
+	emitter.emitter_b = make_emitter_b();
+	emitter.emitter_b.particle_count = 200;
+
+	return emitter;
 }
