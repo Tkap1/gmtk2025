@@ -1241,10 +1241,16 @@ func void render(float interp_dt, float delta)
 				s_entity* enemy = &entity_arr->data[i];
 				s_v2 enemy_pos = lerp_v2(enemy->prev_pos, enemy->pos, interp_dt);
 				s_v4 color = make_color(1);
-				if(enemy->highlight.valid) {
-					color = enemy->highlight.value;
+				// if(enemy->highlight.valid) {
+				// 	color = enemy->highlight.value;
+				// }
+				s_time_data time_data = get_time_data(update_time_to_render_time(game->update_time, interp_dt), enemy->hit_timestamp, 0.5f);
+				s_draw_data draw_data = zero;
+				draw_data.mix_color = make_color(1);
+				if(enemy->hit_timestamp > 0 && time_data.percent <= 1) {
+					draw_data.mix_weight = smoothstep(1.0f, 0.8f, time_data.percent);
 				}
-				draw_atlas(enemy_pos, get_enemy_size(enemy->enemy_type), get_enemy_atlas_index(enemy->enemy_type), color);
+				draw_atlas_ex(enemy_pos, get_enemy_size(enemy->enemy_type), get_enemy_atlas_index(enemy->enemy_type), color, 0, draw_data);
 			}
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw enemies end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1255,8 +1261,15 @@ func void render(float interp_dt, float delta)
 				if(!entity_arr->active[i]) { continue; }
 				s_entity* enemy = &entity_arr->data[i];
 				s_v2 enemy_pos = lerp_v2(enemy->prev_pos, enemy->pos, interp_dt);
-				s_v4 color = enemy->highlight.value;
-				draw_atlas(enemy_pos, get_enemy_size(enemy->enemy_type), get_enemy_atlas_index(enemy->enemy_type), color);
+				// s_v4 color = enemy->highlight.value;
+				s_v4 color = make_color(1);
+				s_time_data time_data = get_time_data(update_time_to_render_time(game->update_time, interp_dt), enemy->hit_timestamp, 0.5f);
+				s_draw_data draw_data = zero;
+				draw_data.mix_color = make_color(1);
+				if(enemy->hit_timestamp > 0 && time_data.percent <= 1) {
+					draw_data.mix_weight = smoothstep(1.0f, 0.8f, time_data.percent);
+				}
+				draw_atlas_ex(enemy_pos, get_enemy_size(enemy->enemy_type), get_enemy_atlas_index(enemy->enemy_type), color, 0, draw_data);
 			}
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw dying enemies end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2245,10 +2258,10 @@ func b8 check_action(float curr_time, float timestamp, float grace)
 
 func void draw_atlas(s_v2 pos, s_v2 size, s_v2i index, s_v4 color)
 {
-	draw_atlas_ex(pos, size, index, color, 0);
+	draw_atlas_ex(pos, size, index, color, 0, zero);
 }
 
-func void draw_atlas_ex(s_v2 pos, s_v2 size, s_v2i index, s_v4 color, float rotation)
+func void draw_atlas_ex(s_v2 pos, s_v2 size, s_v2i index, s_v4 color, float rotation, s_draw_data draw_data)
 {
 	s_instance_data data = zero;
 	data.model = m4_translate(v3(pos, 0));
@@ -2263,6 +2276,8 @@ func void draw_atlas_ex(s_v2 pos, s_v2 size, s_v2i index, s_v4 color, float rota
 	int y = index.y * c_atlas_sprite_size + c_atlas_padding;
 	data.uv_min.y = y / (float)(c_atlas_size_v.y);
 	data.uv_max.y = data.uv_min.y + (c_atlas_sprite_size - c_atlas_padding) / (float)c_atlas_size_v.y;
+	data.mix_weight = draw_data.mix_weight;
+	data.mix_color = draw_data.mix_color;
 
 	add_to_render_group(data, e_shader_flat_remove_black, e_texture_atlas, e_mesh_quad);
 }
@@ -2384,6 +2399,7 @@ func b8 damage_enemy(s_entity* enemy, float damage)
 	b8 dead = false;
 	float max_health = get_enemy_max_health(enemy->enemy_type);
 	enemy->damage_taken += damage;
+	enemy->hit_timestamp = game->update_time;
 	if(enemy->damage_taken >= max_health) {
 		dead = true;
 	}

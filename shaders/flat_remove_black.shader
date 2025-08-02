@@ -7,13 +7,17 @@ layout (location = 3) in vec2 vertex_uv;
 layout (location = 4) in vec4 instance_color;
 layout (location = 5) in vec4 instance_uv_min;
 layout (location = 6) in vec4 instance_uv_max;
-layout (location = 7) in mat4 instance_model;
+layout (location = 7) in float instance_mix_weight;
+layout (location = 8) in vec4 instance_mix_color;
+layout (location = 9) in mat4 instance_model;
 #endif
 
 shared_var vec4 v_color;
 shared_var vec3 v_normal;
 shared_var vec2 v_vertex_uv;
 shared_var vec2 v_instance_uv;
+shared_var float v_mix_weight;
+shared_var vec4 v_mix_color;
 
 #if defined(m_vertex)
 void main()
@@ -23,6 +27,8 @@ void main()
 	v_color = vertex_color * instance_color;
 	v_normal = vertex_normal;
 	v_vertex_uv = vertex_uv;
+	v_mix_weight = instance_mix_weight;
+	v_mix_color = instance_mix_color;
 
 	vec2 uv_arr[6] = vec2[](
 		vec2(instance_uv_min.x, instance_uv_min.y),
@@ -50,5 +56,6 @@ void main()
 	}
 	out_color = texture_color * v_color;
 	if(out_color.a <= 0.0) { discard; }
+	out_color = mix(out_color, v_mix_color, v_mix_weight);
 }
 #endif

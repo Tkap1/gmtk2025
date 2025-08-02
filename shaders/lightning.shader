@@ -7,7 +7,9 @@ layout (location = 3) in vec2 vertex_uv;
 layout (location = 4) in vec4 instance_color;
 layout (location = 5) in vec4 instance_uv_min;
 layout (location = 6) in vec4 instance_uv_max;
-layout (location = 7) in mat4 instance_model;
+layout (location = 7) in float instance_mix_weight;
+layout (location = 8) in vec4 instance_mix_color;
+layout (location = 9) in mat4 instance_model;
 #endif
 
 shared_var vec4 v_color;

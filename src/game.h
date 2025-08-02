@@ -393,6 +393,7 @@ struct s_entity
 			s_maybe<float> knockback;
 			s_maybe<s_v4> highlight;
 			float damage_taken;
+			float hit_timestamp;
 		};
 
 		// @Note(tkap, 31/07/2025): fct

@@ -33,7 +33,7 @@ func s_v2 get_rect_normal_of_closest_edge(s_v2 p, s_v2 center, s_v2 size);
 func b8 is_valid_2d_index(s_v2i index, int x_count, int y_count);
 func b8 check_action(float curr_time, float timestamp, float grace);
 func void draw_atlas(s_v2 pos, s_v2 size, s_v2i index, s_v4 color);
-func void draw_atlas_ex(s_v2 pos, s_v2 size, s_v2i index, s_v4 color, float rotation);
+func void draw_atlas_ex(s_v2 pos, s_v2 size, s_v2i index, s_v4 color, float rotation, s_draw_data draw_data);
 func void draw_atlas_topleft(s_v2 pos, s_v2 size, s_v2i index, s_v4 color);
 func void draw_circle(s_v2 pos, float radius, s_v4 color);
 func void draw_light(s_v2 pos, float radius, s_v4 color);

@@ -66,6 +66,8 @@ struct s_instance_data
 	s_v4 color;
 	s_v2 uv_min;
 	s_v2 uv_max;
+	float mix_weight;
+	s_v4 mix_color;
 	s_m4 model;
 };
 #pragma pack(pop)
@@ -79,6 +81,12 @@ struct s_instance_data1
 	s_v4 color;
 };
 #pragma pack(pop)
+
+struct s_draw_data
+{
+	float mix_weight;
+	s_v4 mix_color;
+};
 
 
 enum e_depth_mode

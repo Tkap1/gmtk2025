@@ -37,6 +37,5 @@ UNLIKELY:
 
 fix volumes
 better targeting
-enemy flash on hit
 shake + different sound when dash hit?
 dont display "paused" text unless we are in default state1

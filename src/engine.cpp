@@ -59,7 +59,7 @@ func s_mesh make_mesh_from_vertices(s_vertex* vertex_arr, int vertex_count)
 		gl(glBindBuffer(GL_ARRAY_BUFFER, result.instance_vbo.id));
 
 		u8* offset = 0;
-		constexpr int stride = sizeof(float) * 24;
+		constexpr int stride = sizeof(float) * 29;
 
 		gl(glVertexAttribPointer(attrib_index, 4, GL_FLOAT, GL_FALSE, stride, offset)); // instance color
 		gl(glEnableVertexAttribArray(attrib_index));
@@ -78,6 +78,18 @@ func s_mesh make_mesh_from_vertices(s_vertex* vertex_arr, int vertex_count)
 		gl(glVertexAttribDivisor(attrib_index, 1));
 		attrib_index += 1;
 		offset += sizeof(float) * 2;
+
+		gl(glVertexAttribPointer(attrib_index, 1, GL_FLOAT, GL_FALSE, stride, offset)); // mix weight
+		gl(glEnableVertexAttribArray(attrib_index));
+		gl(glVertexAttribDivisor(attrib_index, 1));
+		attrib_index += 1;
+		offset += sizeof(float) * 1;
+
+		gl(glVertexAttribPointer(attrib_index, 4, GL_FLOAT, GL_FALSE, stride, offset)); // mix color
+		gl(glEnableVertexAttribArray(attrib_index));
+		gl(glVertexAttribDivisor(attrib_index, 1));
+		attrib_index += 1;
+		offset += sizeof(float) * 4;
 
 		gl(glVertexAttribPointer(attrib_index, 4, GL_FLOAT, GL_FALSE, stride, offset)); // mat4_0
 		gl(glEnableVertexAttribArray(attrib_index));
