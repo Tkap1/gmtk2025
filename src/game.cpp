@@ -2330,6 +2330,9 @@ func float get_player_damage()
 	float result = 0;
 	result += 10;
 	result *= 1.0f + get_upgrade_boost(e_upgrade_damage) / 100.0f;
+	if(timer_is_active(game->soft_data.dash_timer, game->update_time, c_dash_duration)) {
+		result *= 3;
+	}
 	return result;
 }
 
@@ -2660,7 +2663,8 @@ func s_len_str get_upgrade_description(e_upgrade id)
 		};
 		xcase e_upgrade_dash_cooldown: {
 			builder_add(&builder, "-%.0f%% dash cooldown\n", data.stat_boost);
-			builder_add(&builder, "Press %sright click$. or %s%c$. to dash\n\n", key_color, key_color, to_upper_case(scancode_to_char(SDL_SCANCODE_A)));
+			builder_add(&builder, "Press %sright click$. or %s%c$. to dash\n", key_color, key_color, to_upper_case(scancode_to_char(SDL_SCANCODE_A)));
+			builder_add(&builder, "Attacks do triple damage while dashing\n\n", key_color, key_color, to_upper_case(scancode_to_char(SDL_SCANCODE_A)));
 			builder_add(&builder, "Current: %.2f", get_dash_cooldown());
 		};
 		xcase e_upgrade_max_lives: {

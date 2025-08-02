@@ -39,4 +39,4 @@ fix volumes
 better targeting
 enemy flash on hit
 buttons can overflow
-make attacks do more damage while dashing?
+shake + different sound when dash hit?
