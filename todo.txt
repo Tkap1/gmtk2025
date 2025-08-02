@@ -38,3 +38,7 @@ UNLIKELY:
 fix volumes
 better targeting
 enemy flash on hit
+buttons can overflow
+make attacks do more damage while dashing?
+dash indicator
+too much key spam. it's a problem

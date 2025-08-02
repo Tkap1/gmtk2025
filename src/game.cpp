@@ -385,6 +385,7 @@ func void input()
 			case SDL_KEYDOWN:
 			case SDL_KEYUP: {
 				int key = event.key.keysym.sym;
+				int scancode = event.key.keysym.scancode;
 				if(key == SDLK_LSHIFT) {
 					key = c_left_shift;
 				}
@@ -409,11 +410,11 @@ func void input()
 					}
 					else if(key == SDLK_SPACE && event.key.repeat == 0) {
 					}
-					else if(key == SDLK_f && event.key.repeat == 0) {
-						soft_data->attack_timer.want_to_use_timestamp = game->update_time;
-					}
-					else if(key == SDLK_g && event.key.repeat == 0) {
+					else if(scancode == SDL_SCANCODE_A && event.key.repeat == 0) {
 						soft_data->dash_timer.want_to_use_timestamp = game->update_time;
+					}
+					else if(scancode == SDL_SCANCODE_S && event.key.repeat == 0) {
+						soft_data->attack_timer.want_to_use_timestamp = game->update_time;
 					}
 					else if(key == SDLK_ESCAPE && event.key.repeat == 0) {
 						if(state0 == e_game_state0_play && state1 == e_game_state1_default) {
@@ -1451,7 +1452,8 @@ func void render(float interp_dt, float delta)
 					str = format_text("%.*s (%i)", expand_str(data.name), cost_all);
 				}
 				optional.tooltip = get_upgrade_description(upgrade_i);
-				if(do_button_ex(str, pos, button_size, false, optional)) {
+				int key = (int)SDLK_1 + upgrade_i;
+				if(do_button_ex(str, pos, button_size, false, optional) || (!optional.disabled && is_key_pressed(key, true))) {
 					add_gold(-gold_to_spend);
 					apply_upgrade(upgrade_i, how_many_can_afford);
 				}
@@ -1476,7 +1478,7 @@ func void render(float interp_dt, float delta)
 				draw_text(text, wxy(0.87f, 0.2f), 48, make_color(1), true, &game->font);
 			}
 
-			if(game->hover_over_upgrade_pauses_game && g_mouse.x > c_game_area.x) {
+			if(game->hover_over_upgrade_pauses_game && g_mouse.x > c_game_area.x && !game->do_hard_reset) {
 				game->speed = 0;
 				draw_text(S("Paused"), gxy(0.5f, 0.1f), sin_range(64, 80, game->render_time * 8), make_color(1), true, &game->font);
 			}
@@ -2578,38 +2580,52 @@ func s_len_str get_upgrade_description(e_upgrade id)
 	int level = game->soft_data.upgrade_count[id];
 	s_upgrade_data data = g_upgrade_data[id];
 
-	s_len_str result = zero;
+	s_str_builder<512> builder;
+	builder.count = 0;
 	switch(id) {
 		xcase e_upgrade_damage: {
-			result = format_text("+%.0f%% damage\n\nCurrent: %.0f", data.stat_boost, get_player_damage());
+			builder_add(&builder, "+%.0f%% damage\n\n", data.stat_boost);
+			builder_add(&builder, "Current: %.0f", get_player_damage());
 		};
 		xcase e_upgrade_speed: {
-			result = format_text("+%.0f%% movement speed\n\nCurrent: %.2f", data.stat_boost, get_player_speed());
+			builder_add(&builder, "+%.0f%% movement speed\n\n", data.stat_boost);
+			builder_add(&builder, "Current: %.2f", get_player_speed());
 		};
 		xcase e_upgrade_range: {
-			result = format_text("+%.0f%% attack range\n\nCurrent: %.0f", data.stat_boost, get_player_attack_range());
+			builder_add(&builder, "+%.0f%% attack range\n\n", data.stat_boost);
+			builder_add(&builder, "Current: %.0f", get_player_attack_range());
 		};
 		xcase e_upgrade_knockback: {
-			result = format_text("+%.0f%% knockback\n\nCurrent: %.0f", data.stat_boost, get_player_knockback());
+			builder_add(&builder, "+%.0f%% knockback\n\n", data.stat_boost);
+			builder_add(&builder, "Current: %.0f", get_player_knockback());
 		};
 		xcase e_upgrade_dash_cooldown: {
-			result = format_text("-%.0f%% dash cooldown\n\nCurrent: %.2f", data.stat_boost, get_dash_cooldown());
+			builder_add(&builder, "-%.0f%% dash cooldown\n\n", data.stat_boost);
+			builder_add(&builder, "Current: %.2f", get_dash_cooldown());
 		};
 		xcase e_upgrade_max_lives: {
-			result = format_text("+%.0f max lives\n\nCurrent: %i", data.stat_boost, get_max_lives());
+			builder_add(&builder, "+%.0f max lives\n\n", data.stat_boost);
+			builder_add(&builder, "Current: %i", get_max_lives());
 		};
 		xcase e_upgrade_more_hits_per_attack: {
-			result = format_text("+%.0f enemy hit per attack\n\nCurrent: %i", data.stat_boost, get_hits_per_attack());
+			builder_add(&builder, "+%.0f enemy hit per attack\n\n", data.stat_boost);
+			builder_add(&builder, "Current: %i", get_hits_per_attack());
 		};
 		xcase e_upgrade_auto_attack: {
 			if(level == 0) {
-				result = format_text("A lightning bolt strikes an enemy\nin range every %.2f seconds", get_auto_attack_cooldown());
+				builder_add(&builder, "A lightning bolt strikes an enemy\nin range every %.2f seconds", get_auto_attack_cooldown());
 			}
 			else {
-				result = format_text("Lightning bolts strike with %.0f%% increased frequency\n\nCurrent: %.2f hits per second", data.stat_boost, get_auto_attack_frequency());
+				builder_add(&builder, "Lightning bolts strike with %.0f%% increased frequency\n\n", data.stat_boost);
+				builder_add(&builder, "Current: %.2f hits per second", get_auto_attack_frequency());
 			}
 		};
 		break; invalid_default_case;
 	}
+	int key = (int)SDLK_1 + id;
+	builder_add(&builder, "\n\nHotkey [%c]", '1' + key - SDLK_1);
+
+	s_len_str temp = builder_to_len_str(&builder);
+	s_len_str result = format_text("%.*s", expand_str(temp));
 	return result;
 }
