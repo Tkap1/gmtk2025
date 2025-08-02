@@ -381,6 +381,12 @@ func constexpr int get_max_entities()
 	return result;
 }
 
+func constexpr int get_max_entities_of_type(e_entity type)
+{
+	int result = g_entity_type_data[type].max_count;
+	return result;
+}
+
 func constexpr int get_first_index(e_entity type)
 {
 	int result = 0;

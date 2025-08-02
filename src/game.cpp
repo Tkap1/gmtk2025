@@ -708,6 +708,15 @@ func void update()
 			}
 			player->timer += delta * get_player_speed() * dash_speed;
 
+
+			s_list<int, get_max_entities_of_type(e_entity_enemy)> enemy_index_arr;
+			enemy_index_arr.count = 0;
+			for(int i = c_first_index[e_entity_enemy]; i < c_last_index_plus_one[e_entity_enemy]; i += 1) {
+				if(!entity_arr->active[i]) { continue; }
+				enemy_index_arr.add(i);
+			}
+			radix_sort_32(enemy_index_arr.data, enemy_index_arr.count, get_radix_from_enemy_index, &game->update_frame_arena);
+
 			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		try to hit start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 			if(do_we_have_auto_attack()) {
 				soft_data->attack_timer.want_to_use_timestamp = game->update_time;
@@ -720,7 +729,8 @@ func void update()
 			b8 should_attack = timer_can_and_want_activate(soft_data->attack_timer, game->update_time, 0.0f, get_attack_or_auto_attack_cooldown(), 0.1f);
 			b8 can_lightning_bolt = get_upgrade_level(e_upgrade_lightning_bolt) > 0 &&
 				timer_can_and_want_activate(soft_data->lightning_bolt_timer, game->update_time, 0.0f, get_lightning_bolt_cooldown(), 0.0f);
-			for(int i = c_first_index[e_entity_enemy]; i < c_last_index_plus_one[e_entity_enemy]; i += 1) {
+			foreach_val(enemy_index_i, enemy_index, enemy_index_arr) {
+				int i = enemy_index;
 				if(num_enemies_hit >= num_possible_hits) { break; }
 				if(!entity_arr->active[i]) { continue; }
 				s_entity* enemy = &entity_arr->data[i];
@@ -1244,11 +1254,11 @@ func void render(float interp_dt, float delta)
 				// if(enemy->highlight.valid) {
 				// 	color = enemy->highlight.value;
 				// }
-				s_time_data time_data = get_time_data(update_time_to_render_time(game->update_time, interp_dt), enemy->hit_timestamp, 0.5f);
+				s_time_data time_data = get_time_data(update_time_to_render_time(game->update_time, interp_dt), enemy->hit_timestamp, 0.33f);
 				s_draw_data draw_data = zero;
 				draw_data.mix_color = make_color(1);
 				if(enemy->hit_timestamp > 0 && time_data.percent <= 1) {
-					draw_data.mix_weight = smoothstep(1.0f, 0.8f, time_data.percent);
+					draw_data.mix_weight = smoothstep(1.0f, 0.7f, time_data.percent);
 				}
 				draw_atlas_ex(enemy_pos, get_enemy_size(enemy->enemy_type), get_enemy_atlas_index(enemy->enemy_type), color, 0, draw_data);
 			}
@@ -1263,11 +1273,11 @@ func void render(float interp_dt, float delta)
 				s_v2 enemy_pos = lerp_v2(enemy->prev_pos, enemy->pos, interp_dt);
 				// s_v4 color = enemy->highlight.value;
 				s_v4 color = make_color(1);
-				s_time_data time_data = get_time_data(update_time_to_render_time(game->update_time, interp_dt), enemy->hit_timestamp, 0.5f);
+				s_time_data time_data = get_time_data(update_time_to_render_time(game->update_time, interp_dt), enemy->hit_timestamp, 0.33f);
 				s_draw_data draw_data = zero;
 				draw_data.mix_color = make_color(1);
 				if(enemy->hit_timestamp > 0 && time_data.percent <= 1) {
-					draw_data.mix_weight = smoothstep(1.0f, 0.8f, time_data.percent);
+					draw_data.mix_weight = smoothstep(1.0f, 0.7f, time_data.percent);
 				}
 				draw_atlas_ex(enemy_pos, get_enemy_size(enemy->enemy_type), get_enemy_atlas_index(enemy->enemy_type), color, 0, draw_data);
 			}
@@ -2832,4 +2842,56 @@ func s_entity make_enemy_hit_particles(s_v2 pos)
 	emitter.emitter_b.particle_count = 200;
 
 	return emitter;
+}
+
+template <typename t, typename F>
+func void radix_sort_32(t* source, u32 count, F get_radix, s_linear_arena* arena)
+{
+	if(count == 0) { return; }
+
+	t* destination = (t*)arena_alloc(arena, sizeof(t) * count);
+
+	for(u32 index_i = 0; index_i < 32; index_i += 8) {
+		u32 offsets[256] = zero;
+
+		// @Note(tkap, 02/07/2024): Count how many of each value between 0-255 we have
+		// [0, 1, 1, 1, 2, 2] == [1, 3, 2]
+		for(u32 i = 0; i < count; i += 1) {
+			u32 val = get_radix(source[i]);
+			u32 mask = 0xff << index_i;
+			u32 radix_val = (val & mask) >> index_i;
+			offsets[radix_val] += 1;
+		}
+
+		// @Note(tkap, 02/07/2024): Turn the offsets array from an array of counts into an array of offsets
+		u32 total = 0;
+		for(u32 i = 0; i < 256; i += 1) {
+			u32 temp_count = offsets[i];
+			offsets[i] = total;
+			total += temp_count;
+		}
+
+		// @Note(tkap, 02/07/2024): Modify the new list
+		for(u32 i = 0; i < count; i += 1) {
+			u32 val = get_radix(source[i]);
+			u32 mask = 0xff << index_i;
+			u32 radix_val = (val & mask) >> index_i;
+
+			u32 destination_index = offsets[radix_val];
+			offsets[radix_val] += 1;
+			destination[destination_index] = source[i];
+		}
+
+		t* swap_temp = destination;
+		destination = source;
+		source = swap_temp;
+	}
+}
+
+func u32 get_radix_from_enemy_index(int index)
+{
+	assert(game->soft_data.entity_arr.active[index]);
+	float dist = v2_distance_squared(game->soft_data.entity_arr.data[index].pos, gxy(0.5f));
+	u32 result = float_to_radix(dist);
+	return result;
 }

@@ -36,6 +36,6 @@ UNLIKELY:
 	power up drops?????
 
 fix volumes
-better targeting
 shake + different sound when dash hit?
+better highlighting of enemies that will be hit
 dont display "paused" text unless we are in default state1
