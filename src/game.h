@@ -276,6 +276,7 @@ struct s_container
 struct s_button_data
 {
 	b8 disabled;
+	b8 mute_click_sound;
 	s_len_str tooltip;
 };
 

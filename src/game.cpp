@@ -1458,10 +1458,12 @@ func void render(float interp_dt, float delta)
 					str = format_text("%.*s (%i)", expand_str(data.name), cost_all);
 				}
 				optional.tooltip = get_upgrade_description(upgrade_i);
+				optional.mute_click_sound = true;
 				int key = (int)SDLK_1 + upgrade_i;
 				if(do_button_ex(str, pos, button_size, false, optional) || (!optional.disabled && is_key_pressed(key, true))) {
 					add_gold(-gold_to_spend);
 					apply_upgrade(upgrade_i, how_many_can_afford);
+					play_sound(e_sound_upgrade, {.speed = get_rand_sound_speed(1.1f, &game->rng)});
 				}
 			}
 			{
@@ -1930,7 +1932,9 @@ func b8 do_button_ex(s_len_str text, s_v2 pos, s_v2 size, b8 centered, s_button_
 		color = make_color(0.5f);
 		if(g_left_click) {
 			result = true;
-			play_sound(e_sound_click, zero);
+			if(!optional.mute_click_sound) {
+				play_sound(e_sound_click, zero);
+			}
 		}
 	}
 
