@@ -335,7 +335,7 @@ data_enum(e_upgrade,
 		.max_upgrades = 4,
 	}
 
-	auto_attack {
+	lightning_bolt {
 		.name = S("Lightning bolt"),
 		.cost = 50,
 		.extra_cost_per_level = 100,
@@ -413,7 +413,7 @@ struct s_soft_game_data
 	float life_change_timestamp;
 	float gold_change_timestamp;
 	s_timer dash_timer;
-	s_timer auto_attack_timer;
+	s_timer lightning_bolt_timer;
 	s_timer attack_timer;
 	b8 tried_to_submit_score;
 	int update_count;

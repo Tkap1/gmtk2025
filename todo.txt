@@ -45,4 +45,3 @@ too much key spam. it's a problem
 	maybe an upgrade for auto attack
 implement left click / right click for attack/dash
 	fix problem with button clicks?
-rename auto attack to lightning

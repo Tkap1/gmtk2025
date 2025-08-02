@@ -704,10 +704,10 @@ func void update()
 			int num_possible_hits = get_hits_per_attack();
 			b8 was_there_an_enemy_in_range = false;
 			float attack_range = get_player_attack_range();
-			soft_data->auto_attack_timer.want_to_use_timestamp = game->update_time;
+			soft_data->lightning_bolt_timer.want_to_use_timestamp = game->update_time;
 			b8 should_attack = timer_can_and_want_activate(soft_data->attack_timer, game->update_time, 0.0f, c_attack_cooldown, 0.1f);
-			b8 can_auto_attack = get_upgrade_level(e_upgrade_auto_attack) > 0 &&
-				timer_can_and_want_activate(soft_data->auto_attack_timer, game->update_time, 0.0f, get_auto_attack_cooldown(), 0.0f);
+			b8 can_lightning_bolt = get_upgrade_level(e_upgrade_lightning_bolt) > 0 &&
+				timer_can_and_want_activate(soft_data->lightning_bolt_timer, game->update_time, 0.0f, get_lightning_bolt_cooldown(), 0.0f);
 			for(int i = c_first_index[e_entity_enemy]; i < c_last_index_plus_one[e_entity_enemy]; i += 1) {
 				if(num_enemies_hit >= num_possible_hits) { break; }
 				if(!entity_arr->active[i]) { continue; }
@@ -717,15 +717,15 @@ func void update()
 				float dist = v2_distance(enemy->pos, player->pos);
 				if(dist <= attack_range + enemy_size.y * 0.5f) {
 					enemy->highlight = maybe(make_color(1, 0.6f, 0.6f));
-					if(should_attack || can_auto_attack) {
+					if(should_attack || can_lightning_bolt) {
 						was_there_an_enemy_in_range = true;
 						float knockback_multi = 0;
 						float damage_multi = 0;
-						if(can_auto_attack) {
+						if(can_lightning_bolt) {
 							damage_multi = 0.5f;
 							knockback_multi = 0.1f;
-							can_auto_attack = false;
-							timer_activate(&soft_data->auto_attack_timer, game->update_time);
+							can_lightning_bolt = false;
+							timer_activate(&soft_data->lightning_bolt_timer, game->update_time);
 							{
 								s_audio_fade fade = make_simple_fade(0.8f, 1.0f);
 								play_sound(e_sound_lightning_bolt, {.speed = get_rand_sound_speed(1.1f, &game->rng), .fade = maybe(fade)});
@@ -779,9 +779,9 @@ func void update()
 				}
 			}
 			// @Note(tkap, 01/08/2025): We pressed the attack key but there were no enemies in range
-			float time_since_last_auto_attack = game->update_time - soft_data->auto_attack_timer.used_timestamp;
-			b8 auto_attacked_recently = time_since_last_auto_attack <= 0.25f && soft_data->auto_attack_timer.used_timestamp > 0;
-			if(should_attack && !was_there_an_enemy_in_range && !auto_attacked_recently) {
+			float time_since_last_lightning_bolt = game->update_time - soft_data->lightning_bolt_timer.used_timestamp;
+			b8 lightning_bolted_recently = time_since_last_lightning_bolt <= 0.25f && soft_data->lightning_bolt_timer.used_timestamp > 0;
+			if(should_attack && !was_there_an_enemy_in_range && !lightning_bolted_recently) {
 				timer_activate(&soft_data->attack_timer, game->update_time);
 				play_sound(e_sound_miss_attack, zero);
 			}
@@ -2449,7 +2449,7 @@ func int get_upgrade_level(e_upgrade id)
 func float get_upgrade_boost(e_upgrade id)
 {
 	int level = get_upgrade_level(id);
-	if(level > 0 && id == e_upgrade_auto_attack) {
+	if(level > 0 && id == e_upgrade_lightning_bolt) {
 		level -= 1;
 	}
 	float result = level * g_upgrade_data[id].stat_boost;
@@ -2528,17 +2528,17 @@ func int get_hits_per_attack()
 	return result;
 }
 
-func float get_auto_attack_cooldown()
+func float get_lightning_bolt_cooldown()
 {
-	float frequency = 1.0f / c_auto_attack_cooldown;
-	frequency *= 1.0f + get_upgrade_boost(e_upgrade_auto_attack) / 100.0f;
+	float frequency = 1.0f / c_lightning_bolt_cooldown;
+	frequency *= 1.0f + get_upgrade_boost(e_upgrade_lightning_bolt) / 100.0f;
 	float result = 1.0f / frequency;
 	return result;
 }
 
-func float get_auto_attack_frequency()
+func float get_lightning_bolt_frequency()
 {
-	float cd = get_auto_attack_cooldown();
+	float cd = get_lightning_bolt_cooldown();
 	float result = 1.0f / cd;
 	return result;
 }
@@ -2614,13 +2614,13 @@ func s_len_str get_upgrade_description(e_upgrade id)
 			builder_add(&builder, "+%.0f enemy hit per attack\n\n", data.stat_boost);
 			builder_add(&builder, "Current: %i", get_hits_per_attack());
 		};
-		xcase e_upgrade_auto_attack: {
+		xcase e_upgrade_lightning_bolt: {
 			if(level == 0) {
-				builder_add(&builder, "A lightning bolt strikes an enemy\nin range every %.2f seconds", get_auto_attack_cooldown());
+				builder_add(&builder, "A lightning bolt strikes an enemy\nin range every %.2f seconds", get_lightning_bolt_cooldown());
 			}
 			else {
 				builder_add(&builder, "Lightning bolts strike with %.0f%% increased frequency\n\n", data.stat_boost);
-				builder_add(&builder, "Current: %.2f hits per second", get_auto_attack_frequency());
+				builder_add(&builder, "Current: %.2f hits per second", get_lightning_bolt_frequency());
 			}
 		};
 		break; invalid_default_case;
