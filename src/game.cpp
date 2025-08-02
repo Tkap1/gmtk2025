@@ -703,12 +703,12 @@ func void update()
 				timer_activate(&soft_data->dash_timer, game->update_time);
 			}
 
-			float dash_speed = 1;
+			float dash_speed = 1.0f;
 			{
 				b8 active = false;
 				s_time_data time_data = timer_get_time_data(soft_data->dash_timer, game->update_time, c_dash_duration, &active);
 				if(active) {
-					dash_speed = time_data.inv_percent * 10;
+					dash_speed = 1.0f + time_data.inv_percent * 5;
 				}
 			}
 			player->timer += delta * get_player_speed() * dash_speed;
@@ -1429,7 +1429,7 @@ func void render(float interp_dt, float delta)
 			{
 				b8 is_on_cooldown = false;
 				float time = update_time_to_render_time(game->update_time, interp_dt);
-				s_time_data time_data = timer_get_cooldown_time_data(soft_data->attack_timer, time, get_attack_or_auto_attack_cooldown(), &is_on_cooldown);
+				s_time_data time_data = timer_get_cooldown_time_data(soft_data->attack_timer, time, 0.0f, get_attack_or_auto_attack_cooldown(), &is_on_cooldown);
 				if(is_on_cooldown) {
 					do_flush = true;
 					s_v2 size = v2(64, 10);
@@ -1453,8 +1453,8 @@ func void render(float interp_dt, float delta)
 			{
 				b8 is_on_cooldown = false;
 				float time = update_time_to_render_time(game->update_time, interp_dt);
-				s_time_data time_data = timer_get_cooldown_time_data(soft_data->dash_timer, time, get_dash_cooldown(), &is_on_cooldown);
-				if(is_on_cooldown) {
+				s_time_data time_data = timer_get_cooldown_time_data(soft_data->dash_timer, time, c_dash_duration, get_dash_cooldown(), &is_on_cooldown);
+				if(is_on_cooldown && time_data.percent >= 0) {
 					do_flush = true;
 					s_v2 size = v2(64, 10);
 					s_v2 pos = player_pos;

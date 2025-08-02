@@ -45,4 +45,4 @@ dont display "paused" text unless we are in default state1
 explain attack and dash
 trees? just stuff around so the map is not as empty?
 make fire particles move away from the player?
-dash last longer, slower
+when we lose a life, do some kind of effect

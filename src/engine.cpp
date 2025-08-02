@@ -1063,12 +1063,12 @@ func s_time_data timer_get_time_data(s_timer timer, float time_now, float durati
 	return time_data;
 }
 
-func s_time_data timer_get_cooldown_time_data(s_timer timer, float time_now, float cooldown, b8* is_on_cooldown)
+func s_time_data timer_get_cooldown_time_data(s_timer timer, float time_now, float duration, float cooldown, b8* is_on_cooldown)
 {
 	if(is_on_cooldown) {
-		*is_on_cooldown = !timer_can_activate(timer, time_now, 0.0f, cooldown);
+		*is_on_cooldown = !timer_can_activate(timer, time_now, duration, cooldown);
 	}
-	s_time_data time_data = get_time_data(time_now, timer.used_timestamp, cooldown);
+	s_time_data time_data = get_time_data(time_now, timer.used_timestamp + duration, cooldown);
 	return time_data;
 }
 
