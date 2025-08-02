@@ -663,6 +663,7 @@ func void update()
 					else {
 						lose_lives(1);
 					}
+					add_emitter(make_lose_lives_particles());
 					entity_manager_remove(entity_arr, e_entity_enemy, i);
 				}
 			}
@@ -2953,4 +2954,30 @@ func u32 get_radix_from_enemy_index(int index)
 	float dist = v2_distance_squared(game->soft_data.entity_arr.data[index].pos, gxy(0.5f));
 	u32 result = float_to_radix(dist);
 	return result;
+}
+
+func s_entity make_lose_lives_particles()
+{
+	s_entity emitter = zero;
+
+	emitter.emitter_a = make_emitter_a();
+	emitter.emitter_a.pos = v3(gxy(0.5f), 0.0f);
+	emitter.emitter_a.dir = v3(0.4f, -1.0f, 0.0);
+	emitter.emitter_a.dir_rand = v3(1, 0, 0);
+	emitter.emitter_a.particle_duration *= 2.0f;
+	emitter.emitter_a.radius *= 0.5f;
+	emitter.emitter_a.gravity = 10;
+	emitter.emitter_a.speed = 1000;
+	emitter.emitter_a.color_arr[0].color = make_color(1.0f, 0.1f, 0.1f);
+
+	emitter.emitter_a.particle_duration_rand = 1.0f;
+	emitter.emitter_a.radius_rand = 1.0f;
+	emitter.emitter_a.speed_rand = 0.5f;
+
+	emitter.emitter_b = make_emitter_b();
+	emitter.emitter_b.spawn_type = e_emitter_spawn_type_circle;
+	emitter.emitter_b.spawn_data.x = 32;
+	emitter.emitter_b.particle_count = 200;
+
+	return emitter;
 }

@@ -1097,3 +1097,14 @@ func char scancode_to_char(SDL_Scancode scancode)
 	char result = (char)key;
 	return result;
 }
+
+#if defined(m_debug)
+func b8 cheat_key(int key)
+{
+	b8 result = false;
+	if(is_key_pressed(key, true)) {
+		result = true;
+	}
+	return result;
+}
+#endif

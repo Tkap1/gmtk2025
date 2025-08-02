@@ -89,3 +89,4 @@ func s_entity make_circle_particles();
 template <typename t, typename F>
 func void radix_sort_32(t* source, u32 count, F get_radix, s_linear_arena* arena);
 func u32 get_radix_from_enemy_index(int index);
+func s_entity make_lose_lives_particles();

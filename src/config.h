@@ -44,6 +44,6 @@ global constexpr int c_max_leaderboard_entries = 16;
 
 global constexpr float c_pre_victory_duration = 2.0f;
 
-global constexpr int c_leaderboard_id = 31492;
+global constexpr int c_leaderboard_id = 31671;
 
-global constexpr s_len_str c_game_name = S("IDK");
+global constexpr s_len_str c_game_name = S("Loop Fighter");
