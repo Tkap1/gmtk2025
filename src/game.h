@@ -277,6 +277,7 @@ struct s_button_data
 {
 	b8 disabled;
 	b8 mute_click_sound;
+	float font_size = 32;
 	s_len_str tooltip;
 };
 
@@ -458,6 +459,7 @@ struct s_game
 	b8 hover_over_upgrade_pauses_game;
 	b8 reload_shaders;
 	b8 any_key_pressed;
+	b8 purchased_at_least_one_upgrade;
 	s_linear_arena arena;
 	s_linear_arena update_frame_arena;
 	s_linear_arena render_frame_arena;

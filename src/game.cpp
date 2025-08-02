@@ -1461,6 +1461,7 @@ func void render(float interp_dt, float delta)
 					render_flush(data, true);
 				}
 			}
+
 			for_enum(upgrade_i, e_upgrade) {
 				s_upgrade_data data = g_upgrade_data[upgrade_i];
 				int how_many_to_buy = 1;
@@ -1503,13 +1504,31 @@ func void render(float interp_dt, float delta)
 				}
 				optional.tooltip = get_upgrade_description(upgrade_i);
 				optional.mute_click_sound = true;
+				optional.font_size = 28;
 				int key = (int)SDLK_1 + upgrade_i;
 				if(do_button_ex(str, pos, button_size, false, optional) || (!optional.disabled && is_key_pressed(key, true))) {
 					add_gold(-gold_to_spend);
 					apply_upgrade(upgrade_i, how_many_can_afford);
 					play_sound(e_sound_upgrade, {.speed = get_rand_sound_speed(1.1f, &game->rng)});
+					game->purchased_at_least_one_upgrade = true;
 				}
 			}
+
+			{
+				b8 should_do_upgrade_tutorial = false;
+				for_enum(upgrade_i, e_upgrade) {
+					s_upgrade_data data = g_upgrade_data[upgrade_i];
+					if(!game->purchased_at_least_one_upgrade && can_afford(soft_data->gold, data.cost)) {
+						should_do_upgrade_tutorial = true;
+					}
+				}
+
+				if(should_do_upgrade_tutorial) {
+					s_v4 color = hsv_to_rgb(game->render_time * 360, 1, 1);
+					draw_text(S("Buy upgrades! ->"), wxy(0.62f, 0.28f), sin_range(32, 40, game->render_time * 8), color, true, &game->font);
+				}
+			}
+
 			{
 				float passed = game->render_time - soft_data->gold_change_timestamp;
 				float font_size = ease_out_elastic_advanced(passed, 0, 0.5f, 64, 48);
@@ -1990,7 +2009,7 @@ func b8 do_button_ex(s_len_str text, s_v2 pos, s_v2 size, b8 centered, s_button_
 		add_to_render_group(data, e_shader_button, e_texture_white, e_mesh_quad);
 	}
 
-	draw_text(text, pos, 32.0f, text_color, true, &game->font);
+	draw_text(text, pos, optional.font_size, text_color, true, &game->font);
 
 	if(do_tooltip && optional.tooltip.count > 0) {
 		game->tooltip = optional.tooltip;

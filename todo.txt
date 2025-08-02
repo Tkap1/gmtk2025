@@ -38,5 +38,5 @@ UNLIKELY:
 fix volumes
 better targeting
 enemy flash on hit
-buttons can overflow
 shake + different sound when dash hit?
+dont display "paused" text unless we are in default state1
