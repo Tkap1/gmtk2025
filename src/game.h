@@ -343,6 +343,13 @@ data_enum(e_upgrade,
 		.stat_boost = 20,
 	}
 
+	auto_attack {
+		.name = S("Auto attack"),
+		.cost = 100,
+		.extra_cost_per_level = 150,
+		.stat_boost = 25,
+	}
+
 )
 
 struct s_upgrade_data

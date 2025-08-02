@@ -78,3 +78,8 @@ func s_v2 topleft_to_bottomleft_mouse(s_v2 pos, s_v2 size, s_v2 mouse);
 func s_v2 prevent_offscreen(s_v2 pos, s_v2 size);
 func s_len_str get_upgrade_description(e_upgrade id);
 func b8 are_we_hovering_over_ui(s_v2 mouse);
+func b8 do_we_have_auto_attack();
+func float get_auto_attack_cooldown();
+func float get_auto_attack_frequency();
+func float get_attack_or_auto_attack_cooldown();
+func char* handle_plural(float x);

@@ -706,12 +706,15 @@ func void update()
 			player->timer += delta * get_player_speed() * dash_speed;
 
 			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		try to hit start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+			if(do_we_have_auto_attack()) {
+				soft_data->attack_timer.want_to_use_timestamp = game->update_time;
+			}
 			int num_enemies_hit = 0;
 			int num_possible_hits = get_hits_per_attack();
 			b8 was_there_an_enemy_in_range = false;
 			float attack_range = get_player_attack_range();
 			soft_data->lightning_bolt_timer.want_to_use_timestamp = game->update_time;
-			b8 should_attack = timer_can_and_want_activate(soft_data->attack_timer, game->update_time, 0.0f, c_attack_cooldown, 0.1f);
+			b8 should_attack = timer_can_and_want_activate(soft_data->attack_timer, game->update_time, 0.0f, get_attack_or_auto_attack_cooldown(), 0.1f);
 			b8 can_lightning_bolt = get_upgrade_level(e_upgrade_lightning_bolt) > 0 &&
 				timer_can_and_want_activate(soft_data->lightning_bolt_timer, game->update_time, 0.0f, get_lightning_bolt_cooldown(), 0.0f);
 			for(int i = c_first_index[e_entity_enemy]; i < c_last_index_plus_one[e_entity_enemy]; i += 1) {
@@ -787,13 +790,18 @@ func void update()
 			// @Note(tkap, 01/08/2025): We pressed the attack key but there were no enemies in range
 			float time_since_last_lightning_bolt = game->update_time - soft_data->lightning_bolt_timer.used_timestamp;
 			b8 lightning_bolted_recently = time_since_last_lightning_bolt <= 0.33f && soft_data->lightning_bolt_timer.used_timestamp > 0;
-			if(should_attack && !was_there_an_enemy_in_range && !lightning_bolted_recently) {
+			if(should_attack && !was_there_an_enemy_in_range && !lightning_bolted_recently && !do_we_have_auto_attack()) {
 				timer_activate(&soft_data->attack_timer, game->update_time);
 				play_sound(e_sound_miss_attack, zero);
 			}
 			if(num_enemies_hit > 0) {
 				play_sound(e_sound_punch, {.speed = get_rand_sound_speed(1.1f, &game->rng)});
-				soft_data->attack_timer.want_to_use_timestamp = 0;
+				if(do_we_have_auto_attack()) {
+					timer_activate(&soft_data->attack_timer, game->update_time);
+				}
+				else {
+					soft_data->attack_timer.want_to_use_timestamp = 0;
+				}
 				player->did_attack_enemy_timestamp = game->update_time;
 			}
 			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		try to hit end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1372,7 +1380,7 @@ func void render(float interp_dt, float delta)
 		{
 			b8 is_on_cooldown = false;
 			float time = update_time_to_render_time(game->update_time, interp_dt);
-			s_time_data time_data = timer_get_cooldown_time_data(soft_data->attack_timer, time, c_attack_cooldown, &is_on_cooldown);
+			s_time_data time_data = timer_get_cooldown_time_data(soft_data->attack_timer, time, get_attack_or_auto_attack_cooldown(), &is_on_cooldown);
 			if(is_on_cooldown) {
 				s_v2 size = v2(64, 10);
 				s_v2 pos = player_pos;
@@ -2462,6 +2470,9 @@ func float get_upgrade_boost(e_upgrade id)
 	if(level > 0 && id == e_upgrade_lightning_bolt) {
 		level -= 1;
 	}
+	else if(level > 0 && id == e_upgrade_auto_attack) {
+		level -= 1;
+	}
 	float result = level * g_upgrade_data[id].stat_boost;
 	return result;
 }
@@ -2633,6 +2644,16 @@ func s_len_str get_upgrade_description(e_upgrade id)
 				builder_add(&builder, "Current: %.2f hits per second", get_lightning_bolt_frequency());
 			}
 		};
+		xcase e_upgrade_auto_attack: {
+			if(level == 0) {
+				builder_add(&builder, "Attacks happen automatically every %.2f second%s\nNo more clicking!", get_auto_attack_cooldown(), handle_plural(get_auto_attack_cooldown()));
+			}
+			else {
+				builder_add(&builder, "Auto attacks have %.0f%% increased frequency\n\n", data.stat_boost);
+				float frequency = get_auto_attack_frequency();
+				builder_add(&builder, "Current: %.2f hit%s per second", frequency, handle_plural(frequency));
+			}
+		};
 		break; invalid_default_case;
 	}
 	int key = (int)SDLK_1 + id;
@@ -2646,5 +2667,46 @@ func s_len_str get_upgrade_description(e_upgrade id)
 func b8 are_we_hovering_over_ui(s_v2 mouse)
 {
 	b8 result = mouse.x > c_game_area.x;
+	return result;
+}
+
+func b8 do_we_have_auto_attack()
+{
+	b8 result = get_upgrade_level(e_upgrade_auto_attack) > 0;
+	return result;
+}
+
+func float get_auto_attack_cooldown()
+{
+	float frequency = 1.0f / c_auto_attack_cooldown;
+	frequency *= 1.0f + get_upgrade_boost(e_upgrade_auto_attack) / 100.0f;
+	float result = 1.0f / frequency;
+	return result;
+}
+
+func float get_auto_attack_frequency()
+{
+	float result = 1.0f / get_auto_attack_cooldown();
+	return result;
+}
+
+func float get_attack_or_auto_attack_cooldown()
+{
+	float result = 0;
+	if(do_we_have_auto_attack()) {
+		result = get_auto_attack_cooldown();
+	}
+	else {
+		result = c_attack_cooldown_on_miss;
+	}
+	return result;
+}
+
+func char* handle_plural(float x)
+{
+	char* result = "s";
+	if(fabsf(x) == 1.0f) {
+		result = "";
+	}
 	return result;
 }

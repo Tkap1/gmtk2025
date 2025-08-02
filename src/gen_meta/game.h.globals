@@ -121,5 +121,11 @@ global constexpr s_upgrade_data g_upgrade_data[e_upgrade_count] = {
 		.extra_cost_per_level = 100,
 		.stat_boost = 20,
 	},
+	{
+		.name = S("Auto attack"),
+		.cost = 100,
+		.extra_cost_per_level = 150,
+		.stat_boost = 25,
+	},
 };
 

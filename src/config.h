@@ -23,7 +23,8 @@ global constexpr float c_dash_cooldown = 3;
 global constexpr int c_max_lives = 10;
 global constexpr float c_enemy_health = 10;
 global constexpr float c_lightning_bolt_cooldown = 3;
-global constexpr float c_attack_cooldown = 1;
+global constexpr float c_attack_cooldown_on_miss = 1;
+global constexpr float c_auto_attack_cooldown = 1;
 global constexpr float c_knockback = 400;
 
 global constexpr float c_game_speed_arr[] = {
