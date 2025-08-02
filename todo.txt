@@ -39,3 +39,4 @@ fix volumes
 shake + different sound when dash hit?
 better highlighting of enemies that will be hit
 dont display "paused" text unless we are in default state1
+explain attack and dash

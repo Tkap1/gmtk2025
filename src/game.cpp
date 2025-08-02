@@ -549,6 +549,11 @@ func void update()
 			entity_manager_add(entity_arr, e_entity_player, player);
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		create player end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+		{
+			s_entity emitter = make_circle_particles();
+			add_emitter(emitter);
+		}
 	}
 	if(game->do_soft_reset) {
 	}
@@ -1240,7 +1245,13 @@ func void render(float interp_dt, float delta)
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		tiles end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-		draw_circle(gxy(0.5f, 0.5f), c_circle_radius, make_color(0.2f));
+		{
+			s_v2 size = v2(32);
+			draw_atlas(gxy(0.5f) + size * v2(-0.5f, -0.5f), v2(32), v2i(78, 16), make_color(1));
+			draw_atlas(gxy(0.5f) + size * v2(0.5f, -0.5f), v2(32), v2i(79, 16), make_color(1));
+			draw_atlas(gxy(0.5f) + size * v2(-0.5f, 0.5f), v2(32), v2i(78, 17), make_color(1));
+			draw_atlas(gxy(0.5f) + size * v2(0.5f, 0.5f), v2(32), v2i(79, 17), make_color(1));
+		}
 
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw enemies start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		{
@@ -2840,6 +2851,42 @@ func s_entity make_enemy_hit_particles(s_v2 pos)
 
 	emitter.emitter_b = make_emitter_b();
 	emitter.emitter_b.particle_count = 200;
+
+	return emitter;
+}
+
+func s_entity make_circle_particles()
+{
+	s_entity emitter = zero;
+
+	emitter.emitter_a = make_emitter_a();
+	emitter.emitter_a.dir = v3(0.1f, -0.5f, 0);
+	emitter.emitter_a.dir_rand = v3(1, 0, 0);
+	emitter.emitter_a.pos = v3(gxy(0.5f), 0.0f);
+	emitter.emitter_a.particle_duration *= 2;
+	emitter.emitter_a.radius *= 0.5f;
+	// emitter.emitter_a.color_arr[0].color = make_color(0.5f, 0.1f, 0.1f);
+	emitter.emitter_a.color_arr.count = 4;
+	float strength = 0.2f;
+	emitter.emitter_a.color_arr[0].color = make_color(strength);
+	emitter.emitter_a.color_arr[1].color = make_color(strength, strength, 0.0f);
+	emitter.emitter_a.color_arr[2].color = make_color(strength, 0.0f, 0.0f);
+	emitter.emitter_a.color_arr[3].color = make_color(0.0f);
+	emitter.emitter_a.color_arr[0].percent = 0.0f;
+	emitter.emitter_a.color_arr[1].percent = 0.2f;
+	emitter.emitter_a.color_arr[2].percent = 0.6f;
+	emitter.emitter_a.color_arr[3].percent = 1.0f;
+
+	emitter.emitter_a.particle_duration_rand = 0.5f;
+	emitter.emitter_a.radius_rand = 0.5f;
+	emitter.emitter_a.speed_rand = 1.0f;
+
+	emitter.emitter_b = make_emitter_b();
+	emitter.emitter_b.particle_count = 10;
+	emitter.emitter_b.particles_per_second = 100;
+	emitter.emitter_b.duration = -1;
+	emitter.emitter_b.spawn_type = e_emitter_spawn_type_circle_outline;
+	emitter.emitter_b.spawn_data.x = c_circle_radius * 0.5f;
 
 	return emitter;
 }
