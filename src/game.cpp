@@ -1224,14 +1224,12 @@ func void render(float interp_dt, float delta)
 
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		tiles start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		{
-			constexpr int tile_size = 32;
-			int tiles_right = floorfi(c_game_area.x / tile_size);
-			int tiles_down = ceilfi(c_game_area.y / tile_size);
-			for(int y = 0; y < tiles_down; y += 1) {
-				for(int x = 0; x < tiles_right; x += 1) {
-					s_v2 pos = v2(x * tile_size, y * tile_size) + v2(tile_size * 0.5f);
-					draw_atlas(pos, v2(tile_size), v2i(2, 6), make_color(1));
-				}
+			{
+				s_instance_data data = zero;
+				data.model = m4_translate(v3(gxy(0.5f), 0));
+				data.model = m4_multiply(data.model, m4_scale(v3(c_game_area, 1)));
+				data.color = make_color(1);
+				add_to_render_group(data, e_shader_tile_background, e_texture_white, e_mesh_quad);
 			}
 
 			s_render_flush_data data = make_render_flush_data(zero, zero);
@@ -1823,6 +1821,8 @@ func void render_flush(s_render_flush_data data, b8 reset_render_count)
 		uniform_data.cam_pos = data.cam_pos;
 		uniform_data.mouse = g_mouse;
 		uniform_data.player_pos = data.player_pos;
+		uniform_data.window_size.x = (float)g_platform_data->window_size.x;
+		uniform_data.window_size.y = (float)g_platform_data->window_size.y;
 		gl(glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(s_uniform_data), &uniform_data));
 	}
 

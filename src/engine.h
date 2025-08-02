@@ -23,6 +23,7 @@ enum e_shader
 	e_shader_portal,
 	e_shader_flat_remove_black,
 	e_shader_lightning,
+	e_shader_tile_background,
 	e_shader_count,
 };
 
@@ -38,6 +39,7 @@ global constexpr char* c_shader_path_arr[e_shader_count] = {
 	"shaders/portal.shader",
 	"shaders/flat_remove_black.shader",
 	"shaders/lightning.shader",
+	"shaders/tile_background.shader",
 };
 
 
