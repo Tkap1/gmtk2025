@@ -4,7 +4,7 @@ enum e_enemy
 	e_enemy_b,
 	e_enemy_c,
 	e_enemy_fast,
-	e_enemy_big_slow,
+	e_enemy_big,
 	e_enemy_fast_zig_zag,
 	e_enemy_boss,
 	e_enemy_count,

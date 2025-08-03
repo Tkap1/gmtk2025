@@ -218,12 +218,12 @@ data_enum(e_enemy,
 		.atlas_index = {125, 28},
 	}
 
-	big_slow {
+	big {
 		.prev_enemy_required_kill_count = 20,
 		.spawn_weight = 9000,
 		.health_multi = 20.0f,
 		.gold_reward = 10,
-		.speed_multi = 0.75f,
+		.speed_multi = 1,
 		.knockback_resistance = 0.5f,
 		.movement_type = e_enemy_movement_spiral,
 		.size = {64, 64},
@@ -480,6 +480,8 @@ struct s_game
 	s_rng rng;
 	float speed;
 	s_input_name_state input_name_state;
+	int num_times_we_attacked_an_enemy;
+	int num_times_we_dashed;
 
 	s_len_str tooltip;
 

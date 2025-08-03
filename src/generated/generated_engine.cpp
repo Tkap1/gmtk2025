@@ -10,7 +10,7 @@ func void set_window_size(int width, int height);
 func s_texture load_texture_from_file(char* path, u32 filtering);
 func s_texture load_texture_from_data(void* data, int width, int height, int format, u32 filtering);
 func s_font load_font_from_file(char* file, int font_size, s_linear_arena* arena);
-func s_v2 draw_text(s_len_str text, s_v2 in_pos, float font_size, s_v4 color, b8 centered, s_font* font);
+func s_v2 draw_text(s_len_str text, s_v2 in_pos, float font_size, s_v4 color, b8 centered, s_font* font, s_draw_data draw_data);
 func s_v2 get_text_size_with_count(s_len_str in_text, s_font* font, float font_size, int count, int in_column);
 func s_v2 get_text_size(s_len_str text, s_font* font, float font_size);
 func b8 iterate_text(s_text_iterator* it, s_len_str text, s_v4 color);

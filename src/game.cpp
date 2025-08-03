@@ -702,6 +702,9 @@ func void update()
 			if(timer_can_and_want_activate(soft_data->dash_timer, game->update_time, c_dash_duration, get_dash_cooldown(), 0.1f)) {
 				play_sound(e_sound_dash, {.volume = 0.1f});
 				timer_activate(&soft_data->dash_timer, game->update_time);
+				if(completed_attack_tutorial()) {
+					game->num_times_we_dashed += 1;
+				}
 			}
 
 			float dash_speed = 1.0f;
@@ -731,6 +734,7 @@ func void update()
 			int num_possible_hits = get_hits_per_attack();
 			b8 was_there_an_enemy_in_range = false;
 			float attack_range = get_player_attack_range();
+			float lightning_bolt_range = attack_range * 2;
 			soft_data->lightning_bolt_timer.want_to_use_timestamp = game->update_time;
 			b8 should_attack = timer_can_and_want_activate(soft_data->attack_timer, game->update_time, 0.0f, get_attack_or_auto_attack_cooldown(), 0.1f);
 			b8 can_lightning_bolt = get_upgrade_level(e_upgrade_lightning_bolt) > 0 &&
@@ -743,7 +747,11 @@ func void update()
 				s_v2 enemy_size = get_enemy_size(enemy->enemy_type);
 
 				float dist = v2_distance(enemy->pos, player->pos);
-				if(dist <= attack_range + enemy_size.y * 0.5f) {
+				float range = attack_range;
+				if(can_lightning_bolt) {
+					range = lightning_bolt_range;
+				}
+				if(dist <= range + enemy_size.y * 0.5f) {
 					enemy->highlight = maybe(make_color(1, 0.6f, 0.6f));
 					if(should_attack || can_lightning_bolt) {
 						was_there_an_enemy_in_range = true;
@@ -768,6 +776,7 @@ func void update()
 							}
 						}
 						else {
+							game->num_times_we_attacked_an_enemy += 1;
 							damage_multi = 1;
 							num_enemies_hit += 1;
 							knockback_multi = 1;
@@ -918,11 +927,7 @@ func void render(float interp_dt, float delta)
 	s_hard_game_data* hard_data = &game->hard_data;
 	s_soft_game_data* soft_data = &game->soft_data;
 
-	s_m4 light_projection = make_orthographic(-50, 50, -50, 50, -50, 50);
-	s_v3 sun_pos = v3(0, -10, 10);
-	s_v3 sun_dir = v3_normalized(v3(1, 1, -1));
-	s_m4 ortho = make_orthographic(0, c_world_size.x, c_world_size.y, 0, -1, 1);
-	s_m4 perspective = make_perspective(60.0f, c_world_size.x / c_world_size.y, 0.01f, 100.0f);
+	s_m4 ortho = make_orthographic(0, c_world_size.x, c_world_size.y, 0, -100, 100);
 
 	bind_framebuffer(0);
 	clear_framebuffer_depth(0);
@@ -957,8 +962,8 @@ func void render(float interp_dt, float delta)
 				add_state_transition(&game->state0, e_game_state0_options, game->render_time, c_transition_time);
 			}
 
-			draw_text(c_game_name, wxy(0.5f, 0.2f), 128, make_color(1), true, &game->font);
-			draw_text(S("www.twitch.tv/Tkap1"), wxy(0.5f, 0.3f), 32, make_color(0.6f), true, &game->font);
+			draw_text(c_game_name, wxy(0.5f, 0.2f), 128, make_color(1), true, &game->font, zero);
+			draw_text(S("www.twitch.tv/Tkap1"), wxy(0.5f, 0.3f), 32, make_color(0.6f), true, &game->font, zero);
 
 			{
 				s_render_flush_data data = make_render_flush_data(zero, zero);
@@ -992,8 +997,8 @@ func void render(float interp_dt, float delta)
 				add_state_transition(&game->state0, e_game_state0_options, game->render_time, c_transition_time);
 			}
 
-			draw_text(c_game_name, wxy(0.5f, 0.2f), 128, make_color(1), true, &game->font);
-			draw_text(S("www.twitch.tv/Tkap1"), wxy(0.5f, 0.3f), 32, make_color(0.6f), true, &game->font);
+			draw_text(c_game_name, wxy(0.5f, 0.2f), 128, make_color(1), true, &game->font, zero);
+			draw_text(S("www.twitch.tv/Tkap1"), wxy(0.5f, 0.3f), 32, make_color(0.6f), true, &game->font, zero);
 
 			{
 				s_render_flush_data data = make_render_flush_data(zero, zero);
@@ -1030,9 +1035,9 @@ func void render(float interp_dt, float delta)
 			{
 				s_time_format data = update_count_to_time_format(game->update_count_at_win_time);
 				s_len_str text = format_text("%02i:%02i.%i", data.minutes, data.seconds, data.milliseconds);
-				draw_text(text, c_world_center * v2(1.0f, 0.2f), 64, make_color(1), true, &game->font);
+				draw_text(text, c_world_center * v2(1.0f, 0.2f), 64, make_color(1), true, &game->font, zero);
 
-				draw_text(S("Press R to restart..."), c_world_center * v2(1.0f, 0.4f), sin_range(48, 60, game->render_time * 8.0f), make_color(0.66f), true, &game->font);
+				draw_text(S("Press R to restart..."), c_world_center * v2(1.0f, 0.4f), sin_range(48, 60, game->render_time * 8.0f), make_color(0.66f), true, &game->font, zero);
 			}
 
 			b8 want_to_reset = is_key_pressed(SDLK_r, true);
@@ -1172,14 +1177,14 @@ func void render(float interp_dt, float delta)
 				}
 			}
 
-			draw_text(S("Victory!"), c_world_size * v2(0.5f, 0.1f), font_size, make_color(1), true, &game->font);
-			draw_text(S("Enter your name"), c_world_size * v2(0.5f, 0.2f), font_size, make_color(1), true, &game->font);
+			draw_text(S("Victory!"), c_world_size * v2(0.5f, 0.1f), font_size, make_color(1), true, &game->font, zero);
+			draw_text(S("Enter your name"), c_world_size * v2(0.5f, 0.2f), font_size, make_color(1), true, &game->font, zero);
 			if(state->error_str.count > 0) {
-				draw_text(builder_to_len_str(&state->error_str), c_world_size * v2(0.5f, 0.3f), font_size, hex_to_rgb(0xD77870), true, &game->font);
+				draw_text(builder_to_len_str(&state->error_str), c_world_size * v2(0.5f, 0.3f), font_size, hex_to_rgb(0xD77870), true, &game->font, zero);
 			}
 
 			if(state->name.str.count > 0) {
-				draw_text(builder_to_len_str(&state->name.str), pos, font_size, make_color(1), true, &game->font);
+				draw_text(builder_to_len_str(&state->name.str), pos, font_size, make_color(1), true, &game->font, zero);
 			}
 
 			s_v2 full_text_size = get_text_size(builder_to_len_str(&state->name.str), &game->font, font_size);
@@ -1408,7 +1413,7 @@ func void render(float interp_dt, float delta)
 				s_len_str str = builder_to_str(&fct->builder);
 				s_v4 color = make_color(1);
 				color.a = powf(time_data.inv_percent, 0.5f);
-				draw_text(str, fct->pos, 32, color, true, &game->font);
+				draw_text(str, fct->pos, 32, color, true, &game->font, zero);
 			}
 			if(time_data.percent >= 1) {
 				entity_manager_remove(entity_arr, e_entity_fct, i);
@@ -1566,7 +1571,26 @@ func void render(float interp_dt, float delta)
 
 				if(should_do_upgrade_tutorial) {
 					s_v4 color = hsv_to_rgb(game->render_time * 360, 1, 1);
-					draw_text(S("Buy upgrades! ->"), wxy(0.62f, 0.28f), sin_range(32, 40, game->render_time * 8), color, true, &game->font);
+					draw_text(S("Buy upgrades! ->"), wxy(0.62f, 0.28f), sin_range(32, 40, game->render_time * 8), color, true, &game->font, zero);
+				}
+
+				if(!completed_attack_tutorial()) {
+					s_len_str str = format_text("Press %sleft click$. or ", c_key_color_str);
+					float font_size = sin_range(32, 40, game->render_time * 8);
+					s_v2 pos = draw_text(str, gxy(0.42f, 0.8f), font_size, make_color(1), true, &game->font, zero);
+					draw_keycap(scancode_to_char(SDL_SCANCODE_S), pos, v2(font_size));
+					pos.x += font_size;
+					draw_text(S(" to attack"), pos, font_size, make_color(1), false, &game->font, zero);
+					draw_text(S("(There is a cooldown if you don't hit any enemies)"), gxy(0.5f, 0.85f), 32, make_color(0.8f), true, &game->font, zero);
+				}
+				else if(game->num_times_we_dashed < 2) {
+					s_len_str str = format_text("Press %sright click$. or ", c_key_color_str);
+					float font_size = sin_range(32, 40, game->render_time * 8);
+					s_v2 pos = draw_text(str, gxy(0.44f, 0.8f), font_size, make_color(1), true, &game->font, zero);
+					draw_keycap(scancode_to_char(SDL_SCANCODE_A), pos, v2(font_size));
+					pos.x += font_size;
+					draw_text(S(" to dash"), pos, font_size, make_color(1), false, &game->font, zero);
+					draw_text(S("(Attacks do triple damage while dashing)"), gxy(0.5f, 0.85f), 32, make_color(0.8f), true, &game->font, zero);
 				}
 			}
 
@@ -1575,24 +1599,24 @@ func void render(float interp_dt, float delta)
 				float font_size = ease_out_elastic_advanced(passed, 0, 0.5f, 64, 48);
 				float t = ease_linear_advanced(passed, 0, 1, 1, 0);
 				s_v4 color = lerp_color(make_color(0.8f, 0.8f, 0), make_color(1, 1, 0.3f), t);
-				draw_text(format_text("Gold: %i", soft_data->gold), wxy(0.87f, 0.04f), font_size, color, true, &game->font);
+				draw_text(format_text("Gold: %i", soft_data->gold), wxy(0.87f, 0.04f), font_size, color, true, &game->font, zero);
 			}
 			{
 				float passed = game->render_time - soft_data->life_change_timestamp;
 				float font_size = ease_out_elastic_advanced(passed, 0, 0.5f, 64, 48);
 				float t = ease_linear_advanced(passed, 0, 1, 1, 0);
 				s_v4 color = lerp_color(hex_to_rgb(0xDF20AF), hex_to_rgb(0xDF204F), t);
-				draw_text(format_text("Lives: %i", get_max_lives() - soft_data->lives_lost), wxy(0.87f, 0.12f), font_size, color, true, &game->font);
+				draw_text(format_text("Lives: %i", get_max_lives() - soft_data->lives_lost), wxy(0.87f, 0.12f), font_size, color, true, &game->font, zero);
 			}
 			{
 				s_time_format data = update_count_to_time_format(game->hard_data.update_count);
 				s_len_str text = format_text("%02i:%02i.%03i", data.minutes, data.seconds, data.milliseconds);
-				draw_text(text, wxy(0.87f, 0.2f), 48, make_color(1), true, &game->font);
+				draw_text(text, wxy(0.87f, 0.2f), 48, make_color(1), true, &game->font, zero);
 			}
 
 			if(game->hover_over_upgrade_pauses_game && are_we_hovering_over_ui(g_mouse) && !game->do_hard_reset) {
 				game->speed = 0;
-				draw_text(S("Paused"), gxy(0.5f, 0.1f), sin_range(64, 80, game->render_time * 8), make_color(1), true, &game->font);
+				draw_text(S("Paused"), gxy(0.5f, 0.1f), sin_range(64, 80, game->render_time * 8), make_color(1), true, &game->font, zero);
 			}
 			else {
 				game->speed = 1;
@@ -1602,7 +1626,7 @@ func void render(float interp_dt, float delta)
 				s_render_flush_data data = make_render_flush_data(zero, zero);
 				data.projection = ortho;
 				data.blend_mode = e_blend_mode_normal;
-				data.depth_mode = e_depth_mode_no_read_no_write;
+				data.depth_mode = e_depth_mode_read_and_write;
 				render_flush(data, true);
 			}
 
@@ -1616,7 +1640,7 @@ func void render(float interp_dt, float delta)
 				rect_pos = prevent_offscreen(rect_pos, size);
 				s_v2 text_pos = rect_pos + v2(8);
 				draw_rect_topleft(rect_pos, size, make_color(0.0f, 0.95f));
-				draw_text(game->tooltip, text_pos, font_size, make_color(1), false, &game->font);
+				draw_text(game->tooltip, text_pos, font_size, make_color(1), false, &game->font, zero);
 				{
 					s_render_flush_data data = make_render_flush_data(zero, zero);
 					data.projection = ortho;
@@ -1668,8 +1692,8 @@ func void render(float interp_dt, float delta)
 	if(do_defeat) {
 
 		draw_rect_topleft(v2(0), c_world_size, make_color(0, 0.75f));
-		draw_text(S("Defeat"), wxy(0.5f, 0.4f) + rand_v2_11(&game->rng) * 8, 128, make_color(1, 0.2f, 0.2f), true, &game->font);
-		draw_text(S("Press R to try again"), wxy(0.5f, 0.55f), sin_range(48, 64, game->render_time * 8), make_color(1), true, &game->font);
+		draw_text(S("Defeat"), wxy(0.5f, 0.4f) + rand_v2_11(&game->rng) * 8, 128, make_color(1, 0.2f, 0.2f), true, &game->font, zero);
+		draw_text(S("Press R to try again"), wxy(0.5f, 0.55f), sin_range(48, 64, game->render_time * 8), make_color(1), true, &game->font, zero);
 
 		{
 			s_render_flush_data data = make_render_flush_data(zero, zero);
@@ -1765,10 +1789,10 @@ func void draw_rect_topleft(s_v2 pos, s_v2 size, s_v4 color)
 	draw_rect(pos, size, color);
 }
 
-func void draw_texture_screen(s_v2 pos, s_v2 size, s_v4 color, e_texture texture_id, e_shader shader_id, s_v2 uv_min, s_v2 uv_max)
+func void draw_texture_screen(s_v2 pos, s_v2 size, s_v4 color, e_texture texture_id, e_shader shader_id, s_v2 uv_min, s_v2 uv_max, s_draw_data draw_data)
 {
 	s_instance_data data = zero;
-	data.model = m4_translate(v3(pos, 0));
+	data.model = m4_translate(v3(pos, draw_data.z));
 	data.model = m4_multiply(data.model, m4_scale(v3(size, 1)));
 	data.color = color;
 	data.uv_min = uv_min;
@@ -2052,7 +2076,7 @@ func b8 do_button_ex(s_len_str text, s_v2 pos, s_v2 size, b8 centered, s_button_
 		add_to_render_group(data, e_shader_button, e_texture_white, e_mesh_quad);
 	}
 
-	draw_text(text, pos, optional.font_size, text_color, true, &game->font);
+	draw_text(text, pos, optional.font_size, text_color, true, &game->font, {.z = 1});
 
 	if(do_tooltip && optional.tooltip.count > 0) {
 		game->tooltip = optional.tooltip;
@@ -2200,10 +2224,10 @@ func void do_leaderboard()
 
 	{
 		if(!game->leaderboard_received) {
-			draw_text(S("Getting leaderboard..."), c_world_center, 48, make_color(0.66f), true, &game->font);
+			draw_text(S("Getting leaderboard..."), c_world_center, 48, make_color(0.66f), true, &game->font, zero);
 		}
 		else if(game->leaderboard_arr.count <= 0) {
-			draw_text(S("No scores yet :("), c_world_center, 48, make_color(0.66f), true, &game->font);
+			draw_text(S("No scores yet :("), c_world_center, 48, make_color(0.66f), true, &game->font, zero);
 		}
 
 		constexpr int c_max_visible_entries = 10;
@@ -2221,9 +2245,9 @@ func void do_leaderboard()
 			if(entry.nice_name.count > 0) {
 				name = entry.nice_name.str;
 			}
-			draw_text(format_text("%i %s", rank_number, name), v2(c_world_size.x * 0.1f, pos.y - 24), 32, color, false, &game->font);
+			draw_text(format_text("%i %s", rank_number, name), v2(c_world_size.x * 0.1f, pos.y - 24), 32, color, false, &game->font, zero);
 			s_len_str text = format_text("%02i:%02i.%i", data.minutes, data.seconds, data.milliseconds);
-			draw_text(text, v2(c_world_size.x * 0.5f, pos.y - 24), 32, color, false, &game->font);
+			draw_text(text, v2(c_world_size.x * 0.5f, pos.y - 24), 32, color, false, &game->font, zero);
 			pos.y += 48;
 		}
 	}
@@ -2294,7 +2318,7 @@ func void draw_atlas(s_v2 pos, s_v2 size, s_v2i index, s_v4 color)
 func void draw_atlas_ex(s_v2 pos, s_v2 size, s_v2i index, s_v4 color, float rotation, s_draw_data draw_data)
 {
 	s_instance_data data = zero;
-	data.model = m4_translate(v3(pos, 0));
+	data.model = m4_translate(v3(pos, draw_data.z));
 	if(rotation != 0) {
 		data.model *= m4_rotate(rotation, v3(0, 0, 1));
 	}
@@ -2711,11 +2735,10 @@ func s_len_str get_upgrade_description(e_upgrade id)
 
 	s_str_builder<512> builder;
 	builder.count = 0;
-	char* key_color = "$$26A5D9";
 	switch(id) {
 		xcase e_upgrade_damage: {
-			builder_add(&builder, "+%.0f%% damage\n", data.stat_boost);
-			builder_add(&builder, "Press %sleft click$. or %s%c$. to attack\n\n", key_color, key_color, to_upper_case(scancode_to_char(SDL_SCANCODE_S)));
+			builder_add(&builder, "+%.0f%% damage\n\n", data.stat_boost);
+			// builder_add(&builder, "Press %sleft click$. or %s%c$. to attack\n\n", c_key_color_str, c_key_color_str, to_upper_case(scancode_to_char(SDL_SCANCODE_S)));
 			builder_add(&builder, "Current: %.0f", get_player_damage());
 		};
 		xcase e_upgrade_speed: {
@@ -2732,9 +2755,9 @@ func s_len_str get_upgrade_description(e_upgrade id)
 		};
 		xcase e_upgrade_dash_cooldown: {
 			builder_add(&builder, "-%.0f%% dash cooldown\n", data.stat_boost);
-			builder_add(&builder, "Press %sright click$. or %s%c$. to dash\n", key_color, key_color, to_upper_case(scancode_to_char(SDL_SCANCODE_A)));
-			builder_add(&builder, "Attacks do triple damage while dashing\n\n", key_color, key_color, to_upper_case(scancode_to_char(SDL_SCANCODE_A)));
-			builder_add(&builder, "Current: %.2f", get_dash_cooldown());
+			// builder_add(&builder, "Press %sright click$. or %s%c$. to dash\n", c_key_color_str, c_key_color_str, to_upper_case(scancode_to_char(SDL_SCANCODE_A)));
+			builder_add(&builder, "Attacks do triple damage while dashing\n\n", c_key_color_str, c_key_color_str, to_upper_case(scancode_to_char(SDL_SCANCODE_A)));
+			builder_add(&builder, "Current: %.2f second cooldown", get_dash_cooldown());
 		};
 		xcase e_upgrade_max_lives: {
 			builder_add(&builder, "+%.0f max lives\n\n", data.stat_boost);
@@ -2746,7 +2769,7 @@ func s_len_str get_upgrade_description(e_upgrade id)
 		};
 		xcase e_upgrade_lightning_bolt: {
 			if(level == 0) {
-				builder_add(&builder, "A lightning bolt strikes an enemy\nin range every %.2f seconds", get_lightning_bolt_cooldown());
+				builder_add(&builder, "A lightning bolt strikes a nearby\nenemy every %.2f seconds", get_lightning_bolt_cooldown());
 			}
 			else {
 				builder_add(&builder, "Lightning bolts strike with %.0f%% increased frequency\n\n", data.stat_boost);
@@ -2766,7 +2789,7 @@ func s_len_str get_upgrade_description(e_upgrade id)
 		break; invalid_default_case;
 	}
 	int key = (int)SDLK_1 + id;
-	builder_add(&builder, "\n\nHotkey [%s%c$.]", key_color, '1' + key - SDLK_1);
+	builder_add(&builder, "\n\nHotkey [%s%c$.]", c_key_color_str, '1' + key - SDLK_1);
 
 	s_len_str temp = builder_to_len_str(&builder);
 	s_len_str result = format_text("%.*s", expand_str(temp));
@@ -2980,4 +3003,19 @@ func s_entity make_lose_lives_particles()
 	emitter.emitter_b.particle_count = 200;
 
 	return emitter;
+}
+
+func void draw_keycap(char c, s_v2 pos, s_v2 size)
+{
+	pos += size * 0.5f;
+	draw_atlas_ex(pos, size, v2i(124, 42), make_color(1), 0, zero);
+	s_len_str str = format_text("%c", to_upper_case(c));
+	pos.y -= size.x * 0.05f;
+	draw_text(str, pos, size.x, c_key_color, true, &game->font, {.z = 1});
+}
+
+func b8 completed_attack_tutorial()
+{
+	b8 result = game->num_times_we_attacked_an_enemy >= 3;
+	return result;
 }

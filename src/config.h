@@ -26,6 +26,8 @@ global constexpr float c_lightning_bolt_cooldown = 3;
 global constexpr float c_attack_cooldown_on_miss = 1;
 global constexpr float c_auto_attack_cooldown = 1;
 global constexpr float c_knockback = 400;
+global constexpr char* c_key_color_str = "$$26A5D9";
+global constexpr s_v4 c_key_color = {0.149020f, 0.647059f, 0.850980f, 1};
 
 global constexpr float c_game_speed_arr[] = {
 	0.0f, 0.01f, 0.1f, 0.25f, 0.5f,

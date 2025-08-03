@@ -5,7 +5,7 @@ func f64 get_seconds();
 func void on_gl_error(const char* expr, char* file, int line, int error);
 func void draw_rect(s_v2 pos, s_v2 size, s_v4 color);
 func void draw_rect_topleft(s_v2 pos, s_v2 size, s_v4 color);
-func void draw_texture_screen(s_v2 pos, s_v2 size, s_v4 color, e_texture texture_id, e_shader shader_id, s_v2 uv_min, s_v2 uv_max);
+func void draw_texture_screen(s_v2 pos, s_v2 size, s_v4 color, e_texture texture_id, e_shader shader_id, s_v2 uv_min, s_v2 uv_max, s_draw_data draw_data);
 func void draw_mesh(e_mesh mesh_id, s_m4 model, s_v4 color, e_shader shader_id);
 func void draw_mesh(e_mesh mesh_id, s_v3 pos, s_v3 size, s_v4 color, e_shader shader_id);
 func void bind_framebuffer(u32 fbo);
@@ -90,3 +90,5 @@ template <typename t, typename F>
 func void radix_sort_32(t* source, u32 count, F get_radix, s_linear_arena* arena);
 func u32 get_radix_from_enemy_index(int index);
 func s_entity make_lose_lives_particles();
+func void draw_keycap(char c, s_v2 pos, s_v2 size);
+func b8 completed_attack_tutorial();

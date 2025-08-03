@@ -414,7 +414,7 @@ func s_font load_font_from_file(char* file, int font_size, s_linear_arena* arena
 	return font;
 }
 
-func s_v2 draw_text(s_len_str text, s_v2 in_pos, float font_size, s_v4 color, b8 centered, s_font* font)
+func s_v2 draw_text(s_len_str text, s_v2 in_pos, float font_size, s_v4 color, b8 centered, s_font* font, s_draw_data draw_data)
 {
 	float scale = font->scale * (font_size / font->size);
 
@@ -453,8 +453,8 @@ func s_v2 draw_text(s_len_str text, s_v2 in_pos, float font_size, s_v4 color, b8
 			s_v2 bottomleft = tpos.xy;
 
 
-			s_m4 model = m4_translate(v3(tpos.xy, 0));
-			model = m4_multiply(model, m4_scale(v3(draw_size, 1)));
+			// s_m4 model = m4_translate(v3(tpos.xy, draw_data.z));
+			// model = m4_multiply(model, m4_scale(v3(draw_size, 1)));
 
 			// t.color = it.color;
 			s_v2 uv_min = glyph.uv_min;
@@ -464,7 +464,7 @@ func s_v2 draw_text(s_len_str text, s_v2 in_pos, float font_size, s_v4 color, b8
 
 			s_v4 temp_color = it.color;
 			temp_color.a = color.a;
-			draw_texture_screen(tpos.xy, draw_size, temp_color, e_texture_font, e_shader_text, uv_min, uv_max);
+			draw_texture_screen(tpos.xy, draw_size, temp_color, e_texture_font, e_shader_text, uv_min, uv_max, draw_data);
 
 			// draw_generic(game_renderer, &t, render_pass, render_data.shader, font->texture.game_id, e_mesh_rect);
 

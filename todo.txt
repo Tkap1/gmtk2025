@@ -35,22 +35,25 @@ OPTIONS:
 MAYBE:
 	better leaderboard display
 
-UNLIKELY:
+MAYBE:
 	power up drops?????
+	game stutter when hitting? like 0.1s or something?
 
-defeat sound
-win sound
+SOUND:
+	defeat sound
+	win sound
+	fix volumes
+	sound on lose lfie
+
+POLISH:
+	some kind of movement animation on player
+	make fire particles move away from the player?
+	trees? just stuff around so the map is not as empty?
+	dont display "paused" text unless we are in default state1
+	better highlighting of enemies that will be hit
+	shake + different sound when dash hit?
+	dash particles?
+
+higher spawn rate
+more enemies
 lights
-dash particles?
-fix volumes
-shake + different sound when dash hit?
-better highlighting of enemies that will be hit
-dont display "paused" text unless we are in default state1
-explain attack and dash
-trees? just stuff around so the map is not as empty?
-make fire particles move away from the player?
-some kind of movement animation on player
-lightning bolt too similar to auto attack
-	make it not benefit from dash?
-	no scaling with player range
-sound on lose lfie
