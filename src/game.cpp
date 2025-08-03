@@ -96,6 +96,7 @@ m_dll_export void init(s_platform_data* platform_data)
 {
 	g_platform_data = platform_data;
 	game = (s_game*)platform_data->memory;
+	unpoison_memory(game, sizeof(s_game));
 	game->speed_index = 5;
 	game->rng = make_rng(1234);
 	game->reload_shaders = true;
@@ -121,8 +122,8 @@ m_dll_export void init(s_platform_data* platform_data)
 		cursor += 10 * c_mb;
 	}
 	{
-		game->render_frame_arena = make_arena_from_memory(cursor, 500 * c_mb);
-		cursor += 10 * c_mb;
+		game->render_frame_arena = make_arena_from_memory(cursor, 400 * c_mb);
+		cursor += 400 * c_mb;
 	}
 	{
 		game->circular_arena = make_circular_arena_from_memory(cursor, 10 * c_mb);
@@ -492,7 +493,7 @@ func void input()
 
 func void update()
 {
-	game->update_frame_arena.used = 0;
+	reset_linear_arena(&game->update_frame_arena);
 
 	e_game_state0 state0 = (e_game_state0)get_state(&game->state0);
 
@@ -507,7 +508,7 @@ func void update()
 		memset(hard_data, 0, sizeof(*hard_data));
 		memset(soft_data, 0, sizeof(*soft_data));
 		set_state(&game->hard_data.state1, e_game_state1_default);
-		game->arena.used = 0;
+		reset_linear_arena(&game->arena);
 		for_enum(type_i, e_entity) {
 			entity_manager_reset(entity_arr, type_i);
 		}
@@ -857,6 +858,7 @@ func void update()
 		soft_data->update_count += 1;
 	}
 
+
 	if(soft_data->frame_data.lives_to_lose > 0) {
 		game->soft_data.lives_lost += soft_data->frame_data.lives_to_lose;
 		game->soft_data.life_change_timestamp = game->render_time;
@@ -884,7 +886,7 @@ func void update()
 
 func void render(float interp_dt, float delta)
 {
-	game->render_frame_arena.used = 0;
+	reset_linear_arena(&game->render_frame_arena);
 
 	#if defined(_WIN32)
 	while(g_platform_data->hot_read_index[1] < g_platform_data->hot_write_index) {
@@ -2101,7 +2103,7 @@ func void add_to_render_group(t data, e_shader shader_id, e_texture texture_id, 
 func s_shader load_shader_from_file(char* file, s_linear_arena* arena)
 {
 	b8 delete_shaders[2] = {true, true};
-	char* src = (char*)read_file(file, arena);
+	char* src = (char*)read_file(file, arena, null);
 	assert(src);
 
 	u32 shader_arr[] = {glCreateShader(GL_VERTEX_SHADER), glCreateShader(GL_FRAGMENT_SHADER)};

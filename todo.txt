@@ -36,4 +36,8 @@ POLISH:
 	tell people to go full screen
 	O for options?
 
+mention shift+ctrl
+mention ctrl+r
 more enemies
+pausing also causes the same particle problem
+	probably because we dont call update_particles unless we are doing the game?

@@ -8,6 +8,8 @@ enum e_enemy
 	e_enemy_fast_zig_zag,
 	e_enemy_d,
 	e_enemy_e,
+	e_enemy_spiral2,
+	e_enemy_f,
 	e_enemy_boss,
 	e_enemy_count,
 };

@@ -120,7 +120,7 @@ func s_mesh make_mesh_from_vertices(s_vertex* vertex_arr, int vertex_count)
 
 func s_ply_mesh parse_ply_mesh(char* path, s_linear_arena* arena)
 {
-	char* data = (char*)read_file(path, arena);
+	char* data = (char*)read_file(path, arena, null);
 	char* cursor = data;
 	s_ply_mesh result = zero;
 	b8 has_color = strstr(cursor, "property uchar red") != null;
@@ -336,7 +336,7 @@ func s_texture load_texture_from_data(void* data, int width, int height, int for
 // @TODO(tkap, 13/10/2024): premultiply??
 func s_font load_font_from_file(char* file, int font_size, s_linear_arena* arena)
 {
-	u8* file_data = read_file(file, arena);
+	u8* file_data = read_file(file, arena, null);
 	s_font font = {};
 	font.size = (float)font_size;
 
@@ -639,7 +639,7 @@ func u8* try_really_hard_to_read_file(char* file, s_linear_arena* arena)
 {
 	u8* result = null;
 	for(int i = 0; i < 100; i += 1) {
-		result = read_file(file, arena);
+		result = read_file(file, arena, null);
 		if(result) {
 			break;
 		}
@@ -690,7 +690,9 @@ func s_time_format update_count_to_time_format(int update_count)
 func s_obj_mesh* parse_obj_mesh(char* path, s_linear_arena* arena)
 {
 	s_obj_mesh* result = (s_obj_mesh*)arena_alloc_zero(arena, sizeof(s_obj_mesh));
-	char* data = (char*)read_file(path, arena);
+	int file_size = 0;
+	char* data = (char*)read_file(path, arena, &file_size);
+	char* end_ptr = data + file_size;
 	assert(data);
 	char* cursor = strstr(data, "\nv ") + 1;
 	while(memcmp(cursor, "v ", 2) == 0) {
@@ -765,7 +767,8 @@ func s_obj_mesh* parse_obj_mesh(char* path, s_linear_arena* arena)
 		cursor += 1;
 	}
 
-	while(memcmp(cursor, "f ", 2) == 0) {
+	// @Note(tkap, 03/08/2025): This fixes sanitizer, but could be wrong somehow? surely not but needs testing
+	while(cursor < end_ptr && memcmp(cursor, "f ", 2) == 0) {
 		cursor += 2;
 		char* end = null;
 
@@ -974,7 +977,7 @@ func void entity_manager_reset(s_entity_manager<t, n>* manager, e_entity type)
 	manager->count[type] = 0;
 	memset(manager->active, 0, sizeof(manager->active));
 	manager->free_list[type] = (int*)arena_alloc_zero(&game->arena, sizeof(int) * g_entity_type_data[type].max_count);
-	for(int i = 0; i < n; i += 1) {
+	for(int i = 0; i < g_entity_type_data[type].max_count; i += 1) {
 		manager->free_list[type][i] = c_first_index[type] + i;
 	}
 }
