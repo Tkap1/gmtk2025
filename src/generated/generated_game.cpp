@@ -90,7 +90,7 @@ template <typename t, typename F>
 func void radix_sort_32(t* source, u32 count, F get_radix, s_linear_arena* arena);
 func u32 get_radix_from_enemy_index(int index);
 func s_entity make_lose_lives_particles();
-func void draw_keycap(char c, s_v2 pos, s_v2 size);
+func void draw_keycap(char c, s_v2 pos, s_v2 size, float alpha);
 func b8 completed_attack_tutorial();
 func void add_multiplicative_light(s_v2 pos, float radius, s_v4 color, float smoothness);
 func void add_additive_light(s_v2 pos, float radius, s_v4 color, float smoothness);

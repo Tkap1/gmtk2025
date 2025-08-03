@@ -707,6 +707,9 @@ func void update()
 				timer_activate(&soft_data->dash_timer, game->update_time);
 				if(completed_attack_tutorial()) {
 					game->num_times_we_dashed += 1;
+					if(game->num_times_we_dashed >= 2 && game->completed_dash_tutorial_timestamp <= 0) {
+						game->completed_dash_tutorial_timestamp = game->render_time;
+					}
 				}
 			}
 
@@ -1668,7 +1671,7 @@ func void render(float interp_dt, float delta)
 					s_len_str str = format_text("Press %sleft click$. or ", c_key_color_str);
 					float font_size = sin_range(32, 40, game->render_time * 8);
 					s_v2 pos = draw_text(str, gxy(0.42f, 0.8f), font_size, make_color(1), true, &game->font, zero);
-					draw_keycap(scancode_to_char(SDL_SCANCODE_S), pos, v2(font_size));
+					draw_keycap(scancode_to_char(SDL_SCANCODE_S), pos, v2(font_size), 1.0f);
 					pos.x += font_size;
 					draw_text(S(" to attack"), pos, font_size, make_color(1), false, &game->font, zero);
 					draw_text(S("(Attacks cost stamina. Missing an attack consumes double stamina)"), gxy(0.5f, 0.85f), 32, make_color(0.8f), true, &game->font, zero);
@@ -1677,10 +1680,21 @@ func void render(float interp_dt, float delta)
 					s_len_str str = format_text("Press %sright click$. or ", c_key_color_str);
 					float font_size = sin_range(32, 40, game->render_time * 8);
 					s_v2 pos = draw_text(str, gxy(0.44f, 0.8f), font_size, make_color(1), true, &game->font, zero);
-					draw_keycap(scancode_to_char(SDL_SCANCODE_A), pos, v2(font_size));
+					draw_keycap(scancode_to_char(SDL_SCANCODE_A), pos, v2(font_size), 1.0f);
 					pos.x += font_size;
 					draw_text(S(" to dash"), pos, font_size, make_color(1), false, &game->font, zero);
 					draw_text(S("(Attacks do triple damage while dashing)"), gxy(0.5f, 0.85f), 32, make_color(0.8f), true, &game->font, zero);
+				}
+				else if(game->render_time - game->completed_dash_tutorial_timestamp < 5) {
+					s_len_str str = format_text("Press %sCTRL$. + ", c_key_color_str);
+					float font_size = sin_range(32, 40, game->render_time * 8);
+					s_v4 color = make_color(1);
+					float percent = at_most(5.0f, game->render_time - game->completed_dash_tutorial_timestamp) / 5.0f;
+					color.a = powf(1.0f - percent, 0.25f);
+					s_v2 pos = draw_text(str, gxy(0.44f, 0.8f), font_size, color, true, &game->font, zero);
+					draw_keycap('R', pos, v2(font_size), color.a);
+					pos.x += font_size;
+					draw_text(S(" to restart"), pos, font_size, color, false, &game->font, zero);
 				}
 			}
 
@@ -3173,14 +3187,15 @@ func s_entity make_lose_lives_particles()
 	return emitter;
 }
 
-func void draw_keycap(char c, s_v2 pos, s_v2 size)
+func void draw_keycap(char c, s_v2 pos, s_v2 size, float alpha)
 {
 	pos += size * 0.5f;
-	draw_atlas_ex(pos, size, v2i(124, 42), make_color(1), 0, zero);
+	draw_atlas_ex(pos, size, v2i(124, 42), make_color(1, alpha), 0, zero);
 	s_len_str str = format_text("%c", to_upper_case(c));
 	pos.x -= size.x * 0.025f;
 	pos.y -= size.x * 0.05f;
-	draw_text(str, pos, size.x, c_key_color, true, &game->font, {.z = 1});
+	s_v4 color = set_alpha(c_key_color, alpha);
+	draw_text(str, pos, size.x, color, true, &game->font, {.z = 1});
 }
 
 func b8 completed_attack_tutorial()

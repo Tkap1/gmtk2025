@@ -2,8 +2,6 @@
 
 IDEA 4
 	maybe enemies get faster (so it's harder)
-	special enemy that we want to let in the circle because it doesn't take a life. it instead gives bonus gold or something
-	do we mess with the circle/loop size? idk
 
 UPGRADES?
 	very long range tower kind of thing that shoots enemies?
@@ -12,12 +10,9 @@ OPTIONS:
 	hover over upgrade pause
 	turn off damage numbers
 	turn off gold numbers
-	show timer
 	lights
 
 POLISH:
 	some kind of movement animation on player
 	dont display "paused" text unless we are in default state1
 	enemy wobble
-
-mention ctrl+r

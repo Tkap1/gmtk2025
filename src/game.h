@@ -511,6 +511,7 @@ struct s_light
 
 struct s_game
 {
+	float completed_dash_tutorial_timestamp;
 	s_lerpable music_speed;
 	int next_entity_id;
 	#if defined(m_debug)
