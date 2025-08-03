@@ -6,7 +6,6 @@
 #pragma warning(push, 0)
 // #define SDL_MAIN_HANDLED
 #include "SDL2/SDL.h"
-#include "SDL_mixer.h"
 #pragma warning(pop)
 
 #if defined(__EMSCRIPTEN__)

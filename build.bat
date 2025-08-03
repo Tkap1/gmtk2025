@@ -22,7 +22,7 @@ set comp=!comp! -I..\..\my_libs2
 
 set comp=!comp! -I"C:\Users\34687\Desktop\Dev\C\sdl"
 set comp=!comp! -I"C:\Users\34687\Desktop\Dev\C\sdl\SDL2"
-set comp=!comp! -I"C:\Users\34687\Desktop\Dev\C\SDL_mixer\include"
+@REM set comp=!comp! -I"C:\Users\34687\Desktop\Dev\C\SDL_mixer\include"
 set comp=!comp! -I"..\src\external"
 set comp=!comp! -MT
 set comp=!comp! -Zi
