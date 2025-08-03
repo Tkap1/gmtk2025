@@ -823,7 +823,7 @@ func s_v2 wcxy(float x, float y)
 	return result;
 }
 
-func void update_particles(float delta)
+func void update_particles(float delta, b8 do_draw)
 {
 	s_soft_game_data* soft_data = &game->soft_data;
 
@@ -923,7 +923,7 @@ func void update_particles(float delta)
 			pos += data_a.pos;
 		}
 
-		{
+		if(do_draw) {
 			s_instance_data data = zero;
 			data.model = m4_translate(pos);
 			data.model *= m4_scale(v3(radius, radius, 1));

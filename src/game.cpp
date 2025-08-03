@@ -1388,7 +1388,7 @@ func void render(float interp_dt, float delta)
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw visual effects end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-		update_particles(delta);
+		update_particles(delta, true);
 
 		{
 			s_render_flush_data data = make_render_flush_data(zero, zero);
@@ -1827,6 +1827,9 @@ func void render(float interp_dt, float delta)
 		}
 		#endif
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		cheat menu end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+	}
+	else {
+		update_particles(delta, false);
 	}
 
 	if(do_defeat) {

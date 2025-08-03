@@ -26,7 +26,7 @@ func char* skip_whitespace(char* str);
 func s_v2 wxy(float x, float y);
 func s_v2 wxy(float x);
 func s_v2 wcxy(float x, float y);
-func void update_particles(float delta);
+func void update_particles(float delta, b8 do_draw);
 template <typename t, int n>
 func int entity_manager_add(s_entity_manager<t, n>* manager, e_entity type, t new_entity);
 template <typename t, int n>
