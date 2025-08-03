@@ -37,6 +37,3 @@ POLISH:
 	O for options?
 
 more enemies
-fix delta? in web. a bunch of particles spawn after long alt tab
-check if all leaderboard stuff works on web
-check input naem again

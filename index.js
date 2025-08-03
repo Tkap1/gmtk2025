@@ -189,167 +189,162 @@ Module.expectedDataFileDownloads++;
       "start": 86709,
       "end": 337666
     }, {
-      "filename": "/assets/break.wav",
-      "start": 337666,
-      "end": 357486,
-      "audio": 1
-    }, {
-      "filename": "/assets/clap.wav",
-      "start": 357486,
-      "end": 373914,
-      "audio": 1
-    }, {
       "filename": "/assets/click.wav",
-      "start": 373914,
-      "end": 392134,
+      "start": 337666,
+      "end": 355886,
       "audio": 1
     }, {
       "filename": "/assets/cover.png",
-      "start": 392134,
-      "end": 665573
+      "start": 355886,
+      "end": 629325
     }, {
       "filename": "/assets/cube.obj",
-      "start": 665573,
-      "end": 666562
+      "start": 629325,
+      "end": 630314
     }, {
       "filename": "/assets/cube2.obj",
-      "start": 666562,
-      "end": 667596
+      "start": 630314,
+      "end": 631348
     }, {
       "filename": "/assets/dash.wav",
-      "start": 667596,
-      "end": 691192,
+      "start": 631348,
+      "end": 654944,
       "audio": 1
     }, {
       "filename": "/assets/enemy_death.wav",
-      "start": 691192,
-      "end": 712164,
+      "start": 654944,
+      "end": 675916,
       "audio": 1
     }, {
       "filename": "/assets/enemy_death2.wav",
-      "start": 712164,
-      "end": 726160,
+      "start": 675916,
+      "end": 689912,
       "audio": 1
     }, {
       "filename": "/assets/key.wav",
-      "start": 726160,
-      "end": 741052,
+      "start": 689912,
+      "end": 704804,
       "audio": 1
     }, {
       "filename": "/assets/land.wav",
-      "start": 741052,
-      "end": 750152,
+      "start": 704804,
+      "end": 713904,
       "audio": 1
     }, {
       "filename": "/assets/lightning_bolt.wav",
-      "start": 750152,
-      "end": 807514,
+      "start": 713904,
+      "end": 771266,
+      "audio": 1
+    }, {
+      "filename": "/assets/lose_life.wav",
+      "start": 771266,
+      "end": 787694,
       "audio": 1
     }, {
       "filename": "/assets/miss_attack.wav",
-      "start": 807514,
-      "end": 844166,
+      "start": 787694,
+      "end": 824346,
       "audio": 1
     }, {
       "filename": "/assets/music.wav",
-      "start": 844166,
-      "end": 18853404,
+      "start": 824346,
+      "end": 18833584,
       "audio": 1
     }, {
       "filename": "/assets/noise.png",
-      "start": 18853404,
-      "end": 19022938
+      "start": 18833584,
+      "end": 19003118
     }, {
       "filename": "/assets/punch.wav",
-      "start": 19022938,
-      "end": 19047726,
+      "start": 19003118,
+      "end": 19027906,
       "audio": 1
     }, {
       "filename": "/assets/restart.wav",
-      "start": 19047726,
-      "end": 19234434,
+      "start": 19027906,
+      "end": 19214614,
       "audio": 1
     }, {
       "filename": "/assets/screenshot0.png",
-      "start": 19234434,
-      "end": 20275232
+      "start": 19214614,
+      "end": 20255412
     }, {
       "filename": "/assets/sphere.obj",
-      "start": 20275232,
-      "end": 20348607
+      "start": 20255412,
+      "end": 20328787
     }, {
       "filename": "/assets/super_speed.wav",
-      "start": 20348607,
-      "end": 20377611,
+      "start": 20328787,
+      "end": 20357791,
       "audio": 1
     }, {
       "filename": "/assets/teleport.wav",
-      "start": 20377611,
-      "end": 20405751,
+      "start": 20357791,
+      "end": 20385931,
       "audio": 1
     }, {
       "filename": "/assets/upgrade.wav",
-      "start": 20405751,
-      "end": 20448131,
+      "start": 20385931,
+      "end": 20428311,
       "audio": 1
     }, {
       "filename": "/assets/white.png",
-      "start": 20448131,
-      "end": 20448351
+      "start": 20428311,
+      "end": 20428531
     }, {
       "filename": "/shaders/background.shader",
-      "start": 20448351,
-      "end": 20450029
+      "start": 20428531,
+      "end": 20430209
     }, {
       "filename": "/shaders/button.shader",
-      "start": 20450029,
-      "end": 20451807
+      "start": 20430209,
+      "end": 20431987
     }, {
       "filename": "/shaders/circle.shader",
-      "start": 20451807,
-      "end": 20453026
+      "start": 20431987,
+      "end": 20433206
     }, {
       "filename": "/shaders/flat.shader",
-      "start": 20453026,
-      "end": 20454690
+      "start": 20433206,
+      "end": 20434870
     }, {
       "filename": "/shaders/flat_remove_black.shader",
-      "start": 20454690,
-      "end": 20456453
+      "start": 20434870,
+      "end": 20436633
     }, {
       "filename": "/shaders/light.shader",
-      "start": 20456453,
-      "end": 20457818
+      "start": 20436633,
+      "end": 20437998
     }, {
       "filename": "/shaders/lightning.shader",
-      "start": 20457818,
-      "end": 20459573
+      "start": 20437998,
+      "end": 20439753
     }, {
       "filename": "/shaders/line.shader",
-      "start": 20459573,
-      "end": 20460705
+      "start": 20439753,
+      "end": 20440885
     }, {
       "filename": "/shaders/mesh.shader",
-      "start": 20460705,
-      "end": 20463150
+      "start": 20440885,
+      "end": 20443330
     }, {
       "filename": "/shaders/portal.shader",
-      "start": 20463150,
-      "end": 20464604
+      "start": 20443330,
+      "end": 20444784
     }, {
       "filename": "/shaders/text.shader",
-      "start": 20464604,
-      "end": 20466032
+      "start": 20444784,
+      "end": 20446212
     }, {
       "filename": "/shaders/tile_background.shader",
-      "start": 20466032,
-      "end": 20468082
+      "start": 20446212,
+      "end": 20448262
     }, {
       "filename": "/src/shader_shared.h",
-      "start": 20468082,
-      "end": 20468623
+      "start": 20448262,
+      "end": 20448803
     } ],
-    "remote_package_size": 20468623
+    "remote_package_size": 20448803
   });
 })();
 
@@ -1359,7 +1354,7 @@ function dbg(...args) {
 }
 
 var ASM_CONSTS = {
-  306987677: () => {
+  306987549: () => {
     if (typeof (AudioContext) !== "undefined") {
       return true;
     } else if (typeof (webkitAudioContext) !== "undefined") {
@@ -1367,7 +1362,7 @@ var ASM_CONSTS = {
     }
     return false;
   },
-  306987824: () => {
+  306987696: () => {
     if ((typeof (navigator.mediaDevices) !== "undefined") && (typeof (navigator.mediaDevices.getUserMedia) !== "undefined")) {
       return true;
     } else if (typeof (navigator.webkitGetUserMedia) !== "undefined") {
@@ -1375,7 +1370,7 @@ var ASM_CONSTS = {
     }
     return false;
   },
-  306988058: $0 => {
+  306987930: $0 => {
     if (typeof (Module["SDL2"]) === "undefined") {
       Module["SDL2"] = {};
     }
@@ -1397,11 +1392,11 @@ var ASM_CONSTS = {
     }
     return SDL2.audioContext === undefined ? -1 : 0;
   },
-  306988551: () => {
+  306988423: () => {
     var SDL2 = Module["SDL2"];
     return SDL2.audioContext.sampleRate;
   },
-  306988619: ($0, $1, $2, $3) => {
+  306988491: ($0, $1, $2, $3) => {
     var SDL2 = Module["SDL2"];
     var have_microphone = function(stream) {
       if (SDL2.capture.silenceTimer !== undefined) {
@@ -1442,7 +1437,7 @@ var ASM_CONSTS = {
       }, have_microphone, no_microphone);
     }
   },
-  306990271: ($0, $1, $2, $3) => {
+  306990143: ($0, $1, $2, $3) => {
     var SDL2 = Module["SDL2"];
     SDL2.audio.scriptProcessorNode = SDL2.audioContext["createScriptProcessor"]($1, 0, $0);
     SDL2.audio.scriptProcessorNode["onaudioprocess"] = function(e) {
@@ -1454,7 +1449,7 @@ var ASM_CONSTS = {
     };
     SDL2.audio.scriptProcessorNode["connect"](SDL2.audioContext["destination"]);
   },
-  306990681: ($0, $1) => {
+  306990553: ($0, $1) => {
     var SDL2 = Module["SDL2"];
     var numChannels = SDL2.capture.currentCaptureBuffer.numberOfChannels;
     for (var c = 0; c < numChannels; ++c) {
@@ -1473,7 +1468,7 @@ var ASM_CONSTS = {
       }
     }
   },
-  306991286: ($0, $1) => {
+  306991158: ($0, $1) => {
     var SDL2 = Module["SDL2"];
     var numChannels = SDL2.audio.currentOutputBuffer["numberOfChannels"];
     for (var c = 0; c < numChannels; ++c) {
@@ -1486,7 +1481,7 @@ var ASM_CONSTS = {
       }
     }
   },
-  306991766: $0 => {
+  306991638: $0 => {
     var SDL2 = Module["SDL2"];
     if ($0) {
       if (SDL2.capture.silenceTimer !== undefined) {
@@ -1524,7 +1519,7 @@ var ASM_CONSTS = {
       SDL2.audioContext = undefined;
     }
   },
-  306992938: ($0, $1, $2) => {
+  306992810: ($0, $1, $2) => {
     var w = $0;
     var h = $1;
     var pixels = $2;
@@ -1595,7 +1590,7 @@ var ASM_CONSTS = {
     }
     SDL2.ctx.putImageData(SDL2.image, 0, 0);
   },
-  306994407: ($0, $1, $2, $3, $4) => {
+  306994279: ($0, $1, $2, $3, $4) => {
     var w = $0;
     var h = $1;
     var hot_x = $2;
@@ -1632,18 +1627,18 @@ var ASM_CONSTS = {
     stringToUTF8(url, urlBuf, url.length + 1);
     return urlBuf;
   },
-  306995396: $0 => {
+  306995268: $0 => {
     if (Module["canvas"]) {
       Module["canvas"].style["cursor"] = UTF8ToString($0);
     }
   },
-  306995479: () => {
+  306995351: () => {
     if (Module["canvas"]) {
       Module["canvas"].style["cursor"] = "none";
     }
   },
-  306995548: () => window.innerWidth,
-  306995578: () => window.innerHeight
+  306995420: () => window.innerWidth,
+  306995450: () => window.innerHeight
 };
 
 function browser_get_width() {

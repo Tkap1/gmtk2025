@@ -286,6 +286,7 @@ m_dll_export void do_game(s_platform_data* platform_data)
 	game = (s_game*)platform_data->memory;
 
 	f64 delta64 = get_seconds() - game->time_before;
+	delta64 = at_most(1.0/20.0, delta64);
 	game->time_before = get_seconds();
 
 	{
@@ -315,15 +316,13 @@ m_dll_export void do_game(s_platform_data* platform_data)
 	input();
 	float game_speed = c_game_speed_arr[game->speed_index] * game->speed;
 	game->accumulator += delta64 * game_speed;
-	#if defined(__EMSCRIPTEN__)
-	game->accumulator = at_most(game->accumulator, 1.0);
-	#else
-	#endif
-	while(game->accumulator >= c_update_delay) {
+	f64 clamped_accumulator = at_most(c_update_delay * 20, game->accumulator);
+	while(clamped_accumulator >= c_update_delay) {
 		game->accumulator -= c_update_delay;
+		clamped_accumulator -= c_update_delay;
 		update();
 	}
-	float interp_dt = (float)(game->accumulator / c_update_delay);
+	float interp_dt = (float)(clamped_accumulator / c_update_delay);
 	render(interp_dt, (float)delta64);
 }
 
