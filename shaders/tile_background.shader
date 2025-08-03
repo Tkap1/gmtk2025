@@ -65,8 +65,7 @@ void main()
 	float r = random(id);
 	float foo = pow(r + 0.4, 0.25) * 0.4;
 	float n = texture(noise, uv * 4.0 / foo).r;
-	out_color.g = foo * pow(n, 0.5);
-	// out_color.g = 1.0 - pow(1.0 - r, 0.5);
+	out_color.g = foo * pow(n, 0.5) * 0.75;
 	out_color.a = 1.0;
 }
 #endif

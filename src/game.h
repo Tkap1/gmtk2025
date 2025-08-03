@@ -448,9 +448,12 @@ struct s_hard_game_data
 	int update_count;
 };
 
-struct s_input
+struct s_light
 {
-	b8 handled;
+	s_v2 pos;
+	float radius;
+	float smoothness;
+	s_v4 color;
 };
 
 struct s_game
@@ -482,12 +485,14 @@ struct s_game
 	s_input_name_state input_name_state;
 	int num_times_we_attacked_an_enemy;
 	int num_times_we_dashed;
+	b8 do_lights;
 
 	s_len_str tooltip;
 
-	s_input input;
-
 	s_fbo light_fbo;
+
+	s_list<s_light, 256> multiplicative_light_arr;
+	s_list<s_light, 256> additive_light_arr;
 
 	b8 music_volume_clean;
 	b8 disable_music;

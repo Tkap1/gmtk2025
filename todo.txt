@@ -31,6 +31,7 @@ OPTIONS:
 	turn off damage numbers
 	turn off gold numbers
 	show timer
+	lights
 
 MAYBE:
 	better leaderboard display
@@ -53,7 +54,7 @@ POLISH:
 	better highlighting of enemies that will be hit
 	shake + different sound when dash hit?
 	dash particles?
+	enemy wobble
 
 higher spawn rate
 more enemies
-lights

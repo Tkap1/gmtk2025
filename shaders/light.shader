@@ -15,6 +15,8 @@ layout (location = 9) in mat4 instance_model;
 shared_var vec4 v_color;
 shared_var vec3 v_normal;
 shared_var vec2 v_uv;
+shared_var float v_mix_weight;
+shared_var vec4 v_mix_color;
 
 #if defined(m_vertex)
 void main()
@@ -25,6 +27,8 @@ void main()
 	v_color = vertex_color * instance_color;
 	v_normal = vertex_normal;
 	v_uv = vertex_uv;
+	v_mix_weight = instance_mix_weight;
+	v_mix_color = instance_mix_color;
 }
 #endif
 
@@ -41,7 +45,7 @@ void main()
 	// uv.x *= 16.0 / 9.0;
 	vec3 color = vec3(0.0);
 	float d = length(uv);
-	float a = smoothstep(0.5, 0.2, d);
+	float a = smoothstep(1.0, v_mix_weight, d);
 	color = v_color.rgb * a * v_color.a;
 	out_color = vec4(color, 1.0);
 }

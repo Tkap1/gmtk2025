@@ -336,10 +336,6 @@ func void input()
 	game->key_events.count = 0;
 
 	// u8* keyboard_state = (u8*)SDL_GetKeyboardState(null);
-
-	if(game->input.handled) {
-		game->input = zero;
-	}
 	// game->input.left = game->input.left || keyboard_state[SDL_SCANCODE_A];
 	// game->input.right = game->input.right || keyboard_state[SDL_SCANCODE_D];
 
@@ -868,7 +864,6 @@ func void update()
 			#endif
 		}
 	}
-	game->input.handled = true;
 	memset(&soft_data->frame_data, 0, sizeof(soft_data->frame_data));
 }
 
@@ -1279,7 +1274,13 @@ func void render(float interp_dt, float delta)
 				if(dir.x > 0) {
 					draw_data.flip_x = true;
 				}
-				draw_atlas_ex(enemy_pos, get_enemy_size(enemy->enemy_type), get_enemy_atlas_index(enemy->enemy_type), color, 0, draw_data);
+				s_v2 size = get_enemy_size(enemy->enemy_type);
+				draw_atlas_ex(enemy_pos, size, get_enemy_atlas_index(enemy->enemy_type), color, 0, draw_data);
+				s_v2 light_offset = v2(-8, 0);
+				if(!draw_data.flip_x) {
+					light_offset.x *= -1;
+				}
+				add_multiplicative_light(enemy_pos + light_offset, size.x * 2, make_color(0.5f), 0.0f);
 			}
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw enemies end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1299,6 +1300,7 @@ func void render(float interp_dt, float delta)
 					draw_data.mix_weight = smoothstep(1.0f, 0.7f, time_data.percent);
 				}
 				draw_atlas_ex(enemy_pos, get_enemy_size(enemy->enemy_type), get_enemy_atlas_index(enemy->enemy_type), color, 0, draw_data);
+				// add_additive_light(enemy_pos, 64, make_color(1), 0.0f);
 			}
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw dying enemies end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1378,10 +1380,17 @@ func void render(float interp_dt, float delta)
 					s_instance_data data = zero;
 					data.model = m4_translate(v3(pos, 0));
 					data.model = m4_multiply(data.model, m4_scale(v3(size, 1)));
-					data.color = make_color(1, powf(time_data.inv_percent, 0.5f));
+					float alpha = powf(time_data.inv_percent, 0.5f);
+					data.color = make_color(1, alpha);
 					add_to_render_group(data, e_shader_lightning, e_texture_white, e_mesh_quad);
-					// draw_rect(effect->pos, v2(64), make_color(1));
+
+					{
+						s_v4 color = hex_to_rgb(0x0076FF);
+						color = multiply_rgb(color, alpha * 0.75f);
+						add_additive_light(pos, effect->effect_size.y * 2, color, 0.0f);
+					}
 				}
+
 
 				if(time_data.percent >= 1) {
 					entity_manager_remove(entity_arr, e_entity_visual_effect, i);
@@ -1398,6 +1407,72 @@ func void render(float interp_dt, float delta)
 			data.depth_mode = e_depth_mode_no_read_no_write;
 			render_flush(data, true);
 		}
+
+		if(cheat_key(SDLK_f)) {
+			game->do_lights = !game->do_lights;
+		}
+
+		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		multiplicative lights start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+		if(game->do_lights) {
+
+			clear_framebuffer_color(game->light_fbo.id, make_color(0.5f));
+
+			draw_light(player_pos, 256, make_color(0.75f), 0.0f);
+			foreach_val(light_i, light, game->multiplicative_light_arr) {
+				draw_light(light.pos, light.radius, light.color, light.smoothness);
+			}
+			game->multiplicative_light_arr.count = 0;
+			{
+				s_render_flush_data data = make_render_flush_data(zero, zero);
+				data.projection = ortho;
+				data.blend_mode = e_blend_mode_additive;
+				data.depth_mode = e_depth_mode_no_read_no_write;
+				data.fbo = game->light_fbo;
+				render_flush(data, true);
+			}
+
+			draw_texture_screen(c_world_center, c_world_size, make_color(1), e_texture_light, e_shader_flat, v2(0, 1), v2(1, 0), zero);
+			{
+				s_render_flush_data data = make_render_flush_data(zero, zero);
+				data.projection = ortho;
+				data.blend_mode = e_blend_mode_multiply;
+				data.depth_mode = e_depth_mode_no_read_no_write;
+				render_flush(data, true);
+			}
+		}
+		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		multiplicative lights end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		additive lights start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+		if(game->do_lights) {
+
+			clear_framebuffer_color(game->light_fbo.id, make_color(0.0f));
+
+			draw_light(gxy(0.5f), 300, make_color(0.5f, 0.33f, 0.0f), 0.0f);
+			draw_light(player_pos + v2(0, 8), 24, make_color(0.0f, 0.15f, 0.0f), 0.0f);
+
+			foreach_val(light_i, light, game->additive_light_arr) {
+				draw_light(light.pos, light.radius, light.color, light.smoothness);
+			}
+			game->additive_light_arr.count = 0;
+			{
+				s_render_flush_data data = make_render_flush_data(zero, zero);
+				data.projection = ortho;
+				data.blend_mode = e_blend_mode_additive;
+				data.depth_mode = e_depth_mode_no_read_no_write;
+				data.fbo = game->light_fbo;
+				render_flush(data, true);
+			}
+
+			draw_texture_screen(c_world_center, c_world_size, make_color(1), e_texture_light, e_shader_flat, v2(0, 1), v2(1, 0), zero);
+			{
+				s_render_flush_data data = make_render_flush_data(zero, zero);
+				data.projection = ortho;
+				data.blend_mode = e_blend_mode_additive;
+				data.depth_mode = e_depth_mode_no_read_no_write;
+				render_flush(data, true);
+			}
+		}
+		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		additive lights end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw fct start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		for(int i = c_first_index[e_entity_fct]; i < c_last_index_plus_one[e_entity_fct]; i += 1) {
@@ -2356,12 +2431,13 @@ func void draw_circle(s_v2 pos, float radius, s_v4 color)
 	add_to_render_group(data, e_shader_circle, e_texture_white, e_mesh_quad);
 }
 
-func void draw_light(s_v2 pos, float radius, s_v4 color)
+func void draw_light(s_v2 pos, float radius, s_v4 color, float smoothness)
 {
 	s_instance_data data = zero;
 	data.model = m4_translate(v3(pos, 0));
 	data.model = m4_multiply(data.model, m4_scale(v3(radius * 2, radius * 2, 1)));
 	data.color = color;
+	data.mix_weight = smoothness;
 
 	add_to_render_group(data, e_shader_light, e_texture_white, e_mesh_quad);
 }
@@ -3018,4 +3094,28 @@ func b8 completed_attack_tutorial()
 {
 	b8 result = game->num_times_we_attacked_an_enemy >= 3;
 	return result;
+}
+
+func void add_multiplicative_light(s_v2 pos, float radius, s_v4 color, float smoothness)
+{
+	s_light light = zero;
+	light.pos = pos;
+	light.radius = radius;
+	light.color = color;
+	light.smoothness = smoothness;
+	if(!game->multiplicative_light_arr.is_full()) {
+		game->multiplicative_light_arr.add(light);
+	}
+}
+
+func void add_additive_light(s_v2 pos, float radius, s_v4 color, float smoothness)
+{
+	s_light light = zero;
+	light.pos = pos;
+	light.radius = radius;
+	light.color = color;
+	light.smoothness = smoothness;
+	if(!game->additive_light_arr.is_full()) {
+		game->additive_light_arr.add(light);
+	}
 }
