@@ -635,6 +635,34 @@ func s_len_str format_text(const char* text, ...)
 }
 
 
+func s_len_str format_text2(const char* text, ...)
+{
+	static constexpr int max_format_text_buffers = 16;
+	static constexpr int max_text_buffer_length = 512;
+
+	static char buffers[max_format_text_buffers][max_text_buffer_length] = {};
+	static int index = 0;
+
+	char* current_buffer = buffers[index];
+	memset(current_buffer, 0, max_text_buffer_length);
+
+	va_list args;
+	va_start(args, text);
+	#ifdef m_debug
+	int written = vsnprintf(current_buffer, max_text_buffer_length, text, args);
+	assert(written > 0 && written < max_text_buffer_length);
+	#else
+	vsnprintf(current_buffer, max_text_buffer_length, text, args);
+	#endif
+	va_end(args);
+
+	index += 1;
+	if(index >= max_format_text_buffers) { index = 0; }
+
+	return S(current_buffer);
+}
+
+
 func u8* try_really_hard_to_read_file(char* file, s_linear_arena* arena)
 {
 	u8* result = null;

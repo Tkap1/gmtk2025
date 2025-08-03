@@ -30,7 +30,7 @@ func void on_leaderboard_id_load_success(void* arg, void* in_data, int data_len)
 	attr.onerror = failure;
 	attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
 
-	s_len_str body = format_text("{\"game_key\": \"dev_ae7c0ca6ad2047e1890f76fe7836a5e3\", \"player_identifier\": \"%s\", \"game_version\": \"0.0.0.1\", \"development_mode\": true}", (char*)data);
+	s_len_str body = format_text2("{\"game_key\": \"dev_ae7c0ca6ad2047e1890f76fe7836a5e3\", \"player_identifier\": \"%s\", \"game_version\": \"0.0.0.1\", \"development_mode\": true}", (char*)data);
 	attr.requestData = body.str;
 	attr.requestDataSize = body.count;
 	emscripten_fetch(&attr, "https://api.lootlocker.io/game/v2/session/guest");
@@ -290,7 +290,7 @@ func b8 get_leaderboard(int leaderboard_id)
 
 		char* headers[] = {"x-session-token", builder_to_cstr(&game->leaderboard_session_token, &game->circular_arena), NULL};
 		attr.requestHeaders = headers;
-		s_len_str url = format_text("https://api.lootlocker.io/game/leaderboards/%i/list?count=10", leaderboard_id);
+		s_len_str url = format_text2("https://api.lootlocker.io/game/leaderboards/%i/list?count=10", leaderboard_id);
 		emscripten_fetch(&attr, url.str);
 	}
 	return true;
@@ -312,7 +312,7 @@ func void get_our_leaderboard(int leaderboard_id)
 
 		char* headers[] = {"x-session-token", builder_to_cstr(&game->leaderboard_session_token, &game->circular_arena), NULL};
 		attr.requestHeaders = headers;
-		s_len_str url = format_text("https://api.lootlocker.io/game/leaderboards/%i/member/%i", leaderboard_id, game->leaderboard_player_id);
+		s_len_str url = format_text2("https://api.lootlocker.io/game/leaderboards/%i/member/%i", leaderboard_id, game->leaderboard_player_id);
 		emscripten_fetch(&attr, url.str);
 	}
 }
@@ -444,12 +444,12 @@ func void submit_leaderboard_score(int time, int leaderboard_id)
 	attr.onerror = failure;
 	attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
 
-	s_len_str data = format_text("{\"score\": %i}", time);
+	s_len_str data = format_text2("{\"score\": %i}", time);
 	char* headers[] = {"x-session-token", builder_to_cstr(&game->leaderboard_session_token, &game->circular_arena), NULL};
 	attr.requestHeaders = headers;
 	attr.requestData = data.str;
 	attr.requestDataSize = data.count;
-	s_len_str url = format_text("https://api.lootlocker.io/game/leaderboards/%i/submit", leaderboard_id);
+	s_len_str url = format_text2("https://api.lootlocker.io/game/leaderboards/%i/submit", leaderboard_id);
 	emscripten_fetch(&attr, url.str);
 }
 
@@ -489,7 +489,7 @@ func void set_leaderboard_name(s_len_str name)
 	attr.onerror = set_leaderboard_name_fail;
 	attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
 
-	s_len_str data = format_text("{\"name\": \"%s\"}", to_cstr(name, &game->update_frame_arena));
+	s_len_str data = format_text2("{\"name\": \"%s\"}", to_cstr(name, &game->update_frame_arena));
 	char* headers[] = {"x-session-token", builder_to_cstr(&game->leaderboard_session_token, &game->circular_arena), NULL};
 	attr.requestHeaders = headers;
 	attr.requestData = data.str;

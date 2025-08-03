@@ -16,6 +16,7 @@ func s_v2 get_text_size(s_len_str text, s_font* font, float font_size);
 func b8 iterate_text(s_text_iterator* it, s_len_str text, s_v4 color);
 func int hex_str_to_int(s_len_str str);
 func s_len_str format_text(const char* text, ...);
+func s_len_str format_text2(const char* text, ...);
 func u8* try_really_hard_to_read_file(char* file, s_linear_arena* arena);
 func float update_time_to_render_time(float time, float interp_dt);
 func s_m4 fullscreen_m4();
