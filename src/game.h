@@ -426,7 +426,6 @@ struct s_entity
 			b8 shake;
 			int fct_type;
 			float font_size;
-			s_v2 effect_size;
 			s_str_builder<16> builder;
 			s_v2 vel;
 		};

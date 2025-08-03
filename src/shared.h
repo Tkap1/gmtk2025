@@ -1,6 +1,13 @@
 
 global constexpr int c_max_hot_files = 64;
 
+struct s_loaded_sound
+{
+	u8* data;
+	u32 size_in_bytes;
+	SDL_AudioSpec spec;
+};
+
 struct s_audio_fade
 {
 	float percent[2];
@@ -13,13 +20,6 @@ struct s_play_sound_data
 	float speed = 1;
 	b8 loop;
 	s_maybe<s_audio_fade> fade;
-};
-
-struct s_active_sound
-{
-	Mix_Chunk* chunk;
-	s_play_sound_data data;
-	float index;
 };
 
 enum e_sound
@@ -46,6 +46,14 @@ struct s_sound_data
 	char* path;
 	float volume;
 };
+
+struct s_active_sound
+{
+	e_sound loaded_sound_id;
+	s_play_sound_data data;
+	float index;
+};
+
 
 global constexpr s_sound_data c_sound_data_arr[e_sound_count] = {
 	{"assets/click.wav", 0.2f},
@@ -75,11 +83,11 @@ struct s_platform_data
 	s_v2i window_size;
 	s_v2i prev_window_size;
 	u8* memory;
-	Mix_Chunk* sound_arr[e_sound_count];
+	s_loaded_sound sound_arr[e_sound_count];
 
 	s_list<s_active_sound, 128> active_sound_arr;
 
-	Mix_Chunk* (*load_sound_from_file)(char*);
+	s_loaded_sound (*load_sound_from_file)(char*);
 	void (*play_sound)(e_sound, s_play_sound_data);
 
 	#if defined(_WIN32) && defined(m_debug)

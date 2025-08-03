@@ -11,8 +11,8 @@
 
 #include "tklib.h"
 #include "shared.h"
-#include "shared_between_platforms.h"
 global s_platform_data g_platform_data;
+#include "shared_between_platforms.h"
 
 func void do_one_frame();
 
@@ -23,14 +23,14 @@ int main()
 
 	SDL_SetMainReady();
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
-	Mix_OpenAudioDevice(44100, AUDIO_F32SYS, 2, 512, NULL, 0);
-	// Mix_Volume(-1, floorfi(MIX_MAX_VOLUME * 0.1f));
 	init_common();
+	// Mix_OpenAudioDevice(44100, AUDIO_F32SYS, 2, 512, NULL, 0);
+	// Mix_Volume(-1, floorfi(MIX_MAX_VOLUME * 0.1f));
 
 	init(&g_platform_data);
 	init_after_recompile(&g_platform_data);
 
-	do_one_frame();
+	// do_one_frame();
 
 	return 0;
 }

@@ -1,11 +1,14 @@
 
 #include "generated/generated_shared_between_platforms.h"
 
-func Mix_Chunk* load_sound_from_file(char* path)
+func s_loaded_sound load_sound_from_file(char* path)
 {
-	Mix_Chunk* chunk = Mix_LoadWAV(path);
-	assert(chunk);
-	return chunk;
+	s_loaded_sound result = zero;
+	SDL_LoadWAV(path, &result.spec, &result.data, &result.size_in_bytes);
+	assert(result.spec.freq == 44100);
+	assert(result.spec.format == 32784);
+	assert(result.spec.channels == 1);
+	return result;
 }
 
 func void init_common()
@@ -17,17 +20,25 @@ func void init_common()
 		SDL_AudioSpec desired_spec;
     desired_spec.freq = 44100;
     desired_spec.format = AUDIO_F32SYS;
-    desired_spec.channels = 2;
+    desired_spec.channels = 1;
     desired_spec.samples = 512;
     desired_spec.callback = my_audio_callback;
 
 		SDL_AudioSpec obtained_spec = zero;
 
 		SDL_AudioDeviceID device = SDL_OpenAudioDevice(null, 0, &desired_spec, &obtained_spec, 0);
+		// SDL_AudioDeviceID device = SDL_OpenAudioDevice(null, 0, &desired_spec, &obtained_spec, SDL_AUDIO_ALLOW_ANY_CHANGE);
+		#if defined(m_debug)
+		printf("Audio device %i\n", device);
+		if(device == 0) {
+			printf("%s\n", SDL_GetError());
+		}
+		#endif
 		SDL_PauseAudioDevice(device, 0);
 	}
 }
 
+// @Note(tkap, 03/08/2025): Why is this working? we are doing 2 channel stuff but all sounds are 1 channel, and so is the device
 func void my_audio_callback(void* userdata, u8* stream, int len) {
 	(void)userdata;
 	assert(len % sizeof(float) == 0);
@@ -37,8 +48,9 @@ func void my_audio_callback(void* userdata, u8* stream, int len) {
 		float value_left = 0;
 		float value_right = 0;
 		foreach_ptr(sound_i, sound, g_platform_data.active_sound_arr) {
-			int sound_sample_count = sound->chunk->alen / sizeof(s16);
-			s16* sound_sample_arr = (s16*)sound->chunk->abuf;
+			s_loaded_sound loaded_sound = g_platform_data.sound_arr[sound->loaded_sound_id];
+			int sound_sample_count = loaded_sound.size_in_bytes / sizeof(s16);
+			s16* sound_sample_arr = (s16*)loaded_sound.data;
 			float percent = floorfi(sound->index) * 2 / (float)sound_sample_count;
 			float fade_volume = 1;
 			if(sound->data.fade.valid) {
@@ -98,10 +110,9 @@ func void my_audio_callback(void* userdata, u8* stream, int len) {
 func void play_sound(e_sound sound_id, s_play_sound_data data)
 {
 	data.volume *= c_sound_data_arr[sound_id].volume;
-	Mix_Chunk* chunk = g_platform_data.sound_arr[sound_id];
 	if(!g_platform_data.active_sound_arr.is_full()) {
 		s_active_sound active_sound = zero;
-		active_sound.chunk = chunk;
+		active_sound.loaded_sound_id = sound_id;
 		active_sound.data = data;
 		g_platform_data.active_sound_arr.add(active_sound);
 	}

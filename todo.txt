@@ -5,26 +5,8 @@ IDEA 4
 	special enemy that we want to let in the circle because it doesn't take a life. it instead gives bonus gold or something
 	do we mess with the circle/loop size? idk
 
-
-main menu sounds too loud. are we playing them many tiems??
-	or is our volume on load not being used? probably not
-
 UPGRADES?
 	very long range tower kind of thing that shoots enemies?
-
-should dash be upgrade?
-
-button hotkey
-
-PARTICLESSSS
-health bars?
-enemies with different movement pattern
-
-more keys for the different actions
-
-ending is dogshit, we need some pause or something
-higher enemy spawn rate
-
 
 OPTIONS:
 	hover over upgrade pause
@@ -34,11 +16,9 @@ OPTIONS:
 	lights
 
 MAYBE:
-	better leaderboard display
-
-MAYBE:
 	power up drops?????
 	game stutter when hitting? like 0.1s or something?
+	better leaderboard display
 
 SOUND:
 	defeat sound
@@ -53,5 +33,9 @@ POLISH:
 	dont display "paused" text unless we are in default state1
 	dash particles?
 	enemy wobble
+	ending is dogshit, we need some pause or something
+	tell people to go full screen
+	O for options?
+	fix delta? in web. a bunch of particles spawn after long alt tab
 
 more enemies

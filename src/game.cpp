@@ -135,7 +135,7 @@ m_dll_export void init(s_platform_data* platform_data)
 	platform_data->window_size.y = (int)c_world_size.y;
 
 	g_platform_data->window = SDL_CreateWindow(
-		"Loopscape", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+		"Loop Fighter", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
 		(int)c_world_size.x, (int)c_world_size.y, SDL_WINDOW_HIDDEN | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE
 	);
 	SDL_SetWindowPosition(g_platform_data->window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
@@ -225,11 +225,11 @@ m_dll_export void init(s_platform_data* platform_data)
 		platform_data->sound_arr[i] = platform_data->load_sound_from_file(c_sound_data_arr[i].path);
 	}
 
-	Mix_Music* music = Mix_LoadMUS("assets/music.ogg");
-	if(music) {
-		Mix_VolumeMusic(c_music_volume);
+	// Mix_Music* music = Mix_LoadMUS("assets/music.ogg");
+	// if(music) {
+		// Mix_VolumeMusic(c_music_volume);
 		// Mix_PlayMusic(music, -1);
-	}
+	// }
 
 	for(int i = 0; i < e_texture_count; i += 1) {
 		char* path = c_texture_path_arr[i];
@@ -892,15 +892,15 @@ func void render(float interp_dt, float delta)
 {
 	game->render_frame_arena.used = 0;
 
-	if(!game->music_volume_clean) {
-		game->music_volume_clean = true;
-		if(game->disable_music) {
-			Mix_VolumeMusic(0);
-		}
-		else {
-			Mix_VolumeMusic(c_music_volume);
-		}
-	}
+	// if(!game->music_volume_clean) {
+	// 	game->music_volume_clean = true;
+	// 	if(game->disable_music) {
+	// 		Mix_VolumeMusic(0);
+	// 	}
+	// 	else {
+	// 		Mix_VolumeMusic(c_music_volume);
+	// 	}
+	// }
 
 	#if defined(_WIN32)
 	while(g_platform_data->hot_read_index[1] < g_platform_data->hot_write_index) {
@@ -1430,10 +1430,6 @@ func void render(float interp_dt, float delta)
 			data.blend_mode = e_blend_mode_additive;
 			data.depth_mode = e_depth_mode_no_read_no_write;
 			render_flush(data, true);
-		}
-
-		if(cheat_key(SDLK_f)) {
-			game->do_lights = !game->do_lights;
 		}
 
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		multiplicative lights start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
