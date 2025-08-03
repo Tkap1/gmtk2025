@@ -101,3 +101,4 @@ func s_entity* get_entity(s_entity_ref ref);
 func float get_wanted_game_speed(float interp_dt);
 func s_active_sound* find_playing_sound(e_sound id);
 func void do_lerpable_snap(s_lerpable* lerpable, float dt, float max_diff);
+func s_entity make_boss_death_particles(s_v2 pos);

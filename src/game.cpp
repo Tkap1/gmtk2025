@@ -704,7 +704,7 @@ func void update()
 			player->pos.y = sinf(player->timer) * c_circle_radius * 0.5f;
 			player->pos += center;
 			if(timer_can_and_want_activate(soft_data->dash_timer, game->update_time, c_dash_duration, get_dash_cooldown(), 0.1f)) {
-				play_sound(e_sound_dash, {.volume = 0.1f});
+				play_sound(e_sound_dash, zero);
 				timer_activate(&soft_data->dash_timer, game->update_time);
 				if(completed_attack_tutorial()) {
 					game->num_times_we_dashed += 1;
@@ -805,7 +805,9 @@ func void update()
 						b8 dead = damage_enemy(enemy, get_player_damage() * damage_multi, are_we_dashing);
 						if(dead) {
 							if(enemy->enemy_type == e_enemy_boss) {
-								soft_data->frame_data.boss_defeated = true;
+								soft_data->boss_defeated_timestamp = game->update_time;
+								add_emitter(make_boss_death_particles(enemy->pos));
+								play_sound(e_sound_win, zero);
 							}
 							int gold_reward = g_enemy_type_data[enemy->enemy_type].gold_reward;
 							{
@@ -867,7 +869,8 @@ func void update()
 			add_state(&game->hard_data.state1, e_game_state1_defeat);
 		}
 	}
-	if(soft_data->frame_data.boss_defeated) {
+
+	if(soft_data->boss_defeated_timestamp > 0 && game->update_time - soft_data->boss_defeated_timestamp > 4) {
 		if(game->leaderboard_nice_name.count <= 0 && c_on_web) {
 			add_temporary_state_transition(&game->state0, e_game_state0_input_name, game->render_time, c_transition_time);
 		}
@@ -1808,7 +1811,7 @@ func void render(float interp_dt, float delta)
 				spawn_enemy(e_enemy_boss);
 			}
 			if(do_button_ex(S("Win"), container_get_pos_and_advance(&container), size, false, zero)) {
-				soft_data->frame_data.boss_defeated = true;
+				soft_data->boss_defeated_timestamp = game->update_time;
 			}
 			if(do_button_ex(S("Lose"), container_get_pos_and_advance(&container), size, false, zero)) {
 				soft_data->frame_data.lives_to_lose = 99999;
@@ -3278,4 +3281,29 @@ func s_active_sound* find_playing_sound(e_sound id)
 func void do_lerpable_snap(s_lerpable* lerpable, float dt, float max_diff)
 {
 	lerpable->curr = lerp_snap(lerpable->curr, lerpable->target, dt, max_diff);
+}
+
+func s_entity make_boss_death_particles(s_v2 pos)
+{
+	s_entity emitter = make_entity();
+
+	emitter.emitter_a = make_emitter_a();
+	emitter.emitter_a.dir = v3(1, 1, 0);
+	emitter.emitter_a.dir_rand = v3(1, 1, 0);
+	emitter.emitter_a.pos = v3(pos, 0.0f);
+	emitter.emitter_a.particle_duration *= 3;
+	emitter.emitter_a.speed *= 4;
+	emitter.emitter_a.radius *= 2.5f;
+	emitter.emitter_a.color_arr[0].color = make_color(0.5f, 0.5f, 0.1f);
+
+	emitter.emitter_a.particle_duration_rand = 1.0f;
+	emitter.emitter_a.radius_rand = 1.0f;
+	emitter.emitter_a.speed_rand = 0.5f;
+
+	emitter.emitter_b = make_emitter_b();
+	emitter.emitter_b.particles_per_second = 3;
+	emitter.emitter_b.particle_count = 200;
+	emitter.emitter_b.duration = 3;
+
+	return emitter;
 }

@@ -461,12 +461,12 @@ struct s_entity
 
 struct s_frame_data
 {
-	b8 boss_defeated;
 	int lives_to_lose;
 };
 
 struct s_soft_game_data
 {
+	float boss_defeated_timestamp;
 	int frames_to_freeze;
 	s_entity_ref boss_ref;
 	b8 boss_spawned;

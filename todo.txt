@@ -15,24 +15,10 @@ OPTIONS:
 	show timer
 	lights
 
-MAYBE:
-	power up drops?????
-	game stutter when hitting? like 0.1s or something?
-	better leaderboard display
-
-SOUND:
-	defeat sound
-	win sound
-	fix volumes
-
 POLISH:
 	some kind of movement animation on player
-	make fire particles move away from the player?
-	trees? just stuff around so the map is not as empty?
 	dont display "paused" text unless we are in default state1
-	dash particles?
 	enemy wobble
-	ending is dogshit, we need some pause or something
 	tell people to go full screen
 
 mention shift+ctrl
