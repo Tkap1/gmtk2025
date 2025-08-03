@@ -100,8 +100,6 @@ m_dll_export void init(s_platform_data* platform_data)
 	game->rng = make_rng(1234);
 	game->reload_shaders = true;
 	game->speed = 0;
-	game->hover_over_upgrade_pauses_game = true;
-	game->do_lights = true;
 	game->music_speed = {1, 1};
 
 	SDL_StartTextInput();
@@ -821,7 +819,9 @@ func void update()
 								fct.pos = enemy->pos;
 								fct.pos.y += get_enemy_size(enemy->enemy_type).y * 0.5f;
 								fct.font_size = 32;
-								entity_manager_add_if_not_full(&game->soft_data.entity_arr, e_entity_fct, fct);
+								if(!game->disable_gold_numbers) {
+									entity_manager_add_if_not_full(&game->soft_data.entity_arr, e_entity_fct, fct);
+								}
 							}
 							soft_data->spawn_timer += get_spawn_delay() * 0.5f;
 							soft_data->enemy_type_kill_count_arr[enemy->enemy_type] += 1;
@@ -1084,7 +1084,7 @@ func void render(float interp_dt, float delta)
 			game->music_speed.target = 1;
 			draw_background(ortho, true);
 
-			s_v2 pos = wxy(0.5f, 0.2f);
+			s_v2 pos = wxy(0.5f, 0.15f);
 			s_v2 button_size = v2(600, 48);
 
 			{
@@ -1112,8 +1112,32 @@ func void render(float interp_dt, float delta)
 			}
 
 			{
-				s_len_str text = format_text("Show timer: %s", game->hide_timer ? "Off" : "On");
+				s_len_str text = format_text("Timer: %s", game->hide_timer ? "Off" : "On");
 				do_bool_button_ex(text, pos, button_size, true, &game->hide_timer);
+				pos.y += 80;
+			}
+
+			{
+				s_len_str text = format_text("Lights: %s", game->disable_lights ? "Off" : "On");
+				do_bool_button_ex(text, pos, button_size, true, &game->disable_lights);
+				pos.y += 80;
+			}
+
+			{
+				s_len_str text = format_text("Damage numbers: %s", game->disable_damage_numbers ? "Off" : "On");
+				do_bool_button_ex(text, pos, button_size, true, &game->disable_damage_numbers);
+				pos.y += 80;
+			}
+
+			{
+				s_len_str text = format_text("Gold numbers: %s", game->disable_gold_numbers ? "Off" : "On");
+				do_bool_button_ex(text, pos, button_size, true, &game->disable_gold_numbers);
+				pos.y += 80;
+			}
+
+			{
+				s_len_str text = format_text("Pause when hovering over upgrades: %s", game->disable_hover_over_upgrade_to_pause ? "Off" : "On");
+				do_bool_button_ex(text, pos, button_size, true, &game->disable_hover_over_upgrade_to_pause);
 				pos.y += 80;
 			}
 
@@ -1409,7 +1433,7 @@ func void render(float interp_dt, float delta)
 		}
 
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		multiplicative lights start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-		if(game->do_lights) {
+		if(!game->disable_lights) {
 
 			clear_framebuffer_color(game->light_fbo.id, make_color(0.5f));
 
@@ -1439,7 +1463,7 @@ func void render(float interp_dt, float delta)
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		multiplicative lights end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		additive lights start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-		if(game->do_lights) {
+		if(!game->disable_lights) {
 
 			clear_framebuffer_color(game->light_fbo.id, make_color(0.0f));
 
@@ -1776,7 +1800,7 @@ func void render(float interp_dt, float delta)
 				render_flush(data, true);
 			}
 
-			if(game->hover_over_upgrade_pauses_game && are_we_hovering_over_ui(g_mouse) && !game->do_hard_reset) {
+			if(!game->disable_hover_over_upgrade_to_pause && are_we_hovering_over_ui(g_mouse) && !game->do_hard_reset) {
 				game->speed = 0;
 				draw_text(S("Paused"), gxy(0.5f, 0.1f), sin_range(64, 80, game->render_time * 8), make_color(1), true, &game->font, zero);
 			}
@@ -2650,7 +2674,9 @@ func b8 damage_enemy(s_entity* enemy, float damage, b8 is_dash_hit)
 		fct.duration = 1.5f;
 		fct.pos = enemy->pos;
 		fct.vel.x = randf32_11(&game->rng) * 50;
-		entity_manager_add_if_not_full(&game->soft_data.entity_arr, e_entity_fct, fct);
+		if(!game->disable_damage_numbers) {
+			entity_manager_add_if_not_full(&game->soft_data.entity_arr, e_entity_fct, fct);
+		}
 	}
 
 	return dead;

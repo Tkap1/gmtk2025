@@ -511,13 +511,16 @@ struct s_light
 
 struct s_game
 {
+	b8 disable_hover_over_upgrade_to_pause;
+	b8 disable_damage_numbers;
+	b8 disable_gold_numbers;
+	b8 disable_lights;
 	float completed_dash_tutorial_timestamp;
 	s_lerpable music_speed;
 	int next_entity_id;
 	#if defined(m_debug)
 	b8 cheat_menu_enabled;
 	#endif
-	b8 hover_over_upgrade_pauses_game;
 	b8 reload_shaders;
 	b8 any_key_pressed;
 	b8 purchased_at_least_one_upgrade;
@@ -541,7 +544,6 @@ struct s_game
 	s_input_name_state input_name_state;
 	int num_times_we_attacked_an_enemy;
 	int num_times_we_dashed;
-	b8 do_lights;
 
 	s_len_str tooltip;
 
