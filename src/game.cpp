@@ -407,7 +407,7 @@ func void input()
 					}
 					else if(key == SDLK_SPACE && event.key.repeat == 0) {
 					}
-					else if(scancode == SDL_SCANCODE_A && event.key.repeat == 0) {
+					else if(scancode == SDL_SCANCODE_A) {
 						soft_data->dash_timer.want_to_use_timestamp = game->update_time;
 					}
 					else if(scancode == SDL_SCANCODE_S && event.key.repeat == 0) {
@@ -577,6 +577,12 @@ func void update()
 			entity_arr->data[i].prev_pos = entity_arr->data[i].pos;
 		}
 	}
+
+	if(soft_data->frames_to_freeze > 0) {
+		soft_data->frames_to_freeze -= 1;
+		return;
+	}
+
 
 	if(do_game) {
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		spawn start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -760,6 +766,7 @@ func void update()
 						was_there_an_enemy_in_range = true;
 						float knockback_multi = 0;
 						float damage_multi = 0;
+						b8 are_we_dashing = timer_is_active(game->soft_data.dash_timer, game->update_time, c_dash_duration);
 						if(can_lightning_bolt) {
 							damage_multi = 0.5f;
 							knockback_multi = 0.1f;
@@ -779,6 +786,9 @@ func void update()
 							}
 						}
 						else {
+							if(are_we_dashing && !do_we_have_auto_attack()) {
+								soft_data->frames_to_freeze += 10;
+							}
 							game->num_times_we_attacked_an_enemy += 1;
 							damage_multi = 1;
 							num_enemies_hit += 1;
@@ -797,7 +807,7 @@ func void update()
 							enemy->knockback = maybe(knockback_to_add);
 						}
 
-						b8 dead = damage_enemy(enemy, get_player_damage() * damage_multi);
+						b8 dead = damage_enemy(enemy, get_player_damage() * damage_multi, are_we_dashing);
 						if(dead) {
 							if(enemy->enemy_type == e_enemy_boss) {
 								soft_data->frame_data.boss_defeated = true;
@@ -811,6 +821,7 @@ func void update()
 								builder_add(&fct.builder, "$$ffff00+%ig$.", gold_reward);
 								fct.pos = enemy->pos;
 								fct.pos.y += get_enemy_size(enemy->enemy_type).y * 0.5f;
+								fct.font_size = 32;
 								entity_manager_add_if_not_full(&game->soft_data.entity_arr, e_entity_fct, fct);
 							}
 							soft_data->spawn_timer += get_spawn_delay() * 0.5f;
@@ -840,7 +851,7 @@ func void update()
 				if(do_we_have_auto_attack()) {
 					timer_activate(&soft_data->attack_timer, game->update_time);
 				}
-				player->did_attack_enemy_timestamp = game->update_time;
+				player->did_attack_enemy_timestamp = game->render_time;
 			}
 			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		try to hit end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -942,6 +953,8 @@ func void render(float interp_dt, float delta)
 
 	b8 do_game = false;
 	b8 do_defeat = false;
+
+	float wanted_speed = get_wanted_game_speed(interp_dt);
 
 	switch(state0) {
 
@@ -1135,7 +1148,7 @@ func void render(float interp_dt, float delta)
 
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		play start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		case e_game_state0_play: {
-			game->speed = 1;
+			game->speed = wanted_speed;
 
 
 			handle_state(&hard_data->state1, game->render_time);
@@ -1339,7 +1352,7 @@ func void render(float interp_dt, float delta)
 
 					if(player->did_attack_enemy_timestamp > 0) {
 						target_rotation += v2_angle(player->attacked_enemy_pos - player_pos) + c_pi * 0.5f;
-						float passed = update_time_to_render_time(game->update_time, interp_dt) - player->did_attack_enemy_timestamp;
+						float passed = game->render_time - player->did_attack_enemy_timestamp;
 						s_animator animator = zero;
 						s_v2 temp_pos = zero;
 						s_v2 temp_size = size;
@@ -1353,7 +1366,7 @@ func void render(float interp_dt, float delta)
 						float time = 0;
 						animate_float(&animator, 0.0f, 0.5f, 0.5f, &time, e_ease_linear, passed);
 						if(time >= 0.5f) {
-							player->did_attack_enemy_timestamp = false;
+							player->did_attack_enemy_timestamp = 0.0f;
 						}
 						pos = temp_pos;
 						size = temp_size;
@@ -1402,7 +1415,6 @@ func void render(float interp_dt, float delta)
 						add_additive_light(pos, effect->effect_size.y * 2, color, 0.0f);
 					}
 				}
-
 
 				if(time_data.percent >= 1) {
 					entity_manager_remove(entity_arr, e_entity_visual_effect, i);
@@ -1500,7 +1512,11 @@ func void render(float interp_dt, float delta)
 				s_len_str str = builder_to_str(&fct->builder);
 				s_v4 color = make_color(1);
 				color.a = powf(time_data.inv_percent, 0.5f);
-				draw_text(str, fct->pos, 32, color, true, &game->font, zero);
+				s_v2 pos = fct->pos;
+				if(fct->shake) {
+					pos += rand_v2_11(&game->rng) * 2;
+				}
+				draw_text(str, pos, fct->font_size, color, true, &game->font, zero);
 			}
 			if(time_data.percent >= 1) {
 				entity_manager_remove(entity_arr, e_entity_fct, i);
@@ -1779,7 +1795,7 @@ func void render(float interp_dt, float delta)
 				draw_text(S("Paused"), gxy(0.5f, 0.1f), sin_range(64, 80, game->render_time * 8), make_color(1), true, &game->font, zero);
 			}
 			else {
-				game->speed = 1;
+				game->speed = wanted_speed;
 			}
 
 			{
@@ -2613,7 +2629,7 @@ func float get_enemy_max_health(e_enemy type)
 	return result;
 }
 
-func b8 damage_enemy(s_entity* enemy, float damage)
+func b8 damage_enemy(s_entity* enemy, float damage, b8 is_dash_hit)
 {
 	b8 dead = false;
 	float max_health = get_enemy_max_health(enemy->enemy_type);
@@ -2626,7 +2642,15 @@ func b8 damage_enemy(s_entity* enemy, float damage)
 	{
 		s_entity fct = make_entity();
 		fct.spawn_timestamp = game->render_time;
-		builder_add(&fct.builder, "%.0f", damage);
+		if(is_dash_hit) {
+			builder_add(&fct.builder, "$$ff2222%.0f$.", damage);
+			fct.font_size = 40;
+			fct.shake = true;
+		}
+		else {
+			builder_add(&fct.builder, "%.0f", damage);
+			fct.font_size = 32;
+		}
 		fct.duration = 1.5f;
 		fct.pos = enemy->pos;
 		fct.vel.x = randf32_11(&game->rng) * 50;
@@ -3247,5 +3271,20 @@ func s_entity* get_entity(s_entity_ref ref)
 			}
 		}
 	}
+	return result;
+}
+
+func float get_wanted_game_speed(float interp_dt)
+{
+	(void)interp_dt;
+	float result = 1;
+	// if(game->soft_data.hit_enemy_while_dashing_timestamp > 0) {
+	// 	s_time_data time_data = get_time_data(update_time_to_render_time(game->update_time, interp_dt), game->soft_data.hit_enemy_while_dashing_timestamp, 0.04f);
+	// 	time_data.percent = at_most(1.0f, time_data.percent);
+	// 	result = ease_out_expo_advanced(time_data.percent, 0.75f, 1, 0.1f, 1);
+	// 	if(time_data.percent >= 1) {
+	// 		game->soft_data.hit_enemy_while_dashing_timestamp = 0;
+	// 	}
+	// }
 	return result;
 }

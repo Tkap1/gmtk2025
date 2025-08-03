@@ -392,6 +392,7 @@ struct s_entity
 	s_v2 pos;
 	s_v2 prev_pos;
 	float spawn_timestamp;
+	float duration;
 	union {
 
 		// @Note(tkap, 31/07/2025): Player
@@ -422,11 +423,17 @@ struct s_entity
 
 		// @Note(tkap, 31/07/2025): fct
 		struct {
-			float duration;
+			b8 shake;
 			int fct_type;
+			float font_size;
 			s_v2 effect_size;
 			s_str_builder<16> builder;
 			s_v2 vel;
+		};
+
+		// @Note(tkap, 31/07/2025): visual effect
+		struct {
+			s_v2 effect_size;
 		};
 	};
 };
@@ -439,6 +446,7 @@ struct s_frame_data
 
 struct s_soft_game_data
 {
+	int frames_to_freeze;
 	s_entity_ref boss_ref;
 	b8 boss_spawned;
 	s_frame_data frame_data;
