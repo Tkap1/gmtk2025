@@ -18,7 +18,7 @@ set exe_name=main
 set comp=-nologo -std:c++20 -Zc:strictStrings- -Wall -FC -Gm- -GR- -EHa- -D_CRT_SECURE_NO_WARNINGS
 set comp=!comp! -wd4201 -wd4820 -wd5219 -wd4365 -wd5045 -wd4191 -wd4061 -wd4505 -wd5246 -wd4711 -wd4710 -wd4623
 set comp=!comp! -I..\..\my_libs2
-set comp=!comp! -fsanitize=address
+@REM set comp=!comp! -fsanitize=address
 
 set comp=!comp! -I"C:\Users\34687\Desktop\Dev\C\sdl"
 set comp=!comp! -I"C:\Users\34687\Desktop\Dev\C\sdl\SDL2"

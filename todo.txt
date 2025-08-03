@@ -36,6 +36,7 @@ POLISH:
 	ending is dogshit, we need some pause or something
 	tell people to go full screen
 	O for options?
-	fix delta? in web. a bunch of particles spawn after long alt tab
 
 more enemies
+fix delta? in web. a bunch of particles spawn after long alt tab
+background in mainmenu

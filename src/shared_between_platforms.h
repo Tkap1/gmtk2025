@@ -38,20 +38,18 @@ func void init_common()
 	}
 }
 
-// @Note(tkap, 03/08/2025): Why is this working? we are doing 2 channel stuff but all sounds are 1 channel, and so is the device
 func void my_audio_callback(void* userdata, u8* stream, int len) {
 	(void)userdata;
 	assert(len % sizeof(float) == 0);
-	int sample_count = len / sizeof(float) / 2;
+	int sample_count = len / sizeof(float);
 	float* ptr = (float*)stream;
 	for(int i = 0; i < sample_count; i += 1) {
-		float value_left = 0;
-		float value_right = 0;
+		float value = 0;
 		foreach_ptr(sound_i, sound, g_platform_data.active_sound_arr) {
 			s_loaded_sound loaded_sound = g_platform_data.sound_arr[sound->loaded_sound_id];
 			int sound_sample_count = loaded_sound.size_in_bytes / sizeof(s16);
 			s16* sound_sample_arr = (s16*)loaded_sound.data;
-			float percent = floorfi(sound->index) * 2 / (float)sound_sample_count;
+			float percent = floorfi(sound->index) / (float)sound_sample_count;
 			float fade_volume = 1;
 			if(sound->data.fade.valid) {
 				if(percent >= sound->data.fade.value.percent[0]) {
@@ -62,38 +60,22 @@ func void my_audio_callback(void* userdata, u8* stream, int len) {
 
 			{
 				float left_index_f = sound->index;
-				int left_index_i = floorfi(left_index_f) * 2;
+				int left_index_i = floorfi(left_index_f);
 				float left_sample0 = sound_sample_arr[left_index_i] / (float)c_max_s16;
 				float left_sample1 = 0;
-				if(left_index_i + 2 >= sound_sample_count) {
+				if(left_index_i + 1 >= sound_sample_count) {
 					left_sample1 = left_sample0;
 				}
 				else {
-					left_sample1 = sound_sample_arr[left_index_i + 2] / (float)c_max_s16;
+					left_sample1 = sound_sample_arr[left_index_i + 1] / (float)c_max_s16;
 				}
-				float value = lerp(left_sample0, left_sample1, fract(sound->index));
-				value_left += value * sound->data.volume * fade_volume;
-			}
-
-			{
-				float right_index_f = sound->index + 1;
-				int right_index_i = floorfi(right_index_f) * 2 + 1;
-				float right_sample0 = sound_sample_arr[right_index_i] / (float)c_max_s16;
-				float right_sample1 = 0;
-				if(right_index_i + 2 >= sound_sample_count) {
-					right_sample1 = right_sample0;
-				}
-				else {
-					right_sample1 = sound_sample_arr[right_index_i + 2] / (float)c_max_s16;
-				}
-				float value = lerp(right_sample0, right_sample1, fract(sound->index));
-				value_right += value * sound->data.volume * fade_volume;
+				value += lerp(left_sample0, left_sample1, fract(sound->index)) * sound->data.volume * fade_volume;
 			}
 
 			sound->index += sound->data.speed;
-			if(floorfi(sound->index) * 2 >= sound_sample_count) {
+			if(floorfi(sound->index) >= sound_sample_count) {
 				if(sound->data.loop) {
-					sound->index -= sound_sample_count / 2;
+					sound->index -= sound_sample_count;
 				}
 				else {
 					g_platform_data.active_sound_arr.remove_and_swap(sound_i);
@@ -101,9 +83,8 @@ func void my_audio_callback(void* userdata, u8* stream, int len) {
 				}
 			}
 		}
-		ptr[0] = value_left;
-		ptr[1] = value_right;
-		ptr += 2;
+		ptr[0] = value;
+		ptr += 1;
 	}
 }
 
