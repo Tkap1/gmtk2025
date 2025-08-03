@@ -58,7 +58,7 @@ global constexpr s_sound_data c_sound_data_arr[e_sound_count] = {
 	{"assets/restart.wav", 1.0f},
 	{"assets/super_speed.wav", 1.0f},
 	{"assets/dash.wav", 1.0f},
-	{"assets/miss_attack.wav", 0.2f},
+	{"assets/miss_attack.wav", 0.1f},
 	{"assets/punch.wav", 0.2f},
 	{"assets/lightning_bolt.wav", 0.05f},
 	{"assets/upgrade.wav", 0.2f},

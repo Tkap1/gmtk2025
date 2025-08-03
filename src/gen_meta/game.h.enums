@@ -16,12 +16,12 @@ enum e_upgrade
 {
 	e_upgrade_damage,
 	e_upgrade_speed,
-	e_upgrade_range,
 	e_upgrade_knockback,
+	e_upgrade_range,
 	e_upgrade_dash_cooldown,
 	e_upgrade_max_lives,
-	e_upgrade_more_hits_per_attack,
 	e_upgrade_lightning_bolt,
+	e_upgrade_more_hits_per_attack,
 	e_upgrade_auto_attack,
 	e_upgrade_count,
 };

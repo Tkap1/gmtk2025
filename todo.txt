@@ -55,6 +55,7 @@ POLISH:
 	shake + different sound when dash hit?
 	dash particles?
 	enemy wobble
+	BOSS healthbar
 
 higher spawn rate
 more enemies

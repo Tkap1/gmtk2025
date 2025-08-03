@@ -82,7 +82,7 @@ global constexpr s_enemy_type_data g_enemy_type_data[e_enemy_count] = {
 		.health_multi = 1000.0f,
 		.gold_reward = 100,
 		.speed_multi = 0.5f,
-		.knockback_resistance = 0.95f,
+		.knockback_resistance = 0.99f,
 		.size = {128, 128},
 		.atlas_index = {125, 29},
 	},
@@ -103,14 +103,14 @@ global constexpr s_upgrade_data g_upgrade_data[e_upgrade_count] = {
 		.max_upgrades = 5,
 	},
 	{
-		.name = S("Attack range"),
-		.cost = 20,
+		.name = S("Knockback"),
+		.cost = 10,
 		.extra_cost_per_level = 5,
 		.stat_boost = 20,
 	},
 	{
-		.name = S("Knockback"),
-		.cost = 10,
+		.name = S("Attack range"),
+		.cost = 20,
 		.extra_cost_per_level = 5,
 		.stat_boost = 20,
 	},
@@ -124,15 +124,8 @@ global constexpr s_upgrade_data g_upgrade_data[e_upgrade_count] = {
 	{
 		.name = S("Lives"),
 		.cost = 30,
-		.extra_cost_per_level = 20,
+		.extra_cost_per_level = 5,
 		.stat_boost = 5,
-		.max_upgrades = 4,
-	},
-	{
-		.name = S("Multistrike"),
-		.cost = 100,
-		.extra_cost_per_level = 200,
-		.stat_boost = 1,
 		.max_upgrades = 4,
 	},
 	{
@@ -142,9 +135,16 @@ global constexpr s_upgrade_data g_upgrade_data[e_upgrade_count] = {
 		.stat_boost = 50,
 	},
 	{
-		.name = S("Auto attack"),
+		.name = S("Multistrike"),
 		.cost = 100,
-		.extra_cost_per_level = 150,
+		.extra_cost_per_level = 200,
+		.stat_boost = 1,
+		.max_upgrades = 4,
+	},
+	{
+		.name = S("Auto attack"),
+		.cost = 200,
+		.extra_cost_per_level = 100,
 		.stat_boost = 25,
 	},
 };

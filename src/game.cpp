@@ -525,6 +525,7 @@ func void update()
 			center.x += cosf(player.timer) * c_circle_radius * 0.5f;
 			center.y += sinf(player.timer) * c_circle_radius * 0.5f;
 			teleport_entity(&player, center);
+			player.stamina = c_max_stamina;
 
 			{
 				s_entity emitter = zero;
@@ -714,7 +715,7 @@ func void update()
 				}
 			}
 			player->timer += delta * get_player_speed() * dash_speed;
-
+			player->stamina = at_most(c_max_stamina, player->stamina + c_stamina_regen * delta);
 
 			s_list<int, get_max_entities_of_type(e_entity_enemy)> enemy_index_arr;
 			enemy_index_arr.count = 0;
@@ -734,7 +735,8 @@ func void update()
 			float attack_range = get_player_attack_range();
 			float lightning_bolt_range = attack_range * 2;
 			soft_data->lightning_bolt_timer.want_to_use_timestamp = game->update_time;
-			b8 should_attack = timer_can_and_want_activate(soft_data->attack_timer, game->update_time, 0.0f, get_attack_or_auto_attack_cooldown(), 0.1f);
+			b8 should_attack = timer_can_and_want_activate(soft_data->attack_timer, game->update_time, 0.0f, get_attack_or_auto_attack_cooldown(), 0.1f) &&
+				player->stamina >= c_attack_stamina_cost;
 			b8 can_lightning_bolt = get_upgrade_level(e_upgrade_lightning_bolt) > 0 &&
 				timer_can_and_want_activate(soft_data->lightning_bolt_timer, game->update_time, 0.0f, get_lightning_bolt_cooldown(), 0.0f);
 			foreach_val(enemy_index_i, enemy_index, enemy_index_arr) {
@@ -820,17 +822,20 @@ func void update()
 			// @Note(tkap, 01/08/2025): We pressed the attack key but there were no enemies in range
 			float time_since_last_lightning_bolt = game->update_time - soft_data->lightning_bolt_timer.used_timestamp;
 			b8 lightning_bolted_recently = time_since_last_lightning_bolt <= 0.33f && soft_data->lightning_bolt_timer.used_timestamp > 0;
-			if(should_attack && !was_there_an_enemy_in_range && !lightning_bolted_recently && !do_we_have_auto_attack()) {
-				timer_activate(&soft_data->attack_timer, game->update_time);
-				play_sound(e_sound_miss_attack, zero);
+			if(should_attack && !do_we_have_auto_attack()) {
+				if(!was_there_an_enemy_in_range && !lightning_bolted_recently) {
+					player->stamina -= c_attack_stamina_cost * 2;
+					play_sound(e_sound_miss_attack, zero);
+				}
+				else {
+					player->stamina -= c_attack_stamina_cost;
+				}
+				soft_data->attack_timer.want_to_use_timestamp = 0;
 			}
 			if(num_enemies_hit > 0) {
 				play_sound(e_sound_punch, {.speed = get_rand_sound_speed(1.1f, &game->rng)});
 				if(do_we_have_auto_attack()) {
 					timer_activate(&soft_data->attack_timer, game->update_time);
-				}
-				else {
-					soft_data->attack_timer.want_to_use_timestamp = 0;
 				}
 				player->did_attack_enemy_timestamp = game->update_time;
 			}
@@ -1509,7 +1514,7 @@ func void render(float interp_dt, float delta)
 		{
 			b8 do_flush = false;
 			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw attack cooldown start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-			{
+			if(do_we_have_auto_attack()) {
 				b8 is_on_cooldown = false;
 				float time = update_time_to_render_time(game->update_time, interp_dt);
 				s_time_data time_data = timer_get_cooldown_time_data(soft_data->attack_timer, time, 0.0f, get_attack_or_auto_attack_cooldown(), &is_on_cooldown);
@@ -1529,6 +1534,23 @@ func void render(float interp_dt, float delta)
 					draw_rect(pos, size, color);
 					draw_rect(over_pos, over_size, multiply_rgb(color, 2));
 				}
+			}
+			else if(player->stamina < c_max_stamina) {
+				do_flush = true;
+				s_v2 size = v2(64, 10);
+				s_v2 pos = player_pos;
+				pos.y += c_player_size_v.y * 0.5f;
+				pos.y += size.y * 0.8f;
+				float stamina_percent = player->stamina / c_max_stamina;
+				s_v2 over_pos = pos;
+				s_v2 over_size = size;
+				over_size.x *= stamina_percent;
+				over_pos.x -= size.x * 0.5f;
+				over_pos.x += over_size.x * 0.5f;
+				s_v4 color = hex_to_rgb(0x14A12C);
+				color.a = ease_linear_advanced(stamina_percent, 0.9f, 1.0f, 1, 0.0f);
+				draw_rect(pos, size, color);
+				draw_rect(over_pos, over_size, multiply_rgb(color, 2));
 			}
 			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw attack cooldown end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1658,7 +1680,7 @@ func void render(float interp_dt, float delta)
 					draw_keycap(scancode_to_char(SDL_SCANCODE_S), pos, v2(font_size));
 					pos.x += font_size;
 					draw_text(S(" to attack"), pos, font_size, make_color(1), false, &game->font, zero);
-					draw_text(S("(There is a cooldown if you don't hit any enemies)"), gxy(0.5f, 0.85f), 32, make_color(0.8f), true, &game->font, zero);
+					draw_text(S("(Attacks cost stamina. Missing an attack consumes double stamina)"), gxy(0.5f, 0.85f), 32, make_color(0.8f), true, &game->font, zero);
 				}
 				else if(game->num_times_we_dashed < 2) {
 					s_len_str str = format_text("Press %sright click$. or ", c_key_color_str);
@@ -2847,7 +2869,8 @@ func s_len_str get_upgrade_description(e_upgrade id)
 		};
 		xcase e_upgrade_lightning_bolt: {
 			if(level == 0) {
-				builder_add(&builder, "A lightning bolt strikes a nearby\nenemy every %.2f seconds", get_lightning_bolt_cooldown());
+				float cooldown = get_lightning_bolt_cooldown();
+				builder_add(&builder, "A lightning bolt strikes a nearby\nenemy every %.2f second%s", cooldown, handle_plural(cooldown));
 			}
 			else {
 				builder_add(&builder, "Lightning bolts strike with %.0f%% increased frequency\n\n", data.stat_boost);
@@ -2857,7 +2880,7 @@ func s_len_str get_upgrade_description(e_upgrade id)
 		};
 		xcase e_upgrade_auto_attack: {
 			if(level == 0) {
-				builder_add(&builder, "Attacks happen automatically every %.2f second%s\nNo more clicking!", get_auto_attack_cooldown(), handle_plural(get_auto_attack_cooldown()));
+				builder_add(&builder, "Attacks happen automatically every %.2f second%s\nNo more clicking, no more stamina!", get_auto_attack_cooldown(), handle_plural(get_auto_attack_cooldown()));
 			}
 			else {
 				builder_add(&builder, "Auto attacks have %.0f%% increased frequency\n\n", data.stat_boost);
@@ -2906,9 +2929,6 @@ func float get_attack_or_auto_attack_cooldown()
 	float result = 0;
 	if(do_we_have_auto_attack()) {
 		result = get_auto_attack_cooldown();
-	}
-	else {
-		result = c_attack_cooldown_on_miss;
 	}
 	return result;
 }

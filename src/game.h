@@ -269,7 +269,7 @@ data_enum(e_enemy,
 		.health_multi = 1000.0f,
 		.gold_reward = 100,
 		.speed_multi = 0.5f,
-		.knockback_resistance = 0.95f,
+		.knockback_resistance = 0.99f,
 		.size = {128, 128},
 		.atlas_index = {125, 29},
 	}
@@ -321,16 +321,16 @@ data_enum(e_upgrade,
 		.max_upgrades = 5,
 	}
 
-	range {
-		.name = S("Attack range"),
-		.cost = 20,
+	knockback {
+		.name = S("Knockback"),
+		.cost = 10,
 		.extra_cost_per_level = 5,
 		.stat_boost = 20,
 	}
 
-	knockback {
-		.name = S("Knockback"),
-		.cost = 10,
+	range {
+		.name = S("Attack range"),
+		.cost = 20,
 		.extra_cost_per_level = 5,
 		.stat_boost = 20,
 	}
@@ -346,16 +346,8 @@ data_enum(e_upgrade,
 	max_lives {
 		.name = S("Lives"),
 		.cost = 30,
-		.extra_cost_per_level = 20,
+		.extra_cost_per_level = 5,
 		.stat_boost = 5,
-		.max_upgrades = 4,
-	}
-
-	more_hits_per_attack {
-		.name = S("Multistrike"),
-		.cost = 100,
-		.extra_cost_per_level = 200,
-		.stat_boost = 1,
 		.max_upgrades = 4,
 	}
 
@@ -366,10 +358,18 @@ data_enum(e_upgrade,
 		.stat_boost = 50,
 	}
 
+	more_hits_per_attack {
+		.name = S("Multistrike"),
+		.cost = 100,
+		.extra_cost_per_level = 200,
+		.stat_boost = 1,
+		.max_upgrades = 4,
+	}
+
 	auto_attack {
 		.name = S("Auto attack"),
-		.cost = 100,
-		.extra_cost_per_level = 150,
+		.cost = 200,
+		.extra_cost_per_level = 100,
 		.stat_boost = 25,
 	}
 
@@ -401,6 +401,7 @@ struct s_entity
 			s_v2 attacked_enemy_pos;
 			int range_emitter;
 			float fist_rotation[2];
+			float stamina;
 		};
 
 		// @Note(tkap, 31/07/2025): Emitter
