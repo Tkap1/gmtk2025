@@ -27,7 +27,7 @@ set comp=!comp! --preload-file ../src/shader_shared.h@src/shader_shared.h
 set comp=!comp! -sFULL_ES3 -std=c++20 -Wno-writable-strings -sUSE_SDL=2 -sUSE_WEBGL2=1 -sALLOW_MEMORY_GROWTH
 set comp=!comp! -o index.html
 
-set debug=0
+set debug=1
 if !debug!==0 (
 	set comp=!comp! -O3
 	set comp=!comp! -sSAFE_HEAP=0

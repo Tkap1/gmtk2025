@@ -39,4 +39,6 @@ POLISH:
 
 more enemies
 fix delta? in web. a bunch of particles spawn after long alt tab
-background in mainmenu
+check if all leaderboard stuff works on web
+speed up music when boss spawns?
+name limit??

@@ -13,7 +13,6 @@ global constexpr s_v2 c_fist_size_v = {c_player_size_v.x * 0.8f, c_player_size_v
 global constexpr s_v2i c_atlas_size_v = {2679, 651};
 global constexpr int c_atlas_padding = 1;
 global constexpr int c_atlas_sprite_size = 13;
-global constexpr int c_music_volume = 8;
 global constexpr float c_circle_radius = 320;
 global constexpr float c_player_attack_range = 64;
 global constexpr s_v2 c_game_area = {c_world_size.x * 0.75f, c_world_size.y * 1.0f};
@@ -49,6 +48,6 @@ global constexpr int c_max_leaderboard_entries = 16;
 
 global constexpr float c_pre_victory_duration = 2.0f;
 
-global constexpr int c_leaderboard_id = 31671;
+global constexpr int c_leaderboard_id = 31676;
 
 global constexpr s_len_str c_game_name = S("Loop Fighter");

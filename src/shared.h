@@ -38,6 +38,7 @@ enum e_sound
 	e_sound_punch,
 	e_sound_lightning_bolt,
 	e_sound_upgrade,
+	e_sound_music,
 	e_sound_count,
 };
 
@@ -50,6 +51,7 @@ struct s_sound_data
 struct s_active_sound
 {
 	e_sound loaded_sound_id;
+	float loaded_volume;
 	s_play_sound_data data;
 	float index;
 };
@@ -57,7 +59,7 @@ struct s_active_sound
 
 global constexpr s_sound_data c_sound_data_arr[e_sound_count] = {
 	{"assets/click.wav", 0.2f},
-	{"assets/key.wav", 1.0f},
+	{"assets/key.wav", 0.2f},
 	{"assets/break.wav", 1.0f},
 	{"assets/enemy_death.wav", 0.15f},
 	{"assets/enemy_death2.wav", 0.15f},
@@ -70,6 +72,7 @@ global constexpr s_sound_data c_sound_data_arr[e_sound_count] = {
 	{"assets/punch.wav", 0.2f},
 	{"assets/lightning_bolt.wav", 0.05f},
 	{"assets/upgrade.wav", 0.2f},
+	{"assets/music.wav", 0.1f},
 };
 
 struct s_platform_data

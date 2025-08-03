@@ -155,7 +155,7 @@ struct s_input_str
 
 struct s_input_name_state
 {
-	s_input_str<256> name;
+	s_input_str<16> name;
 	s_str_builder<64> error_str;
 };
 
@@ -416,7 +416,6 @@ struct s_entity
 			float remove_soon_timestamp;
 			e_enemy enemy_type;
 			s_maybe<float> knockback;
-			s_maybe<s_v4> highlight;
 			float damage_taken;
 			float hit_timestamp;
 		};
@@ -526,13 +525,8 @@ struct s_game
 	s_list<s_light, 256> multiplicative_light_arr;
 	s_list<s_light, 256> additive_light_arr;
 
-	b8 music_volume_clean;
 	b8 disable_music;
-	b8 dim_player_when_out_of_jumps;
-	b8 hide_background;
 	b8 hide_timer;
-	b8 hide_ghosts;
-	b8 disable_screen_shake;
 	b8 turn_off_all_sounds;
 
 	int update_count_at_win_time;

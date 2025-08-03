@@ -61,7 +61,8 @@ void main()
 {
 	vec2 uv = v_vertex_uv;
 	uv.x *= v_size.x / v_size.y;
-	vec2 id = floor(uv * 16.0);
+	uv.x *= (sin(uv.y*3.141) + 0.5) * v_mix_weight + (1.0 - v_mix_weight);
+	vec2 id = floor(uv * 16.0 + render_time * v_mix_weight);
 	float r = random(id);
 	float foo = pow(r + 0.4, 0.25) * 0.4;
 	float n = texture(noise, uv * 4.0 / foo).r;

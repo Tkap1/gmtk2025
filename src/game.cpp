@@ -225,12 +225,6 @@ m_dll_export void init(s_platform_data* platform_data)
 		platform_data->sound_arr[i] = platform_data->load_sound_from_file(c_sound_data_arr[i].path);
 	}
 
-	// Mix_Music* music = Mix_LoadMUS("assets/music.ogg");
-	// if(music) {
-		// Mix_VolumeMusic(c_music_volume);
-		// Mix_PlayMusic(music, -1);
-	// }
-
 	for(int i = 0; i < e_texture_count; i += 1) {
 		char* path = c_texture_path_arr[i];
 		if(strlen(path) > 0) {
@@ -259,6 +253,8 @@ m_dll_export void init(s_platform_data* platform_data)
 	#if defined(__EMSCRIPTEN__)
 	load_or_create_leaderboard_id();
 	#endif
+
+	play_sound(e_sound_music, {.loop = true});
 }
 
 m_dll_export void init_after_recompile(s_platform_data* platform_data)
@@ -339,7 +335,6 @@ func void input()
 	// u8* keyboard_state = (u8*)SDL_GetKeyboardState(null);
 	// game->input.left = game->input.left || keyboard_state[SDL_SCANCODE_A];
 	// game->input.right = game->input.right || keyboard_state[SDL_SCANCODE_D];
-
 
 	for(int i = 0; i < c_max_keys; i += 1) {
 		game->input_arr[i].half_transition_count = 0;
@@ -635,7 +630,6 @@ func void update()
 			if(!entity_arr->active[i]) { continue; }
 			s_entity* enemy = &entity_arr->data[i];
 			s_enemy_type_data enemy_type_data = g_enemy_type_data[enemy->enemy_type];
-			enemy->highlight = zero;
 			s_v2 dir = v2_dir_from_to(enemy->pos, gxy(0.5f));
 			if(enemy->knockback.valid) {
 				enemy->pos += dir * -1 * enemy->knockback.value * delta;
@@ -761,7 +755,6 @@ func void update()
 					range = lightning_bolt_range;
 				}
 				if(dist <= range + enemy_size.y * 0.5f) {
-					enemy->highlight = maybe(make_color(1, 0.6f, 0.6f));
 					if(should_attack || can_lightning_bolt) {
 						was_there_an_enemy_in_range = true;
 						float knockback_multi = 0;
@@ -892,16 +885,6 @@ func void render(float interp_dt, float delta)
 {
 	game->render_frame_arena.used = 0;
 
-	// if(!game->music_volume_clean) {
-	// 	game->music_volume_clean = true;
-	// 	if(game->disable_music) {
-	// 		Mix_VolumeMusic(0);
-	// 	}
-	// 	else {
-	// 		Mix_VolumeMusic(c_music_volume);
-	// 	}
-	// }
-
 	#if defined(_WIN32)
 	while(g_platform_data->hot_read_index[1] < g_platform_data->hot_write_index) {
 		char* path = g_platform_data->hot_file_arr[g_platform_data->hot_read_index[1] % c_max_hot_files];
@@ -962,7 +945,7 @@ func void render(float interp_dt, float delta)
 		case e_game_state0_main_menu: {
 			game->speed = 0;
 
-			draw_background(zero, ortho);
+			draw_background(ortho, true);
 
 			if(do_button(S("Play"), wxy(0.5f, 0.5f), true) || is_key_pressed(SDLK_RETURN, true)) {
 				add_state_transition(&game->state0, e_game_state0_play, game->render_time, c_transition_time);
@@ -998,7 +981,7 @@ func void render(float interp_dt, float delta)
 		case e_game_state0_pause: {
 			game->speed = 0;
 
-			draw_background(zero, ortho);
+			draw_background(ortho, true);
 
 			if(do_button(S("Resume"), wxy(0.5f, 0.5f), true) || is_key_pressed(SDLK_RETURN, true)) {
 				pop_state_transition(&game->state0, game->render_time, c_transition_time);
@@ -1032,7 +1015,7 @@ func void render(float interp_dt, float delta)
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		leaderboard start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		case e_game_state0_leaderboard: {
 			game->speed = 0;
-			draw_background(zero, ortho);
+			draw_background(ortho, true);
 			do_leaderboard();
 
 			{
@@ -1047,7 +1030,7 @@ func void render(float interp_dt, float delta)
 
 		case e_game_state0_win_leaderboard: {
 			game->speed = 0;
-			draw_background(zero, ortho);
+			draw_background(ortho, true);
 			do_leaderboard();
 
 			{
@@ -1081,7 +1064,7 @@ func void render(float interp_dt, float delta)
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		options start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		case e_game_state0_options: {
 			game->speed = 0;
-			draw_background(zero, ortho);
+			draw_background(ortho, true);
 
 			s_v2 pos = wxy(0.5f, 0.2f);
 			s_v2 button_size = v2(600, 48);
@@ -1096,38 +1079,23 @@ func void render(float interp_dt, float delta)
 				s_len_str text = format_text("Music: %s", game->disable_music ? "Off" : "On");
 				b8 result = do_bool_button_ex(text, pos, button_size, true, &game->disable_music);
 				if(result) {
-					game->music_volume_clean = false;
+					s_active_sound* music = find_playing_sound(e_sound_music);
+					assert(music);
+					if(music) {
+						if(game->disable_music) {
+							music->data.volume = 0;
+						}
+						else {
+							music->data.volume = 1;
+						}
+					}
 				}
-				pos.y += 80;
-			}
-
-			{
-				s_len_str text = format_text("Replay ghosts: %s", game->hide_ghosts ? "Off" : "On");
-				do_bool_button_ex(text, pos, button_size, true, &game->hide_ghosts);
-				pos.y += 80;
-			}
-
-			{
-				s_len_str text = format_text("Background: %s", game->hide_background ? "Off" : "On");
-				do_bool_button_ex(text, pos, button_size, true, &game->hide_background);
-				pos.y += 80;
-			}
-
-			{
-				s_len_str text = format_text("Screen shake: %s", game->disable_screen_shake ? "Off" : "On");
-				do_bool_button_ex(text, pos, button_size, true, &game->disable_screen_shake);
 				pos.y += 80;
 			}
 
 			{
 				s_len_str text = format_text("Show timer: %s", game->hide_timer ? "Off" : "On");
 				do_bool_button_ex(text, pos, button_size, true, &game->hide_timer);
-				pos.y += 80;
-			}
-
-			{
-				s_len_str text = format_text("Dim player when out of jumps: %s", game->dim_player_when_out_of_jumps ? "On" : "Off");
-				do_bool_button_ex(text, pos, button_size, true, &game->dim_player_when_out_of_jumps);
 				pos.y += 80;
 			}
 
@@ -1150,7 +1118,6 @@ func void render(float interp_dt, float delta)
 		case e_game_state0_play: {
 			game->speed = wanted_speed;
 
-
 			handle_state(&hard_data->state1, game->render_time);
 
 			e_game_state1 state1 = (e_game_state1)get_state(&hard_data->state1);
@@ -1169,13 +1136,13 @@ func void render(float interp_dt, float delta)
 
 		case e_game_state0_input_name: {
 			game->speed = 0;
-			draw_background(zero, ortho);
+			draw_background(ortho, true);
 			s_input_name_state* state = &game->input_name_state;
 			float font_size = 36;
 			s_v2 pos = c_world_size * v2(0.5f, 0.4f);
 
 			int count_before = state->name.str.count;
-			b8 submitted = handle_string_input(&state->name, game->render_time);
+			b8 submitted = handle_string_input(&state->name, game->render_time, 16);
 			int count_after = state->name.str.count;
 			if(count_before != count_after) {
 				play_sound(e_sound_key, zero);
@@ -1251,23 +1218,7 @@ func void render(float interp_dt, float delta)
 
 		s_entity* player = &entity_arr->data[0];
 
-		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		tiles start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-		{
-			{
-				s_instance_data data = zero;
-				data.model = m4_translate(v3(gxy(0.5f), 0));
-				data.model = m4_multiply(data.model, m4_scale(v3(c_game_area, 1)));
-				data.color = make_color(1);
-				add_to_render_group(data, e_shader_tile_background, e_texture_white, e_mesh_quad);
-			}
-
-			s_render_flush_data data = make_render_flush_data(zero, zero);
-			data.projection = ortho;
-			data.blend_mode = e_blend_mode_normal;
-			data.depth_mode = e_depth_mode_no_read_no_write;
-			render_flush(data, true);
-		}
-		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		tiles end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+		draw_background(ortho, false);
 
 		{
 			s_v2 size = v2(32);
@@ -1727,7 +1678,9 @@ func void render(float interp_dt, float delta)
 			{
 				s_time_format data = update_count_to_time_format(game->hard_data.update_count);
 				s_len_str text = format_text("%02i:%02i.%03i", data.minutes, data.seconds, data.milliseconds);
-				draw_text(text, wxy(0.87f, 0.2f), 48, make_color(1), true, &game->font, zero);
+				if(!game->hide_timer) {
+					draw_text(text, wxy(0.87f, 0.2f), 48, make_color(1), true, &game->font, zero);
+				}
 			}
 
 			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		progression bar start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -2562,25 +2515,24 @@ func void add_timed_msg(s_len_str str, s_v2 pos)
 	game->soft_data.timed_msg_arr.add_if_not_full(msg);
 }
 
-func void draw_background(s_v2 player_pos, s_m4 ortho)
+func void draw_background(s_m4 ortho, b8 scroll)
 {
-	if(game->hide_background) { return; }
-
 	{
 		s_instance_data data = zero;
 		data.model = m4_translate(v3(c_world_center, 0));
 		data.model = m4_multiply(data.model, m4_scale(v3(c_world_size, 1)));
 		data.color = make_color(1);
-		add_to_render_group(data, e_shader_background, e_texture_white, e_mesh_quad);
+		if(scroll) {
+			data.mix_weight = 1;
+		}
+		add_to_render_group(data, e_shader_tile_background, e_texture_white, e_mesh_quad);
 	}
 
-	{
-		s_render_flush_data data = make_render_flush_data(zero, v3(player_pos, 0.0f));
-		data.projection = ortho;
-		data.blend_mode = e_blend_mode_normal;
-		data.depth_mode = e_depth_mode_read_no_write;
-		render_flush(data, true);
-	}
+	s_render_flush_data data = make_render_flush_data(zero, zero);
+	data.projection = ortho;
+	data.blend_mode = e_blend_mode_normal;
+	data.depth_mode = e_depth_mode_no_read_no_write;
+	render_flush(data, true);
 }
 
 
@@ -3283,4 +3235,14 @@ func float get_wanted_game_speed(float interp_dt)
 	// 	}
 	// }
 	return result;
+}
+
+func s_active_sound* find_playing_sound(e_sound id)
+{
+	foreach_ptr(sound_i, sound, g_platform_data->active_sound_arr) {
+		if(sound->loaded_sound_id == id) {
+			return sound;
+		}
+	}
+	return null;
 }

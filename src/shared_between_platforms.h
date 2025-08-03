@@ -69,7 +69,7 @@ func void my_audio_callback(void* userdata, u8* stream, int len) {
 				else {
 					left_sample1 = sound_sample_arr[left_index_i + 1] / (float)c_max_s16;
 				}
-				value += lerp(left_sample0, left_sample1, fract(sound->index)) * sound->data.volume * fade_volume;
+				value += lerp(left_sample0, left_sample1, fract(sound->index)) * sound->data.volume * fade_volume * sound->loaded_volume;
 			}
 
 			sound->index += sound->data.speed;
@@ -90,9 +90,9 @@ func void my_audio_callback(void* userdata, u8* stream, int len) {
 
 func void play_sound(e_sound sound_id, s_play_sound_data data)
 {
-	data.volume *= c_sound_data_arr[sound_id].volume;
 	if(!g_platform_data.active_sound_arr.is_full()) {
 		s_active_sound active_sound = zero;
+		active_sound.loaded_volume = c_sound_data_arr[sound_id].volume;
 		active_sound.loaded_sound_id = sound_id;
 		active_sound.data = data;
 		g_platform_data.active_sound_arr.add(active_sound);
