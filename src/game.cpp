@@ -102,7 +102,7 @@ m_dll_export void init(s_platform_data* platform_data)
 	game->speed = 0;
 	game->hover_over_upgrade_pauses_game = true;
 	game->do_lights = true;
-	game->music_speed = 1;
+	game->music_speed = {1, 1};
 
 	SDL_StartTextInput();
 
@@ -255,7 +255,7 @@ m_dll_export void init(s_platform_data* platform_data)
 	load_or_create_leaderboard_id();
 	#endif
 
-	play_sound(e_sound_music, {.loop = true, .speed = game->music_speed});
+	play_sound(e_sound_music, {.loop = true, .speed = game->music_speed.curr});
 }
 
 m_dll_export void init_after_recompile(s_platform_data* platform_data)
@@ -548,7 +548,7 @@ func void update()
 		}
 
 		soft_data->spawn_timer += get_spawn_delay();
-		game->music_speed = 1;
+		game->music_speed.target = 1;
 	}
 	if(game->do_soft_reset) {
 	}
@@ -941,20 +941,12 @@ func void render(float interp_dt, float delta)
 
 	float wanted_speed = get_wanted_game_speed(interp_dt);
 
-	{
-		float target = range_lerp((float)get_progression(), 0, e_enemy_count - 1, 1, 1.5f);
-		game->music_speed = lerp_snap(game->music_speed, target, delta, 0.01f);
-		s_active_sound* music = find_playing_sound(e_sound_music);
-		if(music) {
-			music->data.speed = game->music_speed;
-		}
-	}
-
 	switch(state0) {
 
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		main menu start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		case e_game_state0_main_menu: {
 			game->speed = 0;
+			game->music_speed.target = 1;
 
 			draw_background(ortho, true);
 
@@ -991,6 +983,7 @@ func void render(float interp_dt, float delta)
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		pause menu start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		case e_game_state0_pause: {
 			game->speed = 0;
+			game->music_speed.target = 1;
 
 			draw_background(ortho, true);
 
@@ -1026,6 +1019,7 @@ func void render(float interp_dt, float delta)
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		leaderboard start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		case e_game_state0_leaderboard: {
 			game->speed = 0;
+			game->music_speed.target = 1;
 			draw_background(ortho, true);
 			do_leaderboard();
 
@@ -1041,6 +1035,7 @@ func void render(float interp_dt, float delta)
 
 		case e_game_state0_win_leaderboard: {
 			game->speed = 0;
+			game->music_speed.target = 1;
 			draw_background(ortho, true);
 			do_leaderboard();
 
@@ -1075,6 +1070,7 @@ func void render(float interp_dt, float delta)
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		options start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		case e_game_state0_options: {
 			game->speed = 0;
+			game->music_speed.target = 1;
 			draw_background(ortho, true);
 
 			s_v2 pos = wxy(0.5f, 0.2f);
@@ -1128,6 +1124,7 @@ func void render(float interp_dt, float delta)
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		play start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		case e_game_state0_play: {
 			game->speed = wanted_speed;
+			game->music_speed.target = range_lerp((float)get_progression(), 0, e_enemy_count - 1, 1, 1.5f);
 
 			handle_state(&hard_data->state1, game->render_time);
 
@@ -1139,6 +1136,7 @@ func void render(float interp_dt, float delta)
 				xcase e_game_state1_defeat: {
 					do_game = true;
 					do_defeat = true;
+					game->music_speed.target = 0.5f;
 				}
 			}
 
@@ -1147,6 +1145,7 @@ func void render(float interp_dt, float delta)
 
 		case e_game_state0_input_name: {
 			game->speed = 0;
+			game->music_speed.target = 1;
 			draw_background(ortho, true);
 			s_input_name_state* state = &game->input_name_state;
 			float font_size = 36;
@@ -1866,6 +1865,14 @@ func void render(float interp_dt, float delta)
 			data.blend_mode = e_blend_mode_normal;
 			data.depth_mode = e_depth_mode_no_read_no_write;
 			render_flush(data, true);
+		}
+	}
+
+	{
+		do_lerpable_snap(&game->music_speed, delta * 2.0f, 0.01f);
+		s_active_sound* music = find_playing_sound(e_sound_music);
+		if(music) {
+			music->data.speed = game->music_speed.curr;
 		}
 	}
 
@@ -3159,6 +3166,7 @@ func void draw_keycap(char c, s_v2 pos, s_v2 size)
 	pos += size * 0.5f;
 	draw_atlas_ex(pos, size, v2i(124, 42), make_color(1), 0, zero);
 	s_len_str str = format_text("%c", to_upper_case(c));
+	pos.x -= size.x * 0.025f;
 	pos.y -= size.x * 0.05f;
 	draw_text(str, pos, size.x, c_key_color, true, &game->font, {.z = 1});
 }
@@ -3261,4 +3269,9 @@ func s_active_sound* find_playing_sound(e_sound id)
 		}
 	}
 	return null;
+}
+
+func void do_lerpable_snap(s_lerpable* lerpable, float dt, float max_diff)
+{
+	lerpable->curr = lerp_snap(lerpable->curr, lerpable->target, dt, max_diff);
 }
