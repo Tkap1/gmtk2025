@@ -94,3 +94,5 @@ func void draw_keycap(char c, s_v2 pos, s_v2 size);
 func b8 completed_attack_tutorial();
 func void add_multiplicative_light(s_v2 pos, float radius, s_v4 color, float smoothness);
 func void add_additive_light(s_v2 pos, float radius, s_v4 color, float smoothness);
+func int get_progression();
+func float get_spawn_delay();

@@ -101,6 +101,7 @@ m_dll_export void init(s_platform_data* platform_data)
 	game->reload_shaders = true;
 	game->speed = 0;
 	game->hover_over_upgrade_pauses_game = true;
+	game->do_lights = true;
 
 	SDL_StartTextInput();
 
@@ -516,8 +517,6 @@ func void update()
 			entity_manager_reset(entity_arr, type_i);
 		}
 
-		soft_data->spawn_timer += c_spawn_delay;
-
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		create player start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		{
 			s_entity player = zero;
@@ -550,6 +549,8 @@ func void update()
 			s_entity emitter = make_circle_particles();
 			add_emitter(emitter);
 		}
+
+		soft_data->spawn_timer += get_spawn_delay();
 	}
 	if(game->do_soft_reset) {
 	}
@@ -580,8 +581,9 @@ func void update()
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		spawn start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		{
 			soft_data->spawn_timer += delta;
-			while(soft_data->spawn_timer >= c_spawn_delay) {
-				soft_data->spawn_timer -= c_spawn_delay;
+			float spawn_delay = get_spawn_delay();
+			while(soft_data->spawn_timer >= spawn_delay) {
+				soft_data->spawn_timer -= spawn_delay;
 
 				s_list<e_enemy, e_enemy_count> possible_spawn_arr;
 				possible_spawn_arr.count = 0;
@@ -806,7 +808,7 @@ func void update()
 								fct.pos.y += get_enemy_size(enemy->enemy_type).y * 0.5f;
 								entity_manager_add(&game->soft_data.entity_arr, e_entity_fct, fct);
 							}
-							soft_data->spawn_timer += c_spawn_delay * 0.5f;
+							soft_data->spawn_timer += get_spawn_delay() * 0.5f;
 							soft_data->enemy_type_kill_count_arr[enemy->enemy_type] += 1;
 							add_gold(gold_reward);
 							make_dying_enemy(*enemy);
@@ -2849,7 +2851,8 @@ func s_len_str get_upgrade_description(e_upgrade id)
 			}
 			else {
 				builder_add(&builder, "Lightning bolts strike with %.0f%% increased frequency\n\n", data.stat_boost);
-				builder_add(&builder, "Current: %.2f hits per second", get_lightning_bolt_frequency());
+				float frequency = get_lightning_bolt_frequency();
+				builder_add(&builder, "Current: %.2f hit%s per second", frequency, handle_plural(frequency));
 			}
 		};
 		xcase e_upgrade_auto_attack: {
@@ -3118,4 +3121,26 @@ func void add_additive_light(s_v2 pos, float radius, s_v4 color, float smoothnes
 	if(!game->additive_light_arr.is_full()) {
 		game->additive_light_arr.add(light);
 	}
+}
+
+func int get_progression()
+{
+	int result = 0;
+	for_enum(type_i, e_enemy) {
+		if(type_i == 0) { continue; }
+		int num_needed = g_enemy_type_data[type_i].prev_enemy_required_kill_count;
+		if(game->soft_data.enemy_type_kill_count_arr[type_i - 1] >= num_needed) {
+			result += 1;
+		}
+	}
+	return result;
+}
+
+func float get_spawn_delay()
+{
+	float frequency = 1.0f / c_spawn_delay;
+	float progression_multi = get_progression() * 33.0f;
+	frequency *= 1.0f + progression_multi / 100.0f;
+	float result = 1.0f / frequency;
+	return result;
 }

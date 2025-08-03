@@ -224,7 +224,7 @@ data_enum(e_enemy,
 		.health_multi = 20.0f,
 		.gold_reward = 10,
 		.speed_multi = 1,
-		.knockback_resistance = 0.5f,
+		.knockback_resistance = 0.75f,
 		.movement_type = e_enemy_movement_spiral,
 		.size = {64, 64},
 		.atlas_index = {113, 16},
@@ -242,13 +242,34 @@ data_enum(e_enemy,
 		.atlas_index = {104, 14},
 	}
 
-	boss {
+	d {
 		.prev_enemy_required_kill_count = 20,
+		.spawn_weight = 13000,
+		.health_multi = 10.0f,
+		.gold_reward = 15,
+		.knockback_resistance = 0.5f,
+		.size = {48, 48},
+		.atlas_index = {115, 40},
+	}
+
+	e {
+		.prev_enemy_required_kill_count = 10,
+		.spawn_weight = 15000,
+		.health_multi = 20.0f,
+		.gold_reward = 30,
+		.speed_multi = 1.25f,
+		.knockback_resistance = 0.5f,
+		.size = {48, 48},
+		.atlas_index = {113, 37},
+	}
+
+	boss {
+		.prev_enemy_required_kill_count = 10,
 		.spawn_weight = 1000000,
-		.health_multi = 100.0f,
+		.health_multi = 1000.0f,
 		.gold_reward = 100,
 		.speed_multi = 0.5f,
-		.knockback_resistance = 0.9f,
+		.knockback_resistance = 0.95f,
 		.size = {128, 128},
 		.atlas_index = {125, 29},
 	}
@@ -294,21 +315,22 @@ data_enum(e_upgrade,
 
 	speed {
 		.name = S("Speed"),
-		.cost = 20,
+		.cost = 10,
 		.extra_cost_per_level = 5,
 		.stat_boost = 20,
+		.max_upgrades = 5,
 	}
 
 	range {
 		.name = S("Attack range"),
-		.cost = 30,
+		.cost = 20,
 		.extra_cost_per_level = 5,
 		.stat_boost = 20,
 	}
 
 	knockback {
 		.name = S("Knockback"),
-		.cost = 30,
+		.cost = 10,
 		.extra_cost_per_level = 5,
 		.stat_boost = 20,
 	}
@@ -332,7 +354,7 @@ data_enum(e_upgrade,
 	more_hits_per_attack {
 		.name = S("Multistrike"),
 		.cost = 100,
-		.extra_cost_per_level = 100,
+		.extra_cost_per_level = 200,
 		.stat_boost = 1,
 		.max_upgrades = 4,
 	}
@@ -340,8 +362,8 @@ data_enum(e_upgrade,
 	lightning_bolt {
 		.name = S("Lightning bolt"),
 		.cost = 50,
-		.extra_cost_per_level = 100,
-		.stat_boost = 20,
+		.extra_cost_per_level = 50,
+		.stat_boost = 50,
 	}
 
 	auto_attack {
