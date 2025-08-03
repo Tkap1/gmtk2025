@@ -34,7 +34,6 @@ POLISH:
 	enemy wobble
 	ending is dogshit, we need some pause or something
 	tell people to go full screen
-	O for options?
 
 mention shift+ctrl
 mention ctrl+r

@@ -409,7 +409,7 @@ func void input()
 					else if(scancode == SDL_SCANCODE_S && event.key.repeat == 0) {
 						soft_data->attack_timer.want_to_use_timestamp = game->update_time;
 					}
-					else if(key == SDLK_ESCAPE && event.key.repeat == 0) {
+					else if((key == SDLK_ESCAPE && event.key.repeat == 0) || (key == SDLK_o && event.key.repeat == 0) || (key == SDLK_p && event.key.repeat == 0)) {
 						if(state0 == e_game_state0_play && state1 == e_game_state1_default) {
 							add_state(&game->state0, e_game_state0_pause);
 						}
