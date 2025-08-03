@@ -67,7 +67,7 @@ func s_v2 get_enemy_size(e_enemy type);
 func float get_player_knockback();
 func void add_gold(int gold);
 func void lose_lives(int how_many);
-func void spawn_enemy(e_enemy type);
+func int spawn_enemy(e_enemy type);
 func float get_dash_cooldown();
 func b8 is_upgrade_maxed(e_upgrade id);
 func int get_max_lives();

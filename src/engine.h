@@ -341,19 +341,19 @@ data_enum(e_entity,
 		.max_count = 1,
 	}
 	enemy {
-		.max_count = 1024,
+		.max_count = 2048,
 	}
 	dying_enemy {
-		.max_count = 1024,
+		.max_count = 2048,
 	}
 	emitter {
 		.max_count = 1024,
 	}
 	fct {
-		.max_count = 256,
+		.max_count = 512,
 	}
 	visual_effect {
-		.max_count = 256,
+		.max_count = 512,
 	}
 )
 

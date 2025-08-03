@@ -439,6 +439,7 @@ struct s_frame_data
 
 struct s_soft_game_data
 {
+	int boss_index;
 	b8 boss_spawned;
 	s_frame_data frame_data;
 	int lives_lost;

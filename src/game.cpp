@@ -612,11 +612,13 @@ func void update()
 				int chosen_index = pick_rand_from_weight_arr(&weight_arr, &game->rng);
 				e_enemy chosen_enemy_type = possible_spawn_arr[chosen_index];
 
+				int index = spawn_enemy(chosen_enemy_type);
 				if(chosen_enemy_type == e_enemy_boss) {
 					soft_data->boss_spawned = true;
+					assert(index >= 0);
+					soft_data->boss_index = index;
 				}
 
-				spawn_enemy(chosen_enemy_type);
 			}
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		spawn end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -772,7 +774,7 @@ func void update()
 								effect.pos = enemy->pos;
 								effect.spawn_timestamp = game->render_time;
 								effect.effect_size = enemy_size;
-								entity_manager_add(entity_arr, e_entity_visual_effect, effect);
+								entity_manager_add_if_not_full(entity_arr, e_entity_visual_effect, effect);
 							}
 						}
 						else {
@@ -808,7 +810,7 @@ func void update()
 								builder_add(&fct.builder, "$$ffff00+%ig$.", gold_reward);
 								fct.pos = enemy->pos;
 								fct.pos.y += get_enemy_size(enemy->enemy_type).y * 0.5f;
-								entity_manager_add(&game->soft_data.entity_arr, e_entity_fct, fct);
+								entity_manager_add_if_not_full(&game->soft_data.entity_arr, e_entity_fct, fct);
 							}
 							soft_data->spawn_timer += get_spawn_delay() * 0.5f;
 							soft_data->enemy_type_kill_count_arr[enemy->enemy_type] += 1;
@@ -1316,8 +1318,10 @@ func void render(float interp_dt, float delta)
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw player start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		{
 			draw_atlas(player_pos, c_player_size_v, v2i(123, 42), make_color(1));
-			entity_arr->data[player->range_emitter].emitter_a.pos = v3(player_pos, 0.0f);
-			entity_arr->data[player->range_emitter].emitter_b.spawn_data.x = get_player_attack_range();
+			if(player->range_emitter >= 0) {
+				entity_arr->data[player->range_emitter].emitter_a.pos = v3(player_pos, 0.0f);
+				entity_arr->data[player->range_emitter].emitter_b.spawn_data.x = get_player_attack_range();
+			}
 
 			// @Note(tkap, 31/07/2025): Fist
 			{
@@ -1711,6 +1715,59 @@ func void render(float interp_dt, float delta)
 				s_time_format data = update_count_to_time_format(game->hard_data.update_count);
 				s_len_str text = format_text("%02i:%02i.%03i", data.minutes, data.seconds, data.milliseconds);
 				draw_text(text, wxy(0.87f, 0.2f), 48, make_color(1), true, &game->font, zero);
+			}
+
+			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		progression bar start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+			{
+				s_v2 under_size = c_game_area * v2(0.8, 0.03f);
+				s_v2 pos = gxy(0.5f, 0.04f) - under_size * 0.5f;
+
+				// @Note(tkap, 03/08/2025): Separators
+				int count = e_enemy_count - 1;
+				float advance = under_size.x / (float)count;
+				s_v4 color = hex_to_rgb(0xE11E29);
+				if(!soft_data->boss_spawned) {
+					for(int i = 0; i < count; i += 1) {
+						s_v2 temp_pos = pos;
+						temp_pos.x += advance * i;
+						if(i > 0 ) {
+							draw_rect_topleft(temp_pos, under_size * v2(0.01f, 1.0f), multiply_rgb(color, 1.5f));
+						}
+					}
+				}
+
+				s_v2 over_size = v2(0, under_size.y);
+				if(soft_data->boss_spawned) {
+					float percent = entity_arr->data[soft_data->boss_index].damage_taken / get_enemy_max_health(e_enemy_boss);
+					percent = at_most(1.0f, percent);
+					over_size.x = under_size.x * (1.0f - percent);
+				}
+				else {
+					for_enum(type_i, e_enemy) {
+						if(type_i == e_enemy_count - 1) { break; }
+						int num_needed = g_enemy_type_data[type_i + 1].prev_enemy_required_kill_count;
+						int num_killed = soft_data->enemy_type_kill_count_arr[type_i];
+						float completion = at_most(1.0f, num_killed / (float)num_needed);
+						over_size.x += advance * completion;
+						if(num_killed < num_needed) {
+							break;
+						}
+					}
+				}
+				// @Note(tkap, 03/08/2025): Over
+				draw_rect_topleft(pos, over_size, multiply_rgb(color, 0.8f));
+
+				// @Note(tkap, 03/08/2025): Under
+				draw_rect_topleft(pos, under_size, multiply_rgb(color, 0.45f));
+			}
+			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		progression bar end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+			{
+				s_render_flush_data data = make_render_flush_data(zero, zero);
+				data.projection = ortho;
+				data.blend_mode = e_blend_mode_normal;
+				data.depth_mode = e_depth_mode_read_and_write;
+				render_flush(data, true);
 			}
 
 			if(game->hover_over_upgrade_pauses_game && are_we_hovering_over_ui(g_mouse) && !game->do_hard_reset) {
@@ -2569,7 +2626,7 @@ func b8 damage_enemy(s_entity* enemy, float damage)
 		fct.duration = 1.5f;
 		fct.pos = enemy->pos;
 		fct.vel.x = randf32_11(&game->rng) * 50;
-		entity_manager_add(&game->soft_data.entity_arr, e_entity_fct, fct);
+		entity_manager_add_if_not_full(&game->soft_data.entity_arr, e_entity_fct, fct);
 	}
 
 	return dead;
@@ -2578,7 +2635,7 @@ func b8 damage_enemy(s_entity* enemy, float damage)
 func void make_dying_enemy(s_entity enemy)
 {
 	s_entity dying_enemy = enemy;
-	entity_manager_add(&game->soft_data.entity_arr, e_entity_dying_enemy, dying_enemy);
+	entity_manager_add_if_not_full(&game->soft_data.entity_arr, e_entity_dying_enemy, dying_enemy);
 }
 
 func s_particle_emitter_a make_emitter_a()
@@ -2614,7 +2671,7 @@ func int add_emitter(s_entity emitter)
 	s_soft_game_data* soft_data = &game->soft_data;
 	emitter.emitter_b.creation_timestamp = game->render_time;
 	emitter.emitter_b.last_emit_timestamp = game->render_time - 1.0f / emitter.emitter_b.particles_per_second;
-	int index = entity_manager_add(&soft_data->entity_arr, e_entity_emitter, emitter);
+	int index = entity_manager_add_if_not_full(&soft_data->entity_arr, e_entity_emitter, emitter);
 	return index;
 }
 
@@ -2740,14 +2797,15 @@ func void lose_lives(int how_many)
 	game->soft_data.frame_data.lives_to_lose += how_many;
 }
 
-func void spawn_enemy(e_enemy type)
+func int spawn_enemy(e_enemy type)
 {
 	s_entity enemy = zero;
 	enemy.enemy_type = type;
 	enemy.spawn_timestamp = game->update_time;
 	s_v2 pos = gxy(0.5f) + v2_from_angle(randf_range(&game->rng, 0, c_tau)) * c_game_area.x * 0.6f;
 	teleport_entity(&enemy, pos);
-	entity_manager_add(&game->soft_data.entity_arr, e_entity_enemy, enemy);
+	int index = entity_manager_add(&game->soft_data.entity_arr, e_entity_enemy, enemy);
+	return index;
 }
 
 func float get_dash_cooldown()

@@ -879,7 +879,7 @@ func void update_particles(float delta)
 						};
 					}
 					particle.spawn_timestamp = game->render_time;
-					soft_data->particle_arr.add(particle);
+					soft_data->particle_arr.add_if_not_full(particle);
 				}
 			}
 		}
@@ -939,15 +939,22 @@ func void update_particles(float delta)
 template <typename t, int n>
 func int entity_manager_add(s_entity_manager<t, n>* manager, e_entity type, t new_entity)
 {
-	assert(manager->count[type] < n);
-	#if !defined(m_debug)
-	if(manager->count[type] >= n) { return -10000000; }
-	#endif
+	assert(manager->count[type] < g_entity_type_data[type].max_count);
 	int index = manager->free_list[type][manager->count[type]];
 	assert(!manager->active[index]);
 	manager->data[index] = new_entity;
 	manager->active[index] = true;
 	manager->count[type] += 1;
+	return index;
+}
+
+template <typename t, int n>
+func int entity_manager_add_if_not_full(s_entity_manager<t, n>* manager, e_entity type, t new_entity)
+{
+	if(manager->count[type] >= g_entity_type_data[type].max_count) {
+		return c_invalid_index;
+	}
+	int index = entity_manager_add(manager, type, new_entity);
 	return index;
 }
 

@@ -30,6 +30,8 @@ func void update_particles(float delta);
 template <typename t, int n>
 func int entity_manager_add(s_entity_manager<t, n>* manager, e_entity type, t new_entity);
 template <typename t, int n>
+func int entity_manager_add_if_not_full(s_entity_manager<t, n>* manager, e_entity type, t new_entity);
+template <typename t, int n>
 func void entity_manager_remove(s_entity_manager<t, n>* manager, e_entity type, int index);
 template <typename t, int n>
 func void entity_manager_reset(s_entity_manager<t, n>* manager, e_entity type);

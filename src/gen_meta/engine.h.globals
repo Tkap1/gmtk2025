@@ -3,19 +3,19 @@ global constexpr s_entity_type_data g_entity_type_data[e_entity_count] = {
 		.max_count = 1,
 	},
 	{
-		.max_count = 1024,
+		.max_count = 2048,
+	},
+	{
+		.max_count = 2048,
 	},
 	{
 		.max_count = 1024,
 	},
 	{
-		.max_count = 1024,
+		.max_count = 512,
 	},
 	{
-		.max_count = 256,
-	},
-	{
-		.max_count = 256,
+		.max_count = 512,
 	},
 };
 
