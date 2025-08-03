@@ -1657,6 +1657,7 @@ func void render(float interp_dt, float delta)
 				if(should_do_upgrade_tutorial) {
 					s_v4 color = hsv_to_rgb(game->render_time * 360, 1, 1);
 					draw_text(S("Buy upgrades! ->"), wxy(0.62f, 0.28f), sin_range(32, 40, game->render_time * 8), color, true, &game->font, zero);
+					draw_text(S("Hold CTRL to buy 5x\nHold Shift to buy 10x"), wxy(0.62f, 0.36f), 32, make_color(0.8f), true, &game->font, zero);
 				}
 
 				if(!completed_attack_tutorial()) {
