@@ -873,6 +873,7 @@ func void update()
 	}
 
 	if(soft_data->boss_defeated_timestamp > 0 && game->update_time - soft_data->boss_defeated_timestamp > 4) {
+		soft_data->boss_defeated_timestamp = 0;
 		if(game->leaderboard_nice_name.count <= 0 && c_on_web) {
 			add_temporary_state_transition(&game->state0, e_game_state0_input_name, game->render_time, c_transition_time);
 		}
