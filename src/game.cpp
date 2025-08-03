@@ -102,6 +102,7 @@ m_dll_export void init(s_platform_data* platform_data)
 	game->speed = 0;
 	game->hover_over_upgrade_pauses_game = true;
 	game->do_lights = true;
+	game->music_speed = 1;
 
 	SDL_StartTextInput();
 
@@ -254,7 +255,7 @@ m_dll_export void init(s_platform_data* platform_data)
 	load_or_create_leaderboard_id();
 	#endif
 
-	play_sound(e_sound_music, {.loop = true});
+	play_sound(e_sound_music, {.loop = true, .speed = game->music_speed});
 }
 
 m_dll_export void init_after_recompile(s_platform_data* platform_data)
@@ -547,6 +548,7 @@ func void update()
 		}
 
 		soft_data->spawn_timer += get_spawn_delay();
+		game->music_speed = 1;
 	}
 	if(game->do_soft_reset) {
 	}
@@ -779,7 +781,7 @@ func void update()
 							}
 						}
 						else {
-							if(are_we_dashing && !do_we_have_auto_attack()) {
+							if(are_we_dashing && !do_we_have_auto_attack() && num_enemies_hit == 0) {
 								soft_data->frames_to_freeze += 10;
 							}
 							game->num_times_we_attacked_an_enemy += 1;
@@ -938,6 +940,15 @@ func void render(float interp_dt, float delta)
 	b8 do_defeat = false;
 
 	float wanted_speed = get_wanted_game_speed(interp_dt);
+
+	{
+		float target = range_lerp((float)get_progression(), 0, e_enemy_count - 1, 1, 1.5f);
+		game->music_speed = lerp_snap(game->music_speed, target, delta, 0.01f);
+		s_active_sound* music = find_playing_sound(e_sound_music);
+		if(music) {
+			music->data.speed = game->music_speed;
+		}
+	}
 
 	switch(state0) {
 
@@ -1142,7 +1153,7 @@ func void render(float interp_dt, float delta)
 			s_v2 pos = c_world_size * v2(0.5f, 0.4f);
 
 			int count_before = state->name.str.count;
-			b8 submitted = handle_string_input(&state->name, game->render_time, 16);
+			b8 submitted = handle_string_input(&state->name, game->render_time);
 			int count_after = state->name.str.count;
 			if(count_before != count_after) {
 				play_sound(e_sound_key, zero);
@@ -1158,7 +1169,11 @@ func void render(float interp_dt, float delta)
 					#if defined(__EMSCRIPTEN__)
 					set_leaderboard_name(builder_to_len_str(&state->name.str));
 					#endif
-					game->leaderboard_nice_name = state->name.str;
+					{
+						s_len_str temp = builder_to_len_str(&state->name.str);
+						game->leaderboard_nice_name.count = 0;
+						builder_add(&game->leaderboard_nice_name, "%.*s", expand_str(temp));
+					}
 				}
 			}
 
@@ -2771,6 +2786,7 @@ func void add_gold(int gold)
 func void lose_lives(int how_many)
 {
 	game->soft_data.frame_data.lives_to_lose += how_many;
+	play_sound(e_sound_lose_life, zero);
 }
 
 func int spawn_enemy(e_enemy type)

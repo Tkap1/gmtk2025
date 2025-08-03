@@ -488,6 +488,7 @@ struct s_light
 
 struct s_game
 {
+	float music_speed;
 	int next_entity_id;
 	#if defined(m_debug)
 	b8 cheat_menu_enabled;

@@ -16,9 +16,9 @@ struct s_audio_fade
 
 struct s_play_sound_data
 {
+	b8 loop;
 	float volume = 1;
 	float speed = 1;
-	b8 loop;
 	s_maybe<s_audio_fade> fade;
 };
 
@@ -26,10 +26,9 @@ enum e_sound
 {
 	e_sound_click,
 	e_sound_key,
-	e_sound_break,
 	e_sound_enemy_death,
 	e_sound_enemy_death2,
-	e_sound_clap,
+	e_sound_lose_life,
 	e_sound_land,
 	e_sound_restart,
 	e_sound_super_speed,
@@ -48,22 +47,12 @@ struct s_sound_data
 	float volume;
 };
 
-struct s_active_sound
-{
-	e_sound loaded_sound_id;
-	float loaded_volume;
-	s_play_sound_data data;
-	float index;
-};
-
-
 global constexpr s_sound_data c_sound_data_arr[e_sound_count] = {
 	{"assets/click.wav", 0.2f},
 	{"assets/key.wav", 0.2f},
-	{"assets/break.wav", 1.0f},
 	{"assets/enemy_death.wav", 0.15f},
 	{"assets/enemy_death2.wav", 0.15f},
-	{"assets/clap.wav", 1.0f},
+	{"assets/lose_life.wav", 0.2f},
 	{"assets/land.wav", 1.0f},
 	{"assets/restart.wav", 1.0f},
 	{"assets/super_speed.wav", 1.0f},
@@ -74,6 +63,15 @@ global constexpr s_sound_data c_sound_data_arr[e_sound_count] = {
 	{"assets/upgrade.wav", 0.2f},
 	{"assets/music.wav", 0.1f},
 };
+
+struct s_active_sound
+{
+	e_sound loaded_sound_id;
+	float loaded_volume;
+	s_play_sound_data data;
+	float index;
+};
+
 
 struct s_platform_data
 {

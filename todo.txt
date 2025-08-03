@@ -24,7 +24,6 @@ SOUND:
 	defeat sound
 	win sound
 	fix volumes
-	sound on lose lfie
 
 POLISH:
 	some kind of movement animation on player
@@ -40,5 +39,4 @@ POLISH:
 more enemies
 fix delta? in web. a bunch of particles spawn after long alt tab
 check if all leaderboard stuff works on web
-speed up music when boss spawns?
-name limit??
+check input naem again
