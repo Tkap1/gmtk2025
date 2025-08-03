@@ -1284,9 +1284,6 @@ func void render(float interp_dt, float delta)
 				s_entity* enemy = &entity_arr->data[i];
 				s_v2 enemy_pos = lerp_v2(enemy->prev_pos, enemy->pos, interp_dt);
 				s_v4 color = make_color(1);
-				// if(enemy->highlight.valid) {
-				// 	color = enemy->highlight.value;
-				// }
 				s_time_data time_data = get_time_data(update_time_to_render_time(game->update_time, interp_dt), enemy->hit_timestamp, 0.33f);
 				s_draw_data draw_data = zero;
 				draw_data.mix_color = make_color(1);
@@ -1298,7 +1295,17 @@ func void render(float interp_dt, float delta)
 					draw_data.flip_x = true;
 				}
 				s_v2 size = get_enemy_size(enemy->enemy_type);
-				draw_atlas_ex(enemy_pos, size, get_enemy_atlas_index(enemy->enemy_type), color, 0, draw_data);
+				float rotation = 0;
+				{
+					float speed_multi = g_enemy_type_data[enemy->enemy_type].speed_multi;
+					float passed = update_time_to_render_time(game->update_time, interp_dt) - enemy->spawn_timestamp;
+					float s0 = sinf(passed * 8 * speed_multi);
+					float s1 = sinf(passed * 4 * speed_multi);
+					s1 = sign_as_float(s1) * powf(fabsf(s1), 0.75f);
+					enemy_pos.y += s0 * 4;
+					rotation = s1 * -0.35f;
+				}
+				draw_atlas_ex(enemy_pos, size, get_enemy_atlas_index(enemy->enemy_type), color, rotation, draw_data);
 				s_v2 light_offset = v2(-8, 0);
 				if(!draw_data.flip_x) {
 					light_offset.x *= -1;
@@ -1319,6 +1326,10 @@ func void render(float interp_dt, float delta)
 				s_time_data time_data = get_time_data(update_time_to_render_time(game->update_time, interp_dt), enemy->hit_timestamp, 0.33f);
 				s_draw_data draw_data = zero;
 				draw_data.mix_color = make_color(1);
+				s_v2 dir = v2_dir_from_to(enemy_pos, gxy(0.5f));
+				if(dir.x > 0) {
+					draw_data.flip_x = true;
+				}
 				if(enemy->hit_timestamp > 0 && time_data.percent <= 1) {
 					draw_data.mix_weight = smoothstep(1.0f, 0.7f, time_data.percent);
 				}
@@ -2576,15 +2587,6 @@ func void do_screen_shake(float intensity)
 	s_soft_game_data* soft_data = &game->soft_data;
 	soft_data->start_screen_shake_timestamp = game->render_time;
 	soft_data->shake_intensity = intensity;
-}
-
-func void add_timed_msg(s_len_str str, s_v2 pos)
-{
-	s_timed_msg msg = zero;
-	msg.pos = pos;
-	msg.spawn_timestamp = game->update_time;
-	str_into_builder(&msg.builder, str);
-	game->soft_data.timed_msg_arr.add_if_not_full(msg);
 }
 
 func void draw_background(s_m4 ortho, b8 scroll)

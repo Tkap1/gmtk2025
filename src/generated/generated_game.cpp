@@ -39,7 +39,6 @@ func void draw_circle(s_v2 pos, float radius, s_v4 color);
 func void draw_light(s_v2 pos, float radius, s_v4 color, float smoothness);
 func s_v2 get_upgrade_offset(float interp_dt);
 func void do_screen_shake(float intensity);
-func void add_timed_msg(s_len_str str, s_v2 pos);
 func void draw_background(s_m4 ortho, b8 scroll);
 func void teleport_entity(s_entity* entity, s_v2 pos);
 func float get_player_damage();

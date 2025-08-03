@@ -1,12 +1,4 @@
 
-
-IDEA 4
-	maybe enemies get faster (so it's harder)
-
-UPGRADES?
-	very long range tower kind of thing that shoots enemies?
-
 POLISH:
 	some kind of movement animation on player
 	dont display "paused" text unless we are in default state1
-	enemy wobble
