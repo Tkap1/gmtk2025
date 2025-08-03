@@ -973,6 +973,11 @@ func void render(float interp_dt, float delta)
 			draw_text(S("www.twitch.tv/Tkap1"), wxy(0.5f, 0.3f), 32, make_color(0.6f), true, &game->font, zero);
 
 			{
+				s_v4 color = hsv_to_rgb(game->render_time * 360, 1, 1);
+				draw_text(S("Go fullscreen!\n             V"), wxy(0.9f, 0.93f), sin_range(32, 40, game->render_time * 8), color, true, &game->font, zero);
+			}
+
+			{
 				s_render_flush_data data = make_render_flush_data(zero, zero);
 				data.projection = ortho;
 				data.blend_mode = e_blend_mode_normal;

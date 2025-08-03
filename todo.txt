@@ -19,6 +19,5 @@ POLISH:
 	some kind of movement animation on player
 	dont display "paused" text unless we are in default state1
 	enemy wobble
-	tell people to go full screen
 
 mention ctrl+r
