@@ -519,7 +519,7 @@ func void update()
 
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		create player start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		{
-			s_entity player = zero;
+			s_entity player = make_entity();
 
 			s_v2 center = gxy(0.5f);
 			center.x += cosf(player.timer) * c_circle_radius * 0.5f;
@@ -528,7 +528,7 @@ func void update()
 			player.stamina = c_max_stamina;
 
 			{
-				s_entity emitter = zero;
+				s_entity emitter = make_entity();
 				emitter.emitter_a = make_emitter_a();
 				emitter.emitter_a.pos = v3(player.pos, 0.0f);
 				emitter.emitter_a.radius = 4;
@@ -616,7 +616,8 @@ func void update()
 				if(chosen_enemy_type == e_enemy_boss) {
 					soft_data->boss_spawned = true;
 					assert(index >= 0);
-					soft_data->boss_index = index;
+					soft_data->boss_ref.index = index;
+					soft_data->boss_ref.id = entity_arr->data[index].id;
 				}
 
 			}
@@ -770,7 +771,7 @@ func void update()
 							}
 
 							{
-								s_entity effect = zero;
+								s_entity effect = make_entity();
 								effect.pos = enemy->pos;
 								effect.spawn_timestamp = game->render_time;
 								effect.effect_size = enemy_size;
@@ -803,7 +804,7 @@ func void update()
 							}
 							int gold_reward = g_enemy_type_data[enemy->enemy_type].gold_reward;
 							{
-								s_entity fct = zero;
+								s_entity fct = make_entity();
 								fct.duration = 0.66f;
 								fct.fct_type = 1;
 								fct.spawn_timestamp = game->render_time;
@@ -1738,9 +1739,12 @@ func void render(float interp_dt, float delta)
 
 				s_v2 over_size = v2(0, under_size.y);
 				if(soft_data->boss_spawned) {
-					float percent = entity_arr->data[soft_data->boss_index].damage_taken / get_enemy_max_health(e_enemy_boss);
-					percent = at_most(1.0f, percent);
-					over_size.x = under_size.x * (1.0f - percent);
+					s_entity* boss = get_entity(soft_data->boss_ref);
+					if(boss) {
+						float percent = boss->damage_taken / get_enemy_max_health(boss->enemy_type);
+						percent = at_most(1.0f, percent);
+						over_size.x = under_size.x * (1.0f - percent);
+					}
 				}
 				else {
 					for_enum(type_i, e_enemy) {
@@ -2620,7 +2624,7 @@ func b8 damage_enemy(s_entity* enemy, float damage)
 	}
 
 	{
-		s_entity fct = zero;
+		s_entity fct = make_entity();
 		fct.spawn_timestamp = game->render_time;
 		builder_add(&fct.builder, "%.0f", damage);
 		fct.duration = 1.5f;
@@ -2799,7 +2803,7 @@ func void lose_lives(int how_many)
 
 func int spawn_enemy(e_enemy type)
 {
-	s_entity enemy = zero;
+	s_entity enemy = make_entity();
 	enemy.enemy_type = type;
 	enemy.spawn_timestamp = game->update_time;
 	s_v2 pos = gxy(0.5f) + v2_from_angle(randf_range(&game->rng, 0, c_tau)) * c_game_area.x * 0.6f;
@@ -3002,7 +3006,7 @@ func char* handle_plural(float x)
 
 func s_entity make_enemy_death_particles(s_v2 pos)
 {
-	s_entity emitter = zero;
+	s_entity emitter = make_entity();
 
 	emitter.emitter_a = make_emitter_a();
 	emitter.emitter_a.pos = v3(pos, 0.0f);
@@ -3028,7 +3032,7 @@ func s_entity make_enemy_death_particles(s_v2 pos)
 
 func s_entity make_enemy_hit_particles(s_v2 pos)
 {
-	s_entity emitter = zero;
+	s_entity emitter = make_entity();
 
 	emitter.emitter_a = make_emitter_a();
 	emitter.emitter_a.dir = v3(1, 1, 0);
@@ -3050,7 +3054,7 @@ func s_entity make_enemy_hit_particles(s_v2 pos)
 
 func s_entity make_circle_particles()
 {
-	s_entity emitter = zero;
+	s_entity emitter = make_entity();
 
 	emitter.emitter_a = make_emitter_a();
 	emitter.emitter_a.dir = v3(0.1f, -0.5f, 0);
@@ -3138,7 +3142,7 @@ func u32 get_radix_from_enemy_index(int index)
 
 func s_entity make_lose_lives_particles()
 {
-	s_entity emitter = zero;
+	s_entity emitter = make_entity();
 
 	emitter.emitter_a = make_emitter_a();
 	emitter.emitter_a.pos = v3(gxy(0.5f), 0.0f);
@@ -3220,5 +3224,28 @@ func float get_spawn_delay()
 	float progression_multi = get_progression() * 33.0f;
 	frequency *= 1.0f + progression_multi / 100.0f;
 	float result = 1.0f / frequency;
+	return result;
+}
+
+func s_entity make_entity()
+{
+	s_entity entity = zero;
+	game->next_entity_id += 1;
+	entity.id = game->next_entity_id;
+	return entity;
+}
+
+func s_entity* get_entity(s_entity_ref ref)
+{
+	s_entity* result = null;
+	if(ref.id > 0) {
+		if(ref.index >= 0 && ref.index < c_max_entities) {
+			if(game->soft_data.entity_arr.active[ref.index]) {
+				if(game->soft_data.entity_arr.data[ref.index].id == ref.id) {
+					result = &game->soft_data.entity_arr.data[ref.index];
+				}
+			}
+		}
+	}
 	return result;
 }

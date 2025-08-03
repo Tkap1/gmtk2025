@@ -439,7 +439,7 @@ struct s_frame_data
 
 struct s_soft_game_data
 {
-	int boss_index;
+	s_entity_ref boss_ref;
 	b8 boss_spawned;
 	s_frame_data frame_data;
 	int lives_lost;
@@ -482,6 +482,7 @@ struct s_light
 
 struct s_game
 {
+	int next_entity_id;
 	#if defined(m_debug)
 	b8 cheat_menu_enabled;
 	#endif

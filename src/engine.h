@@ -362,6 +362,12 @@ struct s_entity_type_data
 	int max_count;
 };
 
+struct s_entity_ref
+{
+	int id;
+	int index;
+};
+
 template <typename t, int n>
 struct s_entity_manager
 {
