@@ -103,3 +103,4 @@ func void do_lerpable_snap(s_lerpable* lerpable, float dt, float max_diff);
 func s_entity make_boss_death_particles(s_v2 pos);
 func int get_upgrade_queue_count(e_upgrade id);
 func b8 is_upgrade_queued(e_upgrade id);
+func void hit_enemy(int i, float damage, float knockback_to_add);

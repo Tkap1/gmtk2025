@@ -744,6 +744,9 @@ func void update()
 			player->timer += delta * get_player_speed() * dash_speed;
 			player->stamina = at_most(c_max_stamina, player->stamina + c_stamina_regen * delta);
 
+
+
+			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		try to hit start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 			s_list<int, get_max_entities_of_type(e_entity_enemy)> enemy_index_arr;
 			enemy_index_arr.count = 0;
 			for(int i = c_first_index[e_entity_enemy]; i < c_last_index_plus_one[e_entity_enemy]; i += 1) {
@@ -752,128 +755,107 @@ func void update()
 			}
 			radix_sort_32(enemy_index_arr.data, enemy_index_arr.count, get_radix_from_enemy_index, &game->update_frame_arena);
 
-			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		try to hit start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-			if(do_we_have_auto_attack()) {
-				soft_data->attack_timer.want_to_use_timestamp = game->update_time;
-			}
-			int num_enemies_hit = 0;
 			int num_possible_hits = get_hits_per_attack();
-			b8 was_there_an_enemy_in_range = false;
-			float attack_range = get_player_attack_range();
-			float lightning_bolt_range = attack_range * 2;
-			soft_data->lightning_bolt_timer.want_to_use_timestamp = game->update_time;
-			b8 should_attack = timer_can_and_want_activate(soft_data->attack_timer, game->update_time, 0.1f) &&
-				player->stamina >= c_attack_stamina_cost;
-			b8 can_lightning_bolt = get_upgrade_level(e_upgrade_lightning_bolt) > 0 &&
-				timer_can_and_want_activate(soft_data->lightning_bolt_timer, game->update_time, 0.0f);
-			foreach_val(enemy_index_i, enemy_index, enemy_index_arr) {
-				int i = enemy_index;
-				if(num_enemies_hit >= num_possible_hits) { break; }
-				if(!entity_arr->active[i]) { continue; }
-				s_entity* enemy = &entity_arr->data[i];
-				s_v2 enemy_size = get_enemy_size(enemy->enemy_type);
+			b8 are_we_dashing = timer_is_active(game->soft_data.dash_timer, game->update_time);
 
-				float dist = v2_distance(enemy->pos, player->pos);
-				float range = attack_range;
-				if(can_lightning_bolt) {
-					range = lightning_bolt_range;
-				}
-				if(dist <= range + enemy_size.y * 0.5f) {
-					if(should_attack || can_lightning_bolt) {
-						was_there_an_enemy_in_range = true;
-						float knockback_multi = 0;
-						float damage_multi = 0;
-						b8 are_we_dashing = timer_is_active(game->soft_data.dash_timer, game->update_time);
-						if(can_lightning_bolt) {
-							damage_multi = 0.5f;
-							knockback_multi = 0.1f;
-							can_lightning_bolt = false;
-							timer_activate(&soft_data->lightning_bolt_timer, game->update_time);
-							{
-								s_audio_fade fade = make_simple_fade(0.8f, 1.0f);
-								play_sound(e_sound_lightning_bolt, {.speed = get_rand_sound_speed(1.1f, &game->rng), .fade = maybe(fade)});
-							}
+			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		lightning bolt start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+			{
+				b8 can_lightning_bolt = get_upgrade_level(e_upgrade_lightning_bolt) > 0 &&
+					timer_can_activate(soft_data->lightning_bolt_timer, game->update_time);
+				int num_enemies_hit = 0;
+				float lightning_bolt_range = get_player_attack_range() * 2;
+				foreach_val(enemy_index_i, enemy_index, enemy_index_arr) {
+					int i = enemy_index;
+					if(num_enemies_hit >= num_possible_hits) { break; }
+					if(!entity_arr->active[i]) { continue; }
+					s_entity* enemy = &entity_arr->data[i];
+					s_v2 enemy_size = get_enemy_size(enemy->enemy_type);
+					float dist = v2_distance(enemy->pos, player->pos);
+					if(dist <= lightning_bolt_range + enemy_size.y * 0.5f && can_lightning_bolt) {
+						timer_activate(&soft_data->lightning_bolt_timer, game->update_time);
 
-							{
-								s_entity effect = make_entity();
-								effect.pos = enemy->pos;
-								effect.spawn_timestamp = game->render_time;
-								effect.effect_size = enemy_size;
-								entity_manager_add_if_not_full(entity_arr, e_entity_visual_effect, effect);
-							}
-						}
-						else {
-							if(are_we_dashing && !do_we_have_auto_attack() && num_enemies_hit == 0) {
-								soft_data->frames_to_freeze += 10;
-							}
-							game->num_times_we_attacked_an_enemy += 1;
-							damage_multi = 1;
-							num_enemies_hit += 1;
-							knockback_multi = 1;
-							player->attacked_enemy_pos = enemy->pos;
-
-							s_entity emitter = make_enemy_hit_particles(enemy->pos);
-							add_emitter(emitter);
-
-						}
-						float knockback_to_add = get_player_knockback() * knockback_multi * (1.0f - g_enemy_type_data[enemy->enemy_type].knockback_resistance);
-						if(enemy->knockback.valid) {
-							enemy->knockback.value += knockback_to_add;
-						}
-						else {
-							enemy->knockback = maybe(knockback_to_add);
+						if(num_enemies_hit == 0) {
+							s_audio_fade fade = make_simple_fade(0.8f, 1.0f);
+							play_sound(e_sound_lightning_bolt, {.speed = get_rand_sound_speed(1.1f, &game->rng), .fade = maybe(fade)});
 						}
 
-						b8 dead = damage_enemy(enemy, get_player_damage() * damage_multi, are_we_dashing);
-						if(dead) {
-							if(enemy->enemy_type == e_enemy_boss) {
-								soft_data->boss_defeated_timestamp = game->update_time;
-								add_emitter(make_boss_death_particles(enemy->pos));
-								play_sound(e_sound_win, zero);
-							}
-							int gold_reward = g_enemy_type_data[enemy->enemy_type].gold_reward;
-							{
-								s_entity fct = make_entity();
-								fct.duration = 0.66f;
-								fct.fct_type = 1;
-								fct.spawn_timestamp = game->render_time;
-								builder_add(&fct.builder, "$$ffff00+%ig$.", gold_reward);
-								fct.pos = enemy->pos;
-								fct.pos.y += get_enemy_size(enemy->enemy_type).y * 0.5f;
-								fct.font_size = 32;
-								if(!game->disable_gold_numbers) {
-									entity_manager_add_if_not_full(&game->soft_data.entity_arr, e_entity_fct, fct);
-								}
-							}
-							soft_data->spawn_timer += get_spawn_delay() * 0.5f;
-							soft_data->enemy_type_kill_count_arr[enemy->enemy_type] += 1;
-							add_gold(gold_reward);
-							make_dying_enemy(*enemy);
-							entity_manager_remove(entity_arr, e_entity_enemy, i);
+						{
+							s_entity effect = make_entity();
+							effect.pos = enemy->pos;
+							effect.spawn_timestamp = game->render_time;
+							effect.effect_size = enemy_size;
+							entity_manager_add_if_not_full(entity_arr, e_entity_visual_effect, effect);
 						}
+
+						{
+							float knockback_multi = 0.1f;
+							float knockback_to_add = get_player_knockback() * knockback_multi * (1.0f - g_enemy_type_data[enemy->enemy_type].knockback_resistance);
+							float damage = get_player_damage() * 0.5f;
+							hit_enemy(i, damage, knockback_to_add);
+						}
+						num_enemies_hit += 1;
 					}
 				}
 			}
-			// @Note(tkap, 01/08/2025): We pressed the attack key but there were no enemies in range
-			float time_since_last_lightning_bolt = game->update_time - soft_data->lightning_bolt_timer.used_timestamp;
-			b8 lightning_bolted_recently = time_since_last_lightning_bolt <= 0.33f && soft_data->lightning_bolt_timer.used_timestamp > 0;
-			if(should_attack && !do_we_have_auto_attack()) {
-				if(!was_there_an_enemy_in_range && !lightning_bolted_recently) {
-					player->stamina -= c_attack_stamina_cost * 2;
-					play_sound(e_sound_miss_attack, zero);
+			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		lightning bolt end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		punch start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+			{
+				if(do_we_have_auto_attack()) {
+					soft_data->attack_timer.want_to_use_timestamp = game->update_time;
 				}
-				else {
-					player->stamina -= c_attack_stamina_cost;
+				b8 should_attack = timer_can_and_want_activate(soft_data->attack_timer, game->update_time, 0.1f) &&
+					player->stamina >= c_attack_stamina_cost;
+				int num_enemies_hit = 0;
+				float punch_range = get_player_attack_range();
+				foreach_val(enemy_index_i, enemy_index, enemy_index_arr) {
+					int i = enemy_index;
+					if(num_enemies_hit >= num_possible_hits) { break; }
+					if(!entity_arr->active[i]) { continue; }
+					s_entity* enemy = &entity_arr->data[i];
+					s_v2 enemy_size = get_enemy_size(enemy->enemy_type);
+					float dist = v2_distance(enemy->pos, player->pos);
+					if(dist <= punch_range + enemy_size.y * 0.5f && should_attack) {
+
+						{
+							float knockback_to_add = get_player_knockback() * (1.0f - g_enemy_type_data[enemy->enemy_type].knockback_resistance);
+							float damage = get_player_damage();
+							hit_enemy(i, damage, knockback_to_add);
+						}
+
+						if(num_enemies_hit == 0) {
+							play_sound(e_sound_punch, {.speed = get_rand_sound_speed(1.1f, &game->rng)});
+							if(do_we_have_auto_attack()) {
+								timer_activate(&soft_data->attack_timer, game->update_time);
+							}
+							player->attacked_enemy_pos = enemy->pos;
+							if(are_we_dashing && !do_we_have_auto_attack()) {
+								soft_data->frames_to_freeze += 10;
+							}
+						}
+
+						{
+							s_entity emitter = make_enemy_hit_particles(enemy->pos);
+							add_emitter(emitter);
+						}
+
+						num_enemies_hit += 1;
+						game->num_times_we_attacked_an_enemy += 1;
+						player->did_attack_enemy_timestamp = game->render_time;
+					}
 				}
 				soft_data->attack_timer.want_to_use_timestamp = 0;
-			}
-			if(num_enemies_hit > 0) {
-				play_sound(e_sound_punch, {.speed = get_rand_sound_speed(1.1f, &game->rng)});
-				if(do_we_have_auto_attack()) {
-					timer_activate(&soft_data->attack_timer, game->update_time);
+				if(should_attack && !do_we_have_auto_attack()) {
+					if(num_enemies_hit <= 0) {
+						player->stamina -= c_attack_stamina_cost * 2;
+						play_sound(e_sound_miss_attack, zero);
+					}
+					else {
+						player->stamina -= c_attack_stamina_cost;
+					}
 				}
-				player->did_attack_enemy_timestamp = game->render_time;
 			}
+			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		punch end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		try to hit end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 		}
@@ -2696,7 +2678,6 @@ func float get_player_attack_range()
 	return result;
 }
 
-
 func float get_player_speed()
 {
 	float result = 0;
@@ -3444,4 +3425,48 @@ func b8 is_upgrade_queued(e_upgrade id)
 {
 	b8 result = get_upgrade_queue_count(id) > 0;
 	return result;
+}
+
+func void hit_enemy(int i, float damage, float knockback_to_add)
+{
+	s_soft_game_data* soft_data = &game->soft_data;
+	auto entity_arr = &soft_data->entity_arr;
+	s_entity* enemy = &entity_arr->data[i];
+	assert(entity_arr->active[i]);
+	if(enemy->knockback.valid) {
+		enemy->knockback.value += knockback_to_add;
+	}
+	else {
+		enemy->knockback = maybe(knockback_to_add);
+	}
+
+	b8 are_we_dashing = timer_is_active(game->soft_data.dash_timer, game->update_time);
+
+	b8 dead = damage_enemy(enemy, damage, are_we_dashing);
+	if(dead) {
+		if(enemy->enemy_type == e_enemy_boss) {
+			soft_data->boss_defeated_timestamp = game->update_time;
+			add_emitter(make_boss_death_particles(enemy->pos));
+			play_sound(e_sound_win, zero);
+		}
+		int gold_reward = g_enemy_type_data[enemy->enemy_type].gold_reward;
+		{
+			s_entity fct = make_entity();
+			fct.duration = 0.66f;
+			fct.fct_type = 1;
+			fct.spawn_timestamp = game->render_time;
+			builder_add(&fct.builder, "$$ffff00+%ig$.", gold_reward);
+			fct.pos = enemy->pos;
+			fct.pos.y += get_enemy_size(enemy->enemy_type).y * 0.5f;
+			fct.font_size = 32;
+			if(!game->disable_gold_numbers) {
+				entity_manager_add_if_not_full(&game->soft_data.entity_arr, e_entity_fct, fct);
+			}
+		}
+		soft_data->spawn_timer += get_spawn_delay() * 0.5f;
+		soft_data->enemy_type_kill_count_arr[enemy->enemy_type] += 1;
+		add_gold(gold_reward);
+		make_dying_enemy(*enemy);
+		entity_manager_remove(entity_arr, e_entity_enemy, i);
+	}
 }
