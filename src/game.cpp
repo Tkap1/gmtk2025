@@ -995,11 +995,9 @@ func void render(float interp_dt, float delta)
 			draw_text(c_game_name, wxy(0.5f, 0.2f), 128, make_color(1), true, &game->font, zero);
 			draw_text(S("www.twitch.tv/Tkap1"), wxy(0.5f, 0.3f), 32, make_color(0.6f), true, &game->font, zero);
 
-			{
+			if(c_on_web) {
 				s_v4 color = hsv_to_rgb(game->render_time * 360, 1, 1);
-				if(c_on_web) {
-					draw_text(S("Go fullscreen!\n             V"), wxy(0.9f, 0.93f), sin_range(32, 40, game->render_time * 8), color, true, &game->font, zero);
-				}
+				draw_text(S("Go fullscreen!\n             V"), wxy(0.9f, 0.93f), sin_range(32, 40, game->render_time * 8), color, true, &game->font, zero);
 			}
 
 			{
