@@ -152,7 +152,7 @@ global constexpr s_upgrade_data g_upgrade_data[e_upgrade_count] = {
 	{
 		.name = S("Lightning bolt"),
 		.cost = 50,
-		.extra_cost_per_level = 50,
+		.extra_cost_per_level = 30,
 		.stat_boost = 50,
 	},
 	{

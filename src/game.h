@@ -377,7 +377,7 @@ data_enum(e_upgrade,
 	lightning_bolt {
 		.name = S("Lightning bolt"),
 		.cost = 50,
-		.extra_cost_per_level = 50,
+		.extra_cost_per_level = 30,
 		.stat_boost = 50,
 	}
 

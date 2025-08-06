@@ -3,5 +3,8 @@ POLISH:
 	some kind of movement animation on player
 	dont display "paused" text unless we are in default state1
 
-buff lightning bolt
 auto buy
+
+Changelog:
+- You now auto dash when cooldown is 0 (can be turned off)
+- Reduced Lightning bolt cost increase per level from 50 to 30
