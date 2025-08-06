@@ -8,6 +8,6 @@ show progression times in leaderboard screen?
 
 Changelog:
 - Lightning bolt works with Multistrike
-- You now auto dash when cooldown is 0 (can be turned off in the options menu)
 - Reduced Lightning bolt cost increase per level from 50 to 30
+- You now auto dash when cooldown is 0 (can be turned off in the options menu)
 - You can now queue upgrades by right clicking them (respects holding CTRL and SHIFT). They are bought in the order you queued them, even if you enough gold for a cheaper upgrade that was queued at a later point

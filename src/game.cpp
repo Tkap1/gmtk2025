@@ -997,7 +997,9 @@ func void render(float interp_dt, float delta)
 
 			{
 				s_v4 color = hsv_to_rgb(game->render_time * 360, 1, 1);
-				draw_text(S("Go fullscreen!\n             V"), wxy(0.9f, 0.93f), sin_range(32, 40, game->render_time * 8), color, true, &game->font, zero);
+				if(c_on_web) {
+					draw_text(S("Go fullscreen!\n             V"), wxy(0.9f, 0.93f), sin_range(32, 40, game->render_time * 8), color, true, &game->font, zero);
+				}
 			}
 
 			{
