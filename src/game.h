@@ -533,6 +533,7 @@ struct s_game
 	b8 disable_lights;
 	float completed_dash_tutorial_timestamp;
 	s_lerpable music_speed;
+	s_lerpable music_volume;
 	int next_entity_id;
 	#if defined(m_debug)
 	b8 cheat_menu_enabled;

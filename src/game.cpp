@@ -971,15 +971,17 @@ func void render(float interp_dt, float delta)
 	float wanted_speed = get_wanted_game_speed(interp_dt);
 
 	{
+		if(game->disable_music) {
+			game->music_volume.target = 0;
+		}
+		else {
+			game->music_volume.target = 1;
+		}
+		do_lerpable_snap(&game->music_volume, delta * 2, 0.01f);
 		s_active_sound* music = find_playing_sound(e_sound_music);
 		assert(music);
 		if(music) {
-			if(game->disable_music) {
-				music->data.volume = 0;
-			}
-			else {
-				music->data.volume = 1;
-			}
+			music->data.volume = game->music_volume.curr;
 		}
 	}
 
