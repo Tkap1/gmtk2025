@@ -522,6 +522,7 @@ func void update()
 		game->do_hard_reset = false;
 		memset(hard_data, 0, sizeof(*hard_data));
 		memset(soft_data, 0, sizeof(*soft_data));
+		game->update_time = 0;
 		set_state(&game->hard_data.state1, e_game_state1_default);
 		reset_linear_arena(&game->arena);
 		for_enum(type_i, e_entity) {
@@ -1072,10 +1073,21 @@ func void render(float interp_dt, float delta)
 
 			{
 				s_time_format data = update_count_to_time_format(game->update_count_at_win_time);
-				s_len_str text = format_text("%02i:%02i.%i", data.minutes, data.seconds, data.milliseconds);
+				s_len_str text = format_text("%02i:%02i.%03i", data.minutes, data.seconds, data.milliseconds);
 				draw_text(text, c_world_center * v2(1.0f, 0.2f), 64, make_color(1), true, &game->font, zero);
 
 				draw_text(S("Press R to restart..."), c_world_center * v2(1.0f, 0.4f), sin_range(48, 60, game->render_time * 8.0f), make_color(0.66f), true, &game->font, zero);
+			}
+
+			for(int i = 0; i < e_enemy_count - 1; i += 1) {
+				s_time_format format = update_time_to_time_format(soft_data->progression_timestamp_arr[i]);
+				s_str_builder<128> builder;
+				builder.count = 0;
+				s_len_str text = format_text("Wave %2i: %02i:%02i.%03i", i + 1, format.minutes, format.seconds, format.milliseconds);
+				s_v2 text_pos = wxy(0.79f, 0.02f);
+				constexpr float font_size = 32;
+				text_pos.y += (font_size + 4) * i;
+				draw_text(text, text_pos, font_size, make_color(0.8f), false, &game->font, zero);
 			}
 
 			b8 want_to_reset = is_key_pressed(SDLK_r, true);
@@ -1798,7 +1810,7 @@ func void render(float interp_dt, float delta)
 
 			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		progression bar start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 			{
-				s_v2 under_size = c_game_area * v2(0.8, 0.03f);
+				s_v2 under_size = c_game_area * v2(0.95f, 0.03f);
 				s_v2 pos = gxy(0.5f, 0.04f) - under_size * 0.5f;
 
 				// @Note(tkap, 03/08/2025): Separators
@@ -1809,8 +1821,16 @@ func void render(float interp_dt, float delta)
 					for(int i = 0; i < count; i += 1) {
 						s_v2 temp_pos = pos;
 						temp_pos.x += advance * i;
-						if(i > 0 ) {
+						if(i > 0) {
 							draw_rect_topleft(temp_pos, under_size * v2(0.01f, 1.0f), multiply_rgb(color, 1.5f));
+						}
+						if(soft_data->progression_timestamp_arr[i] > 0) {
+							s_v2 text_pos = temp_pos;
+							text_pos.x += advance * 0.5f;
+							text_pos.y += under_size.y * 0.5f;
+							s_time_format format = update_time_to_time_format(soft_data->progression_timestamp_arr[i]);
+							s_len_str text = format_text("%01i:%02i", format.minutes, format.seconds);
+							draw_text(text, text_pos, 24, make_color(1), true, &game->font, {.z = 3});
 						}
 					}
 				}
@@ -2616,13 +2636,6 @@ func void draw_light(s_v2 pos, float radius, s_v4 color, float smoothness)
 	data.mix_weight = smoothness;
 
 	add_to_render_group(data, e_shader_light, e_texture_white, e_mesh_quad);
-}
-
-func s_v2 get_upgrade_offset(float interp_dt)
-{
-	float t = update_time_to_render_time(game->update_time, interp_dt);
-	s_v2 result = v2(0.0f, sinf(t * 3.14f) * 3);
-	return result;
 }
 
 func void do_screen_shake(float intensity)
@@ -3464,9 +3477,17 @@ func void hit_enemy(int i, float damage, float knockback_to_add)
 			}
 		}
 		soft_data->spawn_timer += get_spawn_delay() * 0.5f;
-		soft_data->enemy_type_kill_count_arr[enemy->enemy_type] += 1;
 		add_gold(gold_reward);
 		make_dying_enemy(*enemy);
+		soft_data->enemy_type_kill_count_arr[enemy->enemy_type] += 1;
+		{
+			if(enemy->enemy_type < e_enemy_boss) {
+				int num_needed_kills = g_enemy_type_data[enemy->enemy_type + 1].prev_enemy_required_kill_count;
+				if(soft_data->enemy_type_kill_count_arr[enemy->enemy_type] == num_needed_kills) {
+					soft_data->progression_timestamp_arr[enemy->enemy_type] = game->update_time;
+				}
+			}
+		}
 		entity_manager_remove(entity_arr, e_entity_enemy, i);
 	}
 }

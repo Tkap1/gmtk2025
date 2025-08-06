@@ -480,6 +480,9 @@ struct s_queued_upgrade
 
 struct s_soft_game_data
 {
+	// @TODO(tkap, 06/08/2025): we are already storing a bool for this, but now we need floats. fucking booleans delete em
+	float progression_timestamp_arr[e_enemy_count];
+
 	s_list<s_queued_upgrade, 64> queued_upgrade_arr;
 	float boss_defeated_timestamp;
 	int frames_to_freeze;

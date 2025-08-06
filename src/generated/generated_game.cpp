@@ -37,7 +37,6 @@ func void draw_atlas_ex(s_v2 pos, s_v2 size, s_v2i index, s_v4 color, float rota
 func void draw_atlas_topleft(s_v2 pos, s_v2 size, s_v2i index, s_v4 color);
 func void draw_circle(s_v2 pos, float radius, s_v4 color);
 func void draw_light(s_v2 pos, float radius, s_v4 color, float smoothness);
-func s_v2 get_upgrade_offset(float interp_dt);
 func void do_screen_shake(float intensity);
 func void draw_background(s_m4 ortho, b8 scroll);
 func void teleport_entity(s_entity* entity, s_v2 pos);

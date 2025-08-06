@@ -4,7 +4,6 @@ POLISH:
 	dont display "paused" text unless we are in default state1
 
 better leaderboard
-show progression times in leaderboard screen?
 
 Changelog:
 - Lightning bolt works with Multistrike
