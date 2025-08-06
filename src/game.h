@@ -323,6 +323,14 @@ struct s_button_data
 	b8 mute_click_sound;
 	float font_size = 32;
 	s_len_str tooltip;
+	s_v4 button_color = {0.25f, 0.25f, 0.25f, 1.0f};
+};
+
+enum e_button_result
+{
+	e_button_result_none,
+	e_button_result_left_click,
+	e_button_result_right_click,
 };
 
 data_enum(e_upgrade,
@@ -464,8 +472,15 @@ struct s_frame_data
 	int lives_to_lose;
 };
 
+struct s_queued_upgrade
+{
+	e_upgrade id;
+	int count;
+};
+
 struct s_soft_game_data
 {
+	s_list<s_queued_upgrade, 64> queued_upgrade_arr;
 	float boss_defeated_timestamp;
 	int frames_to_freeze;
 	s_entity_ref boss_ref;

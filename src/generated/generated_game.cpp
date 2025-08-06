@@ -15,8 +15,8 @@ func void render_flush(s_render_flush_data data, b8 reset_render_count);
 template <typename t>
 func void add_to_render_group(t data, e_shader shader_id, e_texture texture_id, e_mesh mesh_id);
 func s_shader load_shader_from_file(char* file, s_linear_arena* arena);
-func b8 do_button(s_len_str text, s_v2 pos, b8 centered);
-func b8 do_button_ex(s_len_str text, s_v2 pos, s_v2 size, b8 centered, s_button_data optional);
+func e_button_result do_button(s_len_str text, s_v2 pos, b8 centered);
+func e_button_result do_button_ex(s_len_str text, s_v2 pos, s_v2 size, b8 centered, s_button_data optional);
 func b8 do_bool_button(s_len_str text, s_v2 pos, b8 centered, b8* out);
 func b8 do_bool_button_ex(s_len_str text, s_v2 pos, s_v2 size, b8 centered, b8* out);
 func b8 is_key_pressed(int key, b8 consume);
@@ -101,3 +101,5 @@ func float get_wanted_game_speed(float interp_dt);
 func s_active_sound* find_playing_sound(e_sound id);
 func void do_lerpable_snap(s_lerpable* lerpable, float dt, float max_diff);
 func s_entity make_boss_death_particles(s_v2 pos);
+func int get_upgrade_queue_count(e_upgrade id);
+func b8 is_upgrade_queued(e_upgrade id);

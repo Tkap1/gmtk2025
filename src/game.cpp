@@ -84,6 +84,7 @@ global s_platform_data* g_platform_data;
 global s_game* game;
 global s_v2 g_mouse;
 global b8 g_left_click;
+global b8 g_right_click;
 
 #if defined(__EMSCRIPTEN__)
 #include "leaderboard.cpp"
@@ -101,6 +102,10 @@ m_dll_export void init(s_platform_data* platform_data)
 	game->reload_shaders = true;
 	game->speed = 0;
 	game->music_speed = {1, 1};
+
+	if(!c_on_web) {
+		game->disable_music = true;
+	}
 
 	SDL_StartTextInput();
 
@@ -350,6 +355,7 @@ func void input()
 	}
 
 	g_left_click = false;
+	g_right_click = false;
 	{
 		int x;
 		int y;
@@ -466,6 +472,7 @@ func void input()
 					}
 				}
 				if(event.type == SDL_MOUSEBUTTONDOWN && event.button.button == 3) {
+					g_right_click = true;
 					if(!are_we_hovering_over_ui(g_mouse)) {
 						soft_data->dash_timer.want_to_use_timestamp = game->update_time;
 					}
@@ -963,6 +970,19 @@ func void render(float interp_dt, float delta)
 
 	float wanted_speed = get_wanted_game_speed(interp_dt);
 
+	{
+		s_active_sound* music = find_playing_sound(e_sound_music);
+		assert(music);
+		if(music) {
+			if(game->disable_music) {
+				music->data.volume = 0;
+			}
+			else {
+				music->data.volume = 1;
+			}
+		}
+	}
+
 	switch(state0) {
 
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		main menu start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -972,19 +992,19 @@ func void render(float interp_dt, float delta)
 
 			draw_background(ortho, true);
 
-			if(do_button(S("Play"), wxy(0.5f, 0.5f), true) || is_key_pressed(SDLK_RETURN, true)) {
+			if(do_button(S("Play"), wxy(0.5f, 0.5f), true) == e_button_result_left_click || is_key_pressed(SDLK_RETURN, true)) {
 				add_state_transition(&game->state0, e_game_state0_play, game->render_time, c_transition_time);
 				game->do_hard_reset = true;
 			}
 
-			if(do_button(S("Leaderboard"), wxy(0.5f, 0.6f), true)) {
+			if(do_button(S("Leaderboard"), wxy(0.5f, 0.6f), true) == e_button_result_left_click) {
 				#if defined(__EMSCRIPTEN__)
 				get_leaderboard(c_leaderboard_id);
 				#endif
 				add_state_transition(&game->state0, e_game_state0_leaderboard, game->render_time, c_transition_time);
 			}
 
-			if(do_button(S("Options"), wxy(0.5f, 0.7f), true)) {
+			if(do_button(S("Options"), wxy(0.5f, 0.7f), true) == e_button_result_left_click) {
 				add_state_transition(&game->state0, e_game_state0_options, game->render_time, c_transition_time);
 			}
 
@@ -1014,18 +1034,18 @@ func void render(float interp_dt, float delta)
 
 			draw_background(ortho, true);
 
-			if(do_button(S("Resume"), wxy(0.5f, 0.5f), true) || is_key_pressed(SDLK_RETURN, true)) {
+			if(do_button(S("Resume"), wxy(0.5f, 0.5f), true) == e_button_result_left_click || is_key_pressed(SDLK_RETURN, true)) {
 				pop_state_transition(&game->state0, game->render_time, c_transition_time);
 			}
 
-			if(do_button(S("Leaderboard"), wxy(0.5f, 0.6f), true)) {
+			if(do_button(S("Leaderboard"), wxy(0.5f, 0.6f), true) == e_button_result_left_click) {
 				#if defined(__EMSCRIPTEN__)
 				get_leaderboard(c_leaderboard_id);
 				#endif
 				add_state_transition(&game->state0, e_game_state0_leaderboard, game->render_time, c_transition_time);
 			}
 
-			if(do_button(S("Options"), wxy(0.5f, 0.7f), true)) {
+			if(do_button(S("Options"), wxy(0.5f, 0.7f), true) == e_button_result_left_click) {
 				add_state_transition(&game->state0, e_game_state0_options, game->render_time, c_transition_time);
 			}
 
@@ -1076,7 +1096,7 @@ func void render(float interp_dt, float delta)
 
 			b8 want_to_reset = is_key_pressed(SDLK_r, true);
 			if(
-				do_button(S("Restart"), c_world_size * v2(0.87f, 0.82f), true)
+				do_button(S("Restart"), c_world_size * v2(0.87f, 0.82f), true) == e_button_result_left_click
 				|| is_key_pressed(SDLK_ESCAPE, true) || want_to_reset
 			) {
 				pop_state_transition(&game->state0, game->render_time, c_transition_time);
@@ -1111,19 +1131,7 @@ func void render(float interp_dt, float delta)
 
 			{
 				s_len_str text = format_text("Music: %s", game->disable_music ? "Off" : "On");
-				b8 result = do_bool_button_ex(text, pos, button_size, true, &game->disable_music);
-				if(result) {
-					s_active_sound* music = find_playing_sound(e_sound_music);
-					assert(music);
-					if(music) {
-						if(game->disable_music) {
-							music->data.volume = 0;
-						}
-						else {
-							music->data.volume = 1;
-						}
-					}
-				}
+				do_bool_button_ex(text, pos, button_size, true, &game->disable_music);
 				pos.y += 80;
 			}
 
@@ -1164,7 +1172,7 @@ func void render(float interp_dt, float delta)
 			}
 
 			b8 escape = is_key_pressed(SDLK_ESCAPE, true);
-			if(do_button(S("Back"), wxy(0.87f, 0.92f), true) || escape) {
+			if(do_button(S("Back"), wxy(0.87f, 0.92f), true) == e_button_result_left_click || escape) {
 				pop_state_transition(&game->state0, game->render_time, c_transition_time);
 			}
 
@@ -1657,6 +1665,11 @@ func void render(float interp_dt, float delta)
 				}
 			}
 
+			if(soft_data->queued_upgrade_arr.count > 0 && is_upgrade_maxed(soft_data->queued_upgrade_arr[0].id)) {
+				soft_data->queued_upgrade_arr.remove_and_shift(0);
+			}
+
+			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		upgrade buttons start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 			for_enum(upgrade_i, e_upgrade) {
 				s_upgrade_data data = g_upgrade_data[upgrade_i];
 				int how_many_to_buy = 1;
@@ -1700,14 +1713,36 @@ func void render(float interp_dt, float delta)
 				optional.tooltip = get_upgrade_description(upgrade_i);
 				optional.mute_click_sound = true;
 				optional.font_size = 28;
+				if(is_upgrade_queued(upgrade_i)) {
+					optional.button_color = make_color(0.25f, 0.5f, 0.25f);
+				}
 				int key = (int)SDLK_1 + upgrade_i;
-				if(do_button_ex(str, pos, button_size, false, optional) || (!optional.disabled && is_key_pressed(key, true))) {
+				s_queued_upgrade* queued = null;
+				if(soft_data->queued_upgrade_arr.count > 0 && soft_data->queued_upgrade_arr[0].id == upgrade_i && how_many_can_afford > 0) {
+					queued = &soft_data->queued_upgrade_arr[0];
+				}
+				e_button_result button_result = do_button_ex(str, pos, button_size, false, optional);
+				if(button_result == e_button_result_left_click || (!optional.disabled && is_key_pressed(key, true)) || queued != null) {
 					add_gold(-gold_to_spend);
 					apply_upgrade(upgrade_i, how_many_can_afford);
 					play_sound(e_sound_upgrade, {.speed = get_rand_sound_speed(1.1f, &game->rng)});
 					game->purchased_at_least_one_upgrade = true;
+					if(queued != null) {
+						queued->count -= how_many_can_afford;
+						assert(queued->count >= 0);
+						if(queued->count <= 0) {
+							soft_data->queued_upgrade_arr.remove_and_shift(0);
+						}
+					}
+				}
+				else if(button_result == e_button_result_right_click && !soft_data->queued_upgrade_arr.is_full()) {
+					s_queued_upgrade new_queued = zero;
+					new_queued.id = upgrade_i;
+					new_queued.count = how_many_to_buy;
+					game->soft_data.queued_upgrade_arr.add(new_queued);
 				}
 			}
+			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		upgrade buttons end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 			{
 				b8 should_do_upgrade_tutorial = false;
@@ -1880,19 +1915,19 @@ func void render(float interp_dt, float delta)
 			s_v2 size = v2(320, 48);
 			s_container container = make_down_center_x_container(rect, size, 10);
 
-			if(do_button_ex(S("+100000 gold"), container_get_pos_and_advance(&container), size, false, zero)) {
+			if(do_button_ex(S("+100000 gold"), container_get_pos_and_advance(&container), size, false, zero) == e_button_result_left_click) {
 				add_gold(100000);
 			}
-			if(do_button_ex(S("Spawn boss"), container_get_pos_and_advance(&container), size, false, zero)) {
+			if(do_button_ex(S("Spawn boss"), container_get_pos_and_advance(&container), size, false, zero) == e_button_result_left_click) {
 				spawn_enemy(e_enemy_boss);
 			}
-			if(do_button_ex(S("Win"), container_get_pos_and_advance(&container), size, false, zero)) {
+			if(do_button_ex(S("Win"), container_get_pos_and_advance(&container), size, false, zero) == e_button_result_left_click) {
 				soft_data->boss_defeated_timestamp = game->update_time;
 			}
-			if(do_button_ex(S("Lose"), container_get_pos_and_advance(&container), size, false, zero)) {
+			if(do_button_ex(S("Lose"), container_get_pos_and_advance(&container), size, false, zero) == e_button_result_left_click) {
 				soft_data->frame_data.lives_to_lose = 99999;
 			}
-			if(do_button_ex(S("Spawn basic enemy"), container_get_pos_and_advance(&container), size, false, zero)) {
+			if(do_button_ex(S("Spawn basic enemy"), container_get_pos_and_advance(&container), size, false, zero) == e_button_result_left_click) {
 				spawn_enemy(e_enemy_basic);
 			}
 
@@ -2258,43 +2293,45 @@ func s_shader load_shader_from_file(char* file, s_linear_arena* arena)
 	return result;
 }
 
-func b8 do_button(s_len_str text, s_v2 pos, b8 centered)
+func e_button_result do_button(s_len_str text, s_v2 pos, b8 centered)
 {
 	s_v2 size = v2(256, 48);
-	b8 result = do_button_ex(text, pos, size, centered, zero);
+	e_button_result result = do_button_ex(text, pos, size, centered, zero);
 	return result;
 }
 
-func b8 do_button_ex(s_len_str text, s_v2 pos, s_v2 size, b8 centered, s_button_data optional)
+func e_button_result do_button_ex(s_len_str text, s_v2 pos, s_v2 size, b8 centered, s_button_data optional)
 {
-	b8 result = false;
+	e_button_result result = e_button_result_none;
 	if(!centered) {
 		pos += size * 0.5f;
 	}
 
 	b8 do_tooltip = false;
 	b8 hovered = mouse_vs_rect_center(g_mouse, pos, size);
-	s_v4 color = make_color(0.25f);
+	s_v4 color = optional.button_color;
 	s_v4 text_color = make_color(1);
-	if(hovered) {
-		do_tooltip = true;
-	}
 	if(optional.disabled) {
-		hovered = false;
-		color = make_color(0.15f);
+		color = multiply_rgb(color, 0.6f);
 		text_color = make_color(0.7f);
 	}
 	if(hovered) {
-		size += v2(8);
-		if(!centered) {
-			pos -= v2(4) * 0.5f;
-		}
-		color = make_color(0.5f);
-		if(g_left_click) {
-			result = true;
-			if(!optional.mute_click_sound) {
-				play_sound(e_sound_click, zero);
+		do_tooltip = true;
+		if(!optional.disabled) {
+			size += v2(8);
+			if(!centered) {
+				pos -= v2(4) * 0.5f;
 			}
+			color = multiply_rgb(color, 2);
+			if(g_left_click) {
+				result = e_button_result_left_click;
+				if(!optional.mute_click_sound) {
+					play_sound(e_sound_click, zero);
+				}
+			}
+		}
+		if(g_right_click) {
+			result = e_button_result_right_click;
 		}
 	}
 
@@ -2326,7 +2363,7 @@ func b8 do_bool_button_ex(s_len_str text, s_v2 pos, s_v2 size, b8 centered, b8* 
 {
 	assert(out);
 	b8 result = false;
-	if(do_button_ex(text, pos, size, centered, zero)) {
+	if(do_button_ex(text, pos, size, centered, zero) == e_button_result_left_click) {
 		result = true;
 		*out = !(*out);
 	}
@@ -2441,7 +2478,7 @@ func void handle_key_event(int key, b8 is_down, b8 is_repeat)
 func void do_leaderboard()
 {
 	b8 escape = is_key_pressed(SDLK_ESCAPE, true);
-	if(do_button(S("Back"), wxy(0.87f, 0.92f), true) || escape) {
+	if(do_button(S("Back"), wxy(0.87f, 0.92f), true) == e_button_result_left_click || escape) {
 		s_maybe<int> prev = get_previous_non_temporary_state(&game->state0);
 		if(prev.valid && prev.value == e_game_state0_pause) {
 			pop_state_transition(&game->state0, game->render_time, c_transition_time);
@@ -3025,6 +3062,18 @@ func s_len_str get_upgrade_description(e_upgrade id)
 	}
 	int key = (int)SDLK_1 + id;
 	builder_add(&builder, "\n\nHotkey [%s%c$.]", c_key_color_str, '1' + key - SDLK_1);
+	int num_queued = 0;
+	foreach_val(queued_i, queued, game->soft_data.queued_upgrade_arr) {
+		if(queued.id == id) {
+			num_queued += queued.count;
+		}
+	}
+	if(num_queued > 0) {
+		builder_add(&builder, "\n$$aaaaaa%i upgrade%s queued$.", num_queued, handle_plural((float)num_queued));
+	}
+	else {
+		builder_add(&builder, "\n$$aaaaaaRight click to queue upgrades$.");
+	}
 
 	s_len_str temp = builder_to_len_str(&builder);
 	s_len_str result = format_text("%.*s", expand_str(temp));
@@ -3376,4 +3425,21 @@ func s_entity make_boss_death_particles(s_v2 pos)
 	emitter.emitter_b.duration = 3;
 
 	return emitter;
+}
+
+func int get_upgrade_queue_count(e_upgrade id)
+{
+	int result = 0;
+	foreach_val(queued_i, queued, game->soft_data.queued_upgrade_arr) {
+		if(queued.id == id) {
+			result += queued.count;
+		}
+	}
+	return result;
+}
+
+func b8 is_upgrade_queued(e_upgrade id)
+{
+	b8 result = get_upgrade_queue_count(id) > 0;
+	return result;
 }

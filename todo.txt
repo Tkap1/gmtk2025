@@ -3,7 +3,9 @@ POLISH:
 	some kind of movement animation on player
 	dont display "paused" text unless we are in default state1
 
-auto buy
+make lightning bolt work with multistrike?
+smooth music volume
+better leaderboard
 
 Changelog:
 - You now auto dash when cooldown is 0 (can be turned off)
