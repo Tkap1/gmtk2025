@@ -1057,11 +1057,11 @@ func void timer_activate(s_timer* timer, float time_now)
 	timer->want_to_use_timestamp = 0;
 }
 
-func b8 timer_can_activate(s_timer timer, float time_now, float duration, float cooldown)
+func b8 timer_can_activate(s_timer timer, float time_now)
 {
 	b8 result = false;
-	float time_passed_since_last_activation = time_now - (timer.used_timestamp + duration);
-	if(time_passed_since_last_activation >= cooldown || timer.used_timestamp <= 0) {
+	float time_passed_since_last_activation = time_now - (timer.used_timestamp + timer.duration);
+	if(time_passed_since_last_activation >= timer.cooldown || timer.used_timestamp <= 0) {
 		result = true;
 	}
 	return result;
@@ -1077,36 +1077,36 @@ func b8 timer_want_activate(s_timer timer, float time_now, float grace_period)
 	return result;
 }
 
-func b8 timer_can_and_want_activate(s_timer timer, float time_now, float duration, float cooldown, float grace_period)
+func b8 timer_can_and_want_activate(s_timer timer, float time_now, float grace_period)
 {
-	b8 can = timer_can_activate(timer, time_now, duration, cooldown);
+	b8 can = timer_can_activate(timer, time_now);
 	b8 want = timer_want_activate(timer, time_now, grace_period);
 	b8 result = can && want;
 	return result;
 }
 
-func b8 timer_is_active(s_timer timer, float time_now, float duration)
+func b8 timer_is_active(s_timer timer, float time_now)
 {
 	float passed = time_now - timer.used_timestamp;
-	b8 result = passed <= duration && timer.used_timestamp > 0;
+	b8 result = passed <= timer.duration && timer.used_timestamp > 0;
 	return result;
 }
 
-func s_time_data timer_get_time_data(s_timer timer, float time_now, float duration, b8* active)
+func s_time_data timer_get_time_data(s_timer timer, float time_now, b8* active)
 {
 	if(active) {
-		*active = timer_is_active(timer, time_now, duration);
+		*active = timer_is_active(timer, time_now);
 	}
-	s_time_data time_data = get_time_data(time_now, timer.used_timestamp, duration);
+	s_time_data time_data = get_time_data(time_now, timer.used_timestamp, timer.duration);
 	return time_data;
 }
 
-func s_time_data timer_get_cooldown_time_data(s_timer timer, float time_now, float duration, float cooldown, b8* is_on_cooldown)
+func s_time_data timer_get_cooldown_time_data(s_timer timer, float time_now, b8* is_on_cooldown)
 {
 	if(is_on_cooldown) {
-		*is_on_cooldown = !timer_can_activate(timer, time_now, duration, cooldown);
+		*is_on_cooldown = !timer_can_activate(timer, time_now);
 	}
-	s_time_data time_data = get_time_data(time_now, timer.used_timestamp + duration, cooldown);
+	s_time_data time_data = get_time_data(time_now, timer.used_timestamp + timer.duration, timer.cooldown);
 	return time_data;
 }
 

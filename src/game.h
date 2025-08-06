@@ -511,6 +511,7 @@ struct s_light
 
 struct s_game
 {
+	b8 disable_auto_dash_when_no_cooldown;
 	b8 disable_hover_over_upgrade_to_pause;
 	b8 disable_damage_numbers;
 	b8 disable_gold_numbers;

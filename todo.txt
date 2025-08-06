@@ -2,3 +2,6 @@
 POLISH:
 	some kind of movement animation on player
 	dont display "paused" text unless we are in default state1
+
+buff lightning bolt
+auto buy

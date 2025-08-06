@@ -268,6 +268,8 @@ struct s_shader
 
 struct s_timer
 {
+	float cooldown;
+	float duration;
 	float want_to_use_timestamp;
 	float used_timestamp;
 };

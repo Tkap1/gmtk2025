@@ -312,6 +312,17 @@ m_dll_export void do_game(s_platform_data* platform_data)
 	// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		handle state end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	input();
+
+	{
+		game->soft_data.dash_timer.duration = c_dash_duration;
+		game->soft_data.lightning_bolt_timer.duration = 0;
+		game->soft_data.attack_timer.duration = 0;
+
+		game->soft_data.dash_timer.cooldown = get_dash_cooldown();
+		game->soft_data.lightning_bolt_timer.cooldown = get_lightning_bolt_cooldown();
+		game->soft_data.attack_timer.cooldown = get_attack_or_auto_attack_cooldown();
+	}
+
 	float game_speed = c_game_speed_arr[game->speed_index] * game->speed;
 	game->accumulator += delta64 * game_speed;
 	f64 clamped_accumulator = at_most(c_update_delay * 20, game->accumulator);
@@ -577,6 +588,10 @@ func void update()
 		return;
 	}
 
+	if(!game->disable_auto_dash_when_no_cooldown && get_dash_cooldown() <= 0) {
+		soft_data->dash_timer.want_to_use_timestamp = game->update_time;
+	}
+
 
 	if(do_game) {
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		spawn start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -700,7 +715,7 @@ func void update()
 			player->pos.x = cosf(player->timer) * c_circle_radius * 0.5f;
 			player->pos.y = sinf(player->timer) * c_circle_radius * 0.5f;
 			player->pos += center;
-			if(timer_can_and_want_activate(soft_data->dash_timer, game->update_time, c_dash_duration, get_dash_cooldown(), 0.1f)) {
+			if(timer_can_and_want_activate(soft_data->dash_timer, game->update_time, 0.1f)) {
 				play_sound(e_sound_dash, zero);
 				timer_activate(&soft_data->dash_timer, game->update_time);
 				if(completed_attack_tutorial()) {
@@ -714,7 +729,7 @@ func void update()
 			float dash_speed = 1.0f;
 			{
 				b8 active = false;
-				s_time_data time_data = timer_get_time_data(soft_data->dash_timer, game->update_time, c_dash_duration, &active);
+				s_time_data time_data = timer_get_time_data(soft_data->dash_timer, game->update_time, &active);
 				if(active) {
 					dash_speed = 1.0f + time_data.inv_percent * 5;
 				}
@@ -740,10 +755,10 @@ func void update()
 			float attack_range = get_player_attack_range();
 			float lightning_bolt_range = attack_range * 2;
 			soft_data->lightning_bolt_timer.want_to_use_timestamp = game->update_time;
-			b8 should_attack = timer_can_and_want_activate(soft_data->attack_timer, game->update_time, 0.0f, get_attack_or_auto_attack_cooldown(), 0.1f) &&
+			b8 should_attack = timer_can_and_want_activate(soft_data->attack_timer, game->update_time, 0.1f) &&
 				player->stamina >= c_attack_stamina_cost;
 			b8 can_lightning_bolt = get_upgrade_level(e_upgrade_lightning_bolt) > 0 &&
-				timer_can_and_want_activate(soft_data->lightning_bolt_timer, game->update_time, 0.0f, get_lightning_bolt_cooldown(), 0.0f);
+				timer_can_and_want_activate(soft_data->lightning_bolt_timer, game->update_time, 0.0f);
 			foreach_val(enemy_index_i, enemy_index, enemy_index_arr) {
 				int i = enemy_index;
 				if(num_enemies_hit >= num_possible_hits) { break; }
@@ -761,7 +776,7 @@ func void update()
 						was_there_an_enemy_in_range = true;
 						float knockback_multi = 0;
 						float damage_multi = 0;
-						b8 are_we_dashing = timer_is_active(game->soft_data.dash_timer, game->update_time, c_dash_duration);
+						b8 are_we_dashing = timer_is_active(game->soft_data.dash_timer, game->update_time);
 						if(can_lightning_bolt) {
 							damage_multi = 0.5f;
 							knockback_multi = 0.1f;
@@ -1085,7 +1100,7 @@ func void render(float interp_dt, float delta)
 			game->music_speed.target = 1;
 			draw_background(ortho, true);
 
-			s_v2 pos = wxy(0.5f, 0.15f);
+			s_v2 pos = wxy(0.5f, 0.12f);
 			s_v2 button_size = v2(600, 48);
 
 			{
@@ -1139,6 +1154,12 @@ func void render(float interp_dt, float delta)
 			{
 				s_len_str text = format_text("Pause when hovering over upgrades: %s", game->disable_hover_over_upgrade_to_pause ? "Off" : "On");
 				do_bool_button_ex(text, pos, button_size, true, &game->disable_hover_over_upgrade_to_pause);
+				pos.y += 80;
+			}
+
+			{
+				s_len_str text = format_text("Auto dash when 0 cooldown: %s", game->disable_auto_dash_when_no_cooldown ? "Off" : "On");
+				do_bool_button_ex(text, pos, button_size, true, &game->disable_auto_dash_when_no_cooldown);
 				pos.y += 80;
 			}
 
@@ -1546,7 +1567,7 @@ func void render(float interp_dt, float delta)
 			if(do_we_have_auto_attack()) {
 				b8 is_on_cooldown = false;
 				float time = update_time_to_render_time(game->update_time, interp_dt);
-				s_time_data time_data = timer_get_cooldown_time_data(soft_data->attack_timer, time, 0.0f, get_attack_or_auto_attack_cooldown(), &is_on_cooldown);
+				s_time_data time_data = timer_get_cooldown_time_data(soft_data->attack_timer, time, &is_on_cooldown);
 				if(is_on_cooldown) {
 					do_flush = true;
 					s_v2 size = v2(64, 10);
@@ -1587,7 +1608,7 @@ func void render(float interp_dt, float delta)
 			{
 				b8 is_on_cooldown = false;
 				float time = update_time_to_render_time(game->update_time, interp_dt);
-				s_time_data time_data = timer_get_cooldown_time_data(soft_data->dash_timer, time, c_dash_duration, get_dash_cooldown(), &is_on_cooldown);
+				s_time_data time_data = timer_get_cooldown_time_data(soft_data->dash_timer, time, &is_on_cooldown);
 				if(is_on_cooldown && time_data.percent >= 0) {
 					do_flush = true;
 					s_v2 size = v2(64, 10);
@@ -2622,7 +2643,7 @@ func float get_player_damage()
 	float result = 0;
 	result += 10;
 	result *= 1.0f + get_upgrade_boost(e_upgrade_damage) / 100.0f;
-	if(timer_is_active(game->soft_data.dash_timer, game->update_time, c_dash_duration)) {
+	if(timer_is_active(game->soft_data.dash_timer, game->update_time)) {
 		result *= 3;
 	}
 	return result;

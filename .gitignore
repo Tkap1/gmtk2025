@@ -33,3 +33,4 @@
 *.zip
 *compiler_output.txt
 build/**
+game_requests.txt
