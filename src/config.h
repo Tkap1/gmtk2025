@@ -44,7 +44,8 @@ global constexpr int c_right_button = c_max_keys - 1;
 global constexpr int c_left_shift = c_max_keys - 3;
 global constexpr int c_left_ctrl = c_max_keys - 4;
 
-global constexpr int c_max_leaderboard_entries = 16;
+global constexpr int c_max_leaderboard_entries = 2000;
+global constexpr int c_leaderboard_visible_entries_per_page = 10;
 
 global constexpr float c_pre_victory_duration = 2.0f;
 

@@ -157,6 +157,7 @@ func void when_leaderboard_obtained(s_json* json)
 	printf("%s\n", __FUNCTION__);
 
 	game->leaderboard_arr.count = 0;
+	game->curr_leaderboard_page = 0;
 	parse_leaderboard_json(json);
 	get_our_leaderboard(c_leaderboard_id);
 	game->leaderboard_received = true;
@@ -169,40 +170,30 @@ func void when_our_leaderboard_obtained(s_json* json)
 	s_json* j = json->object;
 	if(!j) { return; }
 
-	s_leaderboard_entry new_entry = {};
+	s_leaderboard_entry our_entry = {};
 	s_json* player = json_get(j, "player", e_json_object);
 	if(!player) { return; }
 	player = player->object;
 
-	new_entry.rank = json_get(j, "rank", e_json_integer)->integer;
+	our_entry.rank = json_get(j, "rank", e_json_integer)->integer;
 
 	char* nice_name = json_get(player, "name", e_json_string)->str;
 	if(nice_name) {
-		cstr_into_builder(&new_entry.nice_name, nice_name);
+		cstr_into_builder(&our_entry.nice_name, nice_name);
 	}
 
 	char* internal_name = json_get(player, "public_uid", e_json_string)->str;
 
-	cstr_into_builder(&new_entry.internal_name, internal_name);
+	cstr_into_builder(&our_entry.internal_name, internal_name);
 
-	new_entry.time = json_get(j, "score", e_json_integer)->integer;
+	our_entry.time = json_get(j, "score", e_json_integer)->integer;
 
 	// @Note(tkap, 05/06/2024): We are not in this leaderboard!
-	if(new_entry.rank <= 0 || new_entry.time <= 0) {
+	if(our_entry.rank <= 0 || our_entry.time <= 0) {
 		return;
 	}
 
-	b8 is_already_in_top_ten = false;
-	foreach_val(entry_i, entry, game->leaderboard_arr) {
-		if(strcmp(internal_name, entry.internal_name.str) == 0) {
-			is_already_in_top_ten = true;
-			break;
-		}
-	}
-
-	if(!is_already_in_top_ten) {
-		game->leaderboard_arr.add(new_entry);
-	}
+	game->curr_leaderboard_page = (our_entry.rank - 1) / c_leaderboard_visible_entries_per_page;
 }
 
 
@@ -335,6 +326,8 @@ func b8 get_leaderboard(int leaderboard_id)
 	game->leaderboard_received = false;
 	game->leaderboard_arr.count = 0;
 
+	constexpr int c_num_entries_to_fetch = 2000;
+
 	if(game->leaderboard_session_token.count <= 0) { return false; }
 
 	#if defined(__EMSCRIPTEN__)
@@ -349,14 +342,14 @@ func b8 get_leaderboard(int leaderboard_id)
 
 		char* headers[] = {"x-session-token", builder_to_cstr(&game->leaderboard_session_token, &game->circular_arena), NULL};
 		attr.requestHeaders = headers;
-		s_len_str url = format_text2("https://api.lootlocker.io/game/leaderboards/%i/list?count=10", leaderboard_id);
+		s_len_str url = format_text2("https://api.lootlocker.io/game/leaderboards/%i/list?count=%i", leaderboard_id, c_num_entries_to_fetch);
 		emscripten_fetch(&attr, url.str);
 	}
 	#elif defined(m_winhttp)
 
 	{
 		s_len_str server = S("api.lootlocker.io");
-		s_len_str resource = format_text("/game/leaderboards/%i/list?count=10", leaderboard_id);
+		s_len_str resource = format_text2("/game/leaderboards/%i/list?count=%i", leaderboard_id, c_num_entries_to_fetch);
 		s_len_str token = builder_to_len_str(&game->leaderboard_session_token);
 		s_len_str headers = format_text2("x-session-token: %.*s", expand_str(token));
 		s_http_request result = do_get_request(game->session, server, resource, headers, &game->circular_arena);
@@ -364,6 +357,7 @@ func b8 get_leaderboard(int leaderboard_id)
 		s_json* json = parse_json((char*)result.memory.ptr);
 
 		game->leaderboard_arr.count = 0;
+		game->curr_leaderboard_page = 0;
 		parse_leaderboard_json(json);
 		// get_our_leaderboard(c_leaderboard_id);
 		game->leaderboard_received = true;

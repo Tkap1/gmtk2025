@@ -3,14 +3,10 @@ POLISH:
 	some kind of movement animation on player
 	dont display "paused" text unless we are in default state1
 
-better leaderboard
-
 Changelog:
 - Lightning bolt works with Multistrike
 - Reduced Lightning bolt cost increase per level from 50 to 30
 - You now auto dash when cooldown is 0 (can be turned off in the options menu)
 - You can now queue upgrades by right clicking them (respects holding CTRL and SHIFT). They are bought in the order you queued them, even if you enough gold for a cheaper upgrade that was queued at a later point
 - You can now see at what time you completed each wave in the bar at the top, and also in the leaderboard screen after you beat the game
-
-having more entries might fuck up the get_our_leaderboard thing
-	fix it
+- Leaderboard now has pages that you can navigate

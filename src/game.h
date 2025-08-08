@@ -584,6 +584,7 @@ struct s_game
 
 	s_list<s_leaderboard_entry, c_max_leaderboard_entries> leaderboard_arr;
 	b8 leaderboard_received;
+	int curr_leaderboard_page;
 
 	s_str_builder<256> leaderboard_session_token;
 	s_str_builder<256> leaderboard_public_uid;

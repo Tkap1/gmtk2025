@@ -1,6 +1,8 @@
 
 #define m_cpu_side 1
+#if !defined(__EMSCRIPTEN__)
 #define m_winhttp 1
+#endif
 
 #pragma comment(lib, "opengl32.lib")
 
@@ -2521,25 +2523,51 @@ func void do_leaderboard()
 			draw_text(S("No scores yet :("), c_world_center, 48, make_color(0.66f), true, &game->font, zero);
 		}
 
-		constexpr int c_max_visible_entries = 10;
 		s_v2 pos = c_world_center * v2(1.0f, 0.7f);
-		for(int entry_i = 0; entry_i < at_most(c_max_visible_entries + 1, game->leaderboard_arr.count); entry_i += 1) {
+		int num_pages = ceilfi(game->leaderboard_arr.count / (float)c_leaderboard_visible_entries_per_page);
+		b8 is_last_page = game->curr_leaderboard_page >= num_pages - 1;
+		int start = (c_leaderboard_visible_entries_per_page * game->curr_leaderboard_page);
+		int end = start + c_leaderboard_visible_entries_per_page;
+		if(end > game->leaderboard_arr.count) {
+			end = game->leaderboard_arr.count;
+		}
+		for(int entry_i = start; entry_i < end; entry_i += 1) {
 			s_leaderboard_entry entry = game->leaderboard_arr[entry_i];
 			s_time_format data = update_count_to_time_format(entry.time);
 			s_v4 color = make_color(0.8f);
-			int rank_number = entry_i + 1;
-			if(entry_i == c_max_visible_entries || builder_equals(&game->leaderboard_public_uid, &entry.internal_name)) {
+			if(builder_equals(&game->leaderboard_public_uid, &entry.internal_name)) {
 				color = hex_to_rgb(0xD3A861);
-				rank_number = entry.rank;
 			}
 			char* name = entry.internal_name.str;
 			if(entry.nice_name.count > 0) {
 				name = entry.nice_name.str;
 			}
-			draw_text(format_text("%i %s", rank_number, name), v2(c_world_size.x * 0.1f, pos.y - 24), 32, color, false, &game->font, zero);
+			constexpr float font_size = 28;
+			draw_text(format_text("%2i %s", entry_i + 1, name), v2(c_world_size.x * 0.1f, pos.y - font_size * 0.75f), font_size, color, false, &game->font, zero);
 			s_len_str text = format_text("%02i:%02i.%03i", data.minutes, data.seconds, data.milliseconds);
-			draw_text(text, v2(c_world_size.x * 0.5f, pos.y - 24), 32, color, false, &game->font, zero);
-			pos.y += 48;
+			draw_text(text, v2(c_world_size.x * 0.5f, pos.y - font_size * 0.75f), font_size, color, false, &game->font, zero);
+			pos.y += font_size * 1.5f;
+		}
+		{
+			s_v2 button_size = v2(256, 48);
+			{
+				s_button_data optional = zero;
+				if(game->curr_leaderboard_page <= 0) {
+					optional.disabled = true;
+				}
+				if(do_button_ex(S("Previous"), wxy(0.25f, 0.92f), button_size, true, optional) == e_button_result_left_click) {
+					game->curr_leaderboard_page -= 1;
+				}
+			}
+			{
+				s_button_data optional = zero;
+				if(is_last_page) {
+					optional.disabled = true;
+				}
+				if(do_button_ex(S("Next"), wxy(0.45f, 0.92f), button_size, true, optional) == e_button_result_left_click) {
+					game->curr_leaderboard_page += 1;
+				}
+			}
 		}
 	}
 }
