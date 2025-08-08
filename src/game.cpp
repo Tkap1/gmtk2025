@@ -1,5 +1,6 @@
 
 #define m_cpu_side 1
+#define m_winhttp 1
 
 #pragma comment(lib, "opengl32.lib")
 
@@ -15,12 +16,21 @@
 #endif // __EMSCRIPTEN__
 
 #if defined(_WIN32)
-#define WIN32_LEAN_AND_MEAN
+#pragma warning(push, 0)
 #define NOMINMAX
+#if !defined(m_winhttp)
+#define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
+#if defined(m_winhttp)
+#include <winhttp.h>
+#pragma comment(lib, "winhttp.lib")
+#endif
 #undef near
 #undef far
+#pragma warning(pop)
 #endif // _WIN32
+
 
 #include <stdlib.h>
 
@@ -86,7 +96,9 @@ global s_v2 g_mouse;
 global b8 g_left_click;
 global b8 g_right_click;
 
-#if defined(__EMSCRIPTEN__)
+#include "json.cpp"
+
+#if defined(__EMSCRIPTEN__) || defined(m_winhttp)
 #include "leaderboard.cpp"
 #endif
 
@@ -254,7 +266,13 @@ m_dll_export void init(s_platform_data* platform_data)
 		bind_framebuffer(0);
 	}
 
-	#if defined(__EMSCRIPTEN__)
+	#if defined(m_winhttp)
+	// @TODO(tkap, 08/08/2025): This might break with hot reloading
+	game->session = WinHttpOpen(L"A WinHTTP POST Example/1.0", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+	assert(game->session);
+	#endif
+
+	#if defined(__EMSCRIPTEN__) || defined(m_winhttp)
 	load_or_create_leaderboard_id();
 	#endif
 
@@ -889,6 +907,8 @@ func void update()
 
 			#if defined(__EMSCRIPTEN__)
 			submit_leaderboard_score(hard_data->update_count, c_leaderboard_id);
+			#elif defined(m_winhttp)
+			get_leaderboard(c_leaderboard_id);
 			#endif
 		}
 	}
@@ -983,7 +1003,7 @@ func void render(float interp_dt, float delta)
 			}
 
 			if(do_button(S("Leaderboard"), wxy(0.5f, 0.6f), true) == e_button_result_left_click) {
-				#if defined(__EMSCRIPTEN__)
+				#if defined(__EMSCRIPTEN__) || defined(m_winhttp)
 				get_leaderboard(c_leaderboard_id);
 				#endif
 				add_state_transition(&game->state0, e_game_state0_leaderboard, game->render_time, c_transition_time);
@@ -2517,7 +2537,7 @@ func void do_leaderboard()
 				name = entry.nice_name.str;
 			}
 			draw_text(format_text("%i %s", rank_number, name), v2(c_world_size.x * 0.1f, pos.y - 24), 32, color, false, &game->font, zero);
-			s_len_str text = format_text("%02i:%02i.%i", data.minutes, data.seconds, data.milliseconds);
+			s_len_str text = format_text("%02i:%02i.%03i", data.minutes, data.seconds, data.milliseconds);
 			draw_text(text, v2(c_world_size.x * 0.5f, pos.y - 24), 32, color, false, &game->font, zero);
 			pos.y += 48;
 		}
